@@ -23,3 +23,22 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+
+
+.venv/
+__pycache__/
+*.pyc
+
+
+# Secrets - NIEMALS pushen!
+.env
+service_account.json
+*.json.key
+
+# Output-Dateien
+processed_files.json
+timetable_results.json
+events_raw.json
+
+venv/

@@ -4,6 +4,7 @@ openai==2.24.0
 python-dotenv==1.2.1
 requests==2.32.5
 supabase==2.28.0
+dotenv
 
 [dev]
 pytest==9.0.2
