@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SETRADAR — Berlin</title>
+  <meta name="description" content="Wer spielt wann wo. Berlin Techno Timetables." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Date Tabs -->
+  <nav class="date-nav" id="dateNav"></nav>
+
+  <!-- Content -->
+  <main id="mainContent">
+    <div class="loading-screen">
+      <div class="loading-bar"></div>
+      <span>Lade Events</span>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <!-- JS: Reihenfolge wichtig! -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/home.js"></script>
+
+</body>
+</html>

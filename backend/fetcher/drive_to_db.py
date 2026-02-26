@@ -156,7 +156,7 @@ def analyze_image(client: OpenAI, image_bytes: bytes, filename: str) -> dict:
     print(f"  [→] Sende an OpenAI Vision: {filename}")
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4.1-nano",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {
