@@ -30,7 +30,8 @@ alter table events add column if not exists time_end time null;
 
 create table if not exists acts (
     id bigserial primary key,
-    name text not null unique
+    name text not null unique,
+    insta_name text null
 );
 
 create table if not exists event_acts (
@@ -82,6 +83,7 @@ $$;
 
 alter table event_acts add column if not exists start_time time null;
 alter table event_acts add column if not exists end_time time null;
+alter table acts add column if not exists insta_name text null;
 
 -- Grants for anon role
 grant usage on schema public to anon;
@@ -135,6 +137,12 @@ create policy "anon can insert acts" on acts
 for insert to anon
 with check (true);
 
+drop policy if exists "anon can update acts" on acts;
+create policy "anon can update acts" on acts
+for update to anon
+using (true)
+with check (true);
+
 drop policy if exists "anon can select event_acts" on event_acts;
 create policy "anon can select event_acts" on event_acts
 for select to anon
@@ -183,7 +191,10 @@ on conflict (club_id, event_date, event_name) do update set
   time_start = coalesce(excluded.time_start, events.time_start),
   time_end = coalesce(excluded.time_end, events.time_end);
 
-insert into acts (name) values ('DATSKO') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('DATSKO', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 1
@@ -200,7 +211,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('SZG') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('SZG', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 2
@@ -217,7 +231,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('BabaBass3000') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('BabaBass3000', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 3
@@ -234,7 +251,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('DJ Tallboy') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('DJ Tallboy', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 4
@@ -251,7 +271,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('SUITSIDE') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('SUITSIDE', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 5
@@ -268,7 +291,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('HugoBass303') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('HugoBass303', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 6
@@ -285,7 +311,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('Nachtwasser') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('Nachtwasser', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 7
@@ -302,7 +331,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('Atzendent') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('Atzendent', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 8
@@ -319,7 +351,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('OSKAMAXX') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('OSKAMAXX', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 9
@@ -336,7 +371,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('MIMI404') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('MIMI404', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 10
@@ -353,7 +391,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('Blossmbae') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('Blossmbae', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 11
@@ -370,7 +411,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('bbymeister') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('bbymeister', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 12
@@ -387,7 +431,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('jeanska') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('jeanska', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 13
@@ -404,7 +451,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('subga') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('subga', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 14
@@ -421,7 +471,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('elfie') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('elfie', null)
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 15
@@ -438,7 +491,10 @@ on conflict (event_id, act_id) do update set
   end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
-insert into acts (name) values ('Louv') on conflict (name) do nothing;
+insert into acts (name, insta_name)
+values ('Louv', 'louv.mp3')
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
 
 insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
 select e.id, a.id, null, null, 16
@@ -446,6 +502,26 @@ from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
 join acts a on a.name = 'Louv'
+where c.name = 'Berlin'
+  and cl.name = 'Lokschuppen'
+  and e.event_date = '2026-02-27'::date
+  and e.event_name = 'Candyflip x Wyldhearts'
+on conflict (event_id, act_id) do update set
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
+  sort_order = excluded.sort_order;
+
+insert into acts (name, insta_name)
+values ('Limoncello', 'limoncello.tt')
+on conflict (name) do update set
+  insta_name = coalesce(excluded.insta_name, acts.insta_name);
+
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 17
+from events e
+join clubs cl on cl.id = e.club_id
+join cities c on c.id = cl.city_id
+join acts a on a.name = 'Limoncello'
 where c.name = 'Berlin'
   and cl.name = 'Lokschuppen'
   and e.event_date = '2026-02-27'::date

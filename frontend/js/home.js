@@ -14,10 +14,10 @@ const DEMO_EVENTS = [
     event_date: getDateStr(0),
     clubs: { name: 'Lokschuppen' },
     event_acts: [
-      { act_time: null, sort_order: 1,  acts: { name: 'DATSKO' } },
-      { act_time: null, sort_order: 2,  acts: { name: 'SZG' } },
-      { act_time: null, sort_order: 3,  acts: { name: 'BabaBass3000' } },
-      { act_time: '02:00 - 04:00', sort_order: 4, acts: { name: 'DJ Tallboy' } },
+      { act_time: null, sort_order: 1,  acts: { name: 'DATSKO', insta_name: '' } },
+      { act_time: null, sort_order: 2,  acts: { name: 'SZG', insta_name: '' } },
+      { act_time: null, sort_order: 3,  acts: { name: 'BabaBass3000', insta_name: '' } },
+      { act_time: '02:00 - 04:00', sort_order: 4, acts: { name: 'DJ Tallboy', insta_name: '' } },
     ]
   }
 ];
@@ -168,7 +168,7 @@ async function loadFromSupabase() {
       event_acts (
         act_time,
         sort_order,
-        acts ( name )
+        acts ( name, insta_name )
       )
     `)
     .gte('event_date', getDateStr(0))

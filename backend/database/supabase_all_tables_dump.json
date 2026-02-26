@@ -1,72 +1,89 @@
 {
   "acts": [
     {
+      "id": 1,
+      "name": "DATSKO",
+      "insta_name": null
+    },
+    {
       "id": 2,
-      "name": "SZG"
+      "name": "SZG",
+      "insta_name": null
     },
     {
       "id": 3,
-      "name": "BabaBass3000"
+      "name": "BabaBass3000",
+      "insta_name": null
     },
     {
       "id": 4,
-      "name": "DJ Tallboy"
+      "name": "DJ Tallboy",
+      "insta_name": null
     },
     {
       "id": 5,
-      "name": "SUITSIDE"
+      "name": "SUITSIDE",
+      "insta_name": null
     },
     {
       "id": 6,
-      "name": "HugoBass303"
+      "name": "HugoBass303",
+      "insta_name": null
     },
     {
       "id": 7,
-      "name": "Nachtwasser"
+      "name": "Nachtwasser",
+      "insta_name": null
     },
     {
       "id": 8,
-      "name": "Atzendent"
+      "name": "Atzendent",
+      "insta_name": null
     },
     {
       "id": 9,
-      "name": "OSKAMAXX"
+      "name": "OSKAMAXX",
+      "insta_name": null
     },
     {
       "id": 10,
-      "name": "MIMI404"
+      "name": "MIMI404",
+      "insta_name": null
     },
     {
       "id": 11,
-      "name": "Blossmbae"
+      "name": "Blossmbae",
+      "insta_name": null
     },
     {
       "id": 12,
-      "name": "bbymeister"
+      "name": "bbymeister",
+      "insta_name": null
     },
     {
       "id": 13,
-      "name": "jeanska"
+      "name": "jeanska",
+      "insta_name": null
     },
     {
       "id": 14,
-      "name": "subga"
+      "name": "subga",
+      "insta_name": null
     },
     {
       "id": 15,
-      "name": "elfie"
+      "name": "elfie",
+      "insta_name": null
     },
     {
       "id": 16,
-      "name": "Louv"
-    },
-    {
-      "id": 1,
-      "name": "DATSKO"
+      "name": "Louv",
+      "insta_name": null
     },
     {
       "id": 33,
-      "name": "Limoncello"
+      "name": "Limoncello",
+      "insta_name": null
     }
   ],
   "cities": [
@@ -84,25 +101,17 @@
   ],
   "event_acts": [
     {
-      "id": 2,
-      "event_id": 1,
-      "act_id": 2,
-      "start_time": null,
-      "sort_order": 2,
-      "end_time": null
-    },
-    {
       "id": 1,
       "event_id": 1,
       "act_id": 1,
       "start_time": "22:11:49",
       "sort_order": 1,
-      "end_time": null
+      "end_time": "06:30:36"
     },
     {
-      "id": 33,
+      "id": 2,
       "event_id": 1,
-      "act_id": 33,
+      "act_id": 2,
       "start_time": null,
       "sort_order": 2,
       "end_time": null
@@ -217,6 +226,14 @@
       "act_id": 16,
       "start_time": null,
       "sort_order": 16,
+      "end_time": null
+    },
+    {
+      "id": 33,
+      "event_id": 1,
+      "act_id": 33,
+      "start_time": null,
+      "sort_order": 17,
       "end_time": null
     }
   ],

@@ -12,18 +12,21 @@ def sql_literal(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
-def parse_act(raw_act: Any) -> tuple[str, str | None, str | None]:
+def parse_act(raw_act: Any) -> tuple[str, str | None, str | None, str | None]:
     if isinstance(raw_act, str):
-        return raw_act.strip(), None, None
+        return raw_act.strip(), None, None, None
     if isinstance(raw_act, dict):
         name = str(raw_act.get("name", "")).strip()
         start_time = raw_act.get("start_time")
         end_time = raw_act.get("end_time")
+        insta_name = raw_act.get("insta_name")
         if start_time is not None:
             start_time = str(start_time).strip()
         if end_time is not None:
             end_time = str(end_time).strip()
-        return name, start_time or None, end_time or None
+        if insta_name is not None:
+            insta_name = str(insta_name).strip()
+        return name, start_time or None, end_time or None, insta_name or None
     raise ValueError(f"Unsupported act format: {raw_act!r}")
 
 
@@ -68,7 +71,8 @@ alter table events add column if not exists time_end time null;
 
 create table if not exists acts (
     id bigserial primary key,
-    name text not null unique
+    name text not null unique,
+    insta_name text null
 );
 
 create table if not exists event_acts (
@@ -120,6 +124,7 @@ $$;
 
 alter table event_acts add column if not exists start_time time null;
 alter table event_acts add column if not exists end_time time null;
+alter table acts add column if not exists insta_name text null;
 
 -- Grants for anon role
 grant usage on schema public to anon;
@@ -173,6 +178,12 @@ create policy "anon can insert acts" on acts
 for insert to anon
 with check (true);
 
+drop policy if exists "anon can update acts" on acts;
+create policy "anon can update acts" on acts
+for update to anon
+using (true)
+with check (true);
+
 drop policy if exists "anon can select event_acts" on event_acts;
 create policy "anon can select event_acts" on event_acts
 for select to anon
@@ -208,7 +219,7 @@ $$;
     seen_cities: set[str] = set()
     seen_clubs: set[tuple[str, str]] = set()
     seen_events: set[tuple[str, str, str, str]] = set()
-    seen_acts: set[str] = set()
+    seen_acts: dict[str, str | None] = {}
     seen_event_acts: set[tuple[str, str, str, str, str]] = set()
 
     cities = payload.get("cities", [])
@@ -284,16 +295,24 @@ $$;
 
                 acts = event.get("acts", [])
                 for position, raw_act in enumerate(acts, start=1):
-                    act_name, act_start_time, act_end_time = parse_act(raw_act)
+                    act_name, act_start_time, act_end_time, act_insta_name = parse_act(raw_act)
                     if not act_name:
                         continue
 
-                    if act_name not in seen_acts:
-                        statements.append(
-                            f"insert into acts (name) values ({sql_literal(act_name)}) "
-                            "on conflict (name) do nothing;\n"
+                    current_known_insta = seen_acts.get(act_name)
+                    if act_name not in seen_acts or (
+                        current_known_insta is None and act_insta_name is not None
+                    ):
+                        act_insta_name_expr = (
+                            sql_literal(act_insta_name) if act_insta_name is not None else "null"
                         )
-                        seen_acts.add(act_name)
+                        statements.append(
+                            "insert into acts (name, insta_name)\n"
+                            f"values ({sql_literal(act_name)}, {act_insta_name_expr})\n"
+                            "on conflict (name) do update set\n"
+                            "  insta_name = coalesce(excluded.insta_name, acts.insta_name);\n"
+                        )
+                        seen_acts[act_name] = act_insta_name or current_known_insta
 
                     event_act_key = (city_name, club_name, event_date, event_name, act_name)
                     if event_act_key in seen_event_acts:

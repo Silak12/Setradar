@@ -85,6 +85,14 @@ def _ensure_required_tables(supabase: Client) -> None:
             f"Run SQL from '{DEFAULT_SCHEMA_SQL}' in the Supabase SQL Editor to migrate."
         ) from exc
 
+    try:
+        supabase.table("acts").select("insta_name").limit(1).execute()
+    except APIError as exc:
+        raise RuntimeError(
+            "Schema mismatch: 'acts.insta_name' fehlt. "
+            f"Run SQL from '{DEFAULT_SCHEMA_SQL}' in the Supabase SQL Editor to migrate."
+        ) from exc
+
 
 def _get_or_create_city_id(supabase: Client, city_name: str) -> int:
     try:
@@ -176,31 +184,71 @@ def _get_or_create_event_id(
         raise _api_error(f"Event upsert failed for '{label}'", exc) from exc
 
 
-def _get_or_create_act_id(supabase: Client, act_name: str) -> int:
+def _get_or_create_act_id(
+    supabase: Client,
+    act_name: str,
+    insta_name: str | None = None,
+) -> int:
     try:
-        found = supabase.table("acts").select("id").eq("name", act_name).limit(1).execute()
+        found = (
+            supabase.table("acts")
+            .select("id,insta_name")
+            .eq("name", act_name)
+            .limit(1)
+            .execute()
+        )
         if found.data:
-            return int(found.data[0]["id"])
+            act_id = int(found.data[0]["id"])
+            existing_insta = found.data[0].get("insta_name")
+            if insta_name is not None and insta_name != existing_insta:
+                (
+                    supabase.table("acts")
+                    .update({"insta_name": insta_name})
+                    .eq("id", act_id)
+                    .execute()
+                )
+                refreshed = (
+                    supabase.table("acts")
+                    .select("insta_name")
+                    .eq("id", act_id)
+                    .limit(1)
+                    .execute()
+                )
+                current_insta = refreshed.data[0].get("insta_name") if refreshed.data else None
+                if current_insta != insta_name:
+                    raise RuntimeError(
+                        "Act update blocked (likely RLS policy): "
+                        f"name='{act_name}', expected insta_name='{insta_name}', "
+                        f"current insta_name='{current_insta}'."
+                    )
+            return act_id
 
-        created = supabase.table("acts").insert({"name": act_name}).execute()
+        created = (
+            supabase.table("acts")
+            .insert({"name": act_name, "insta_name": insta_name})
+            .execute()
+        )
         return int(created.data[0]["id"])
     except APIError as exc:
         raise _api_error(f"Act upsert failed for '{act_name}'", exc) from exc
 
 
-def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None]:
+def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None, str | None]:
     if isinstance(raw_act, str):
-        return raw_act.strip(), None, None
+        return raw_act.strip(), None, None, None
     if isinstance(raw_act, dict):
         name = str(raw_act.get("name", "")).strip()
         start_time = raw_act.get("start_time")
         end_time = raw_act.get("end_time")
+        insta_name = raw_act.get("insta_name")
         if start_time is not None:
             start_time = str(start_time).strip()
         if end_time is not None:
             end_time = str(end_time).strip()
-        return name, start_time or None, end_time or None
-    return "", None, None
+        if insta_name is not None:
+            insta_name = str(insta_name).strip()
+        return name, start_time or None, end_time or None, insta_name or None
+    return "", None, None, None
 
 
 def _upsert_event_act(
@@ -297,10 +345,16 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                 counters["events"] += 1
 
                 for idx, raw_act in enumerate(event.get("acts", []), start=1):
-                    act_name, act_start_time, act_end_time = _parse_act(raw_act)
+                    act_name, act_start_time, act_end_time, act_insta_name = _parse_act(
+                        raw_act
+                    )
                     if not act_name:
                         continue
-                    act_id = _get_or_create_act_id(supabase, act_name)
+                    act_id = _get_or_create_act_id(
+                        supabase,
+                        act_name,
+                        insta_name=act_insta_name,
+                    )
                     counters["acts"] += 1
 
                     _upsert_event_act(
