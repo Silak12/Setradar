@@ -1,14 +1,11 @@
 /**
  * home.js
- * Logik für die Hauptseite (index.html):
- * - Supabase Events laden
- * - Date-Tabs rendern
- * - Event-Cards rendern
+ * Logik für die Hauptseite (index.html)
  */
 
-// ── Supabase Config ───────────────────────────────────────────────────────────
-const SUPABASE_URL  = 'DEINE_SUPABASE_URL';
-const SUPABASE_ANON = 'DEIN_SUPABASE_ANON_KEY';
+// ── Supabase Config (aus config.js) ──────────────────────────────────────────
+const SUPABASE_URL  = CONFIG.SUPABASE_URL;
+const SUPABASE_ANON = CONFIG.SUPABASE_ANON;
 
 // ── Demo-Daten ────────────────────────────────────────────────────────────────
 const DEMO_EVENTS = [
@@ -19,8 +16,8 @@ const DEMO_EVENTS = [
     date: getDateStr(0),
     doors_open: '23:00',
     artists: [
-      { name: 'Pangaea',      set_time: null },
-      { name: 'Ben UFO',      set_time: null },
+      { name: 'Pangaea',       set_time: null },
+      { name: 'Ben UFO',       set_time: null },
       { name: 'Pearson Sound', set_time: null },
     ]
   },
@@ -68,7 +65,7 @@ function getDateStr(daysOffset = 0) {
 }
 
 function formatDateLabel(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d       = new Date(dateStr + 'T00:00:00');
   const day     = String(d.getDate()).padStart(2, '0');
   const month   = String(d.getMonth() + 1).padStart(2, '0');
   const weekday = ['SO','MO','DI','MI','DO','FR','SA'][d.getDay()];
@@ -78,7 +75,7 @@ function formatDateLabel(dateStr) {
 function formatTabLabel(dateStr) {
   const today    = getDateStr(0);
   const tomorrow = getDateStr(1);
-  const d = new Date(dateStr + 'T00:00:00');
+  const d        = new Date(dateStr + 'T00:00:00');
   const weekdays = ['So','Mo','Di','Mi','Do','Fr','Sa'];
   if (dateStr === today)    return 'Heute';
   if (dateStr === tomorrow) return 'Morgen';
@@ -95,8 +92,8 @@ function groupByDate(events) {
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let allEvents      = [];
-let activeDateIdx  = 0;
+let allEvents     = [];
+let activeDateIdx = 0;
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderDateTabs(grouped) {
@@ -104,7 +101,7 @@ function renderDateTabs(grouped) {
   nav.innerHTML = '';
   grouped.forEach(([dateStr], i) => {
     const btn = document.createElement('button');
-    btn.className = 'date-tab' + (i === activeDateIdx ? ' active' : '');
+    btn.className   = 'date-tab' + (i === activeDateIdx ? ' active' : '');
     btn.textContent = formatTabLabel(dateStr);
     btn.onclick = () => {
       activeDateIdx = i;
@@ -129,9 +126,7 @@ function renderEventCard(ev) {
   return `
     <div class="event-card">
       <div class="card-header">
-        <div>
-          <div class="event-name">${ev.event_name}</div>
-        </div>
+        <div class="event-name">${ev.event_name}</div>
         <div class="event-meta">
           <span class="venue-tag">${ev.venue}</span>
           ${ev.doors_open ? `<span class="doors-time">↳ ${ev.doors_open}</span>` : ''}
@@ -208,20 +203,12 @@ async function loadFromSupabase() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-  const isConfigured = SUPABASE_URL !== 'DEINE_SUPABASE_URL';
-
-  if (isConfigured) {
-    try {
-      allEvents = await loadFromSupabase();
-    } catch (err) {
-      console.warn('Supabase Fehler, nutze Demo-Daten:', err.message);
-      allEvents = DEMO_EVENTS;
-    }
-  } else {
-    await new Promise(r => setTimeout(r, 500)); // fake loading
+  try {
+    allEvents = await loadFromSupabase();
+  } catch (err) {
+    console.warn('Supabase Fehler, nutze Demo-Daten:', err.message);
     allEvents = DEMO_EVENTS;
   }
-
   renderAll();
 }
 

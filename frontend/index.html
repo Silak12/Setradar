@@ -11,10 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css" />
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
@@ -35,9 +32,11 @@
   <!-- Footer -->
   <div id="footer"></div>
 
-  <!-- JS -->
-  <script src="/js/components.js"></script>
-  <script src="/js/home.js"></script>
+  <!-- JS: Reihenfolge wichtig! -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/home.js"></script>
 
 </body>
 </html>
