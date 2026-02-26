@@ -1,3 +1,25 @@
 .venv/
 __pycache__/
 *.pyc
+.env
+
+# venv
+venv/
+
+# Python
+*.pyo
+*.pyd
+
+# Distribution
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,26 +1,2 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-.env
-
-# venv
-.venv/
-venv/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Distribution
-build/
-dist/
-*.egg-info/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
