@@ -1,6 +1,8 @@
 README.md
 main.py
 pyproject.toml
+backend/database/supabase_example.py
+backend/fetcher/drive_to_db.py
 setradar.egg-info/PKG-INFO
 setradar.egg-info/SOURCES.txt
 setradar.egg-info/dependency_links.txt
