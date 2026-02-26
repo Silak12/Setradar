@@ -10,70 +10,88 @@
             {
               "date": "2026-02-27",
               "name": "Candyflip x Wyldhearts",
+              "time_start": "23:00",
+              "time_end": "09:00",
               "acts": [
                 {
                   "name": "DATSKO",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
-                  "name": "SZG",
-                  "start_time": null
+                  "name": "Limoncello",
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "BabaBass3000",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "DJ Tallboy",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "SUITSIDE",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "HugoBass303",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "Nachtwasser",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "Atzendent",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "OSKAMAXX",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "MIMI404",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "Blossmbae",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "bbymeister",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "jeanska",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "subga",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "elfie",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 },
                 {
                   "name": "Louv",
-                  "start_time": null
+                  "start_time": null,
+                  "end_time": null
                 }
               ]
             }

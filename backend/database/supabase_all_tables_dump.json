@@ -1,10 +1,6 @@
 {
   "acts": [
     {
-      "id": 1,
-      "name": "DATSKO"
-    },
-    {
       "id": 2,
       "name": "SZG"
     },
@@ -63,6 +59,14 @@
     {
       "id": 16,
       "name": "Louv"
+    },
+    {
+      "id": 1,
+      "name": "DATSKO"
+    },
+    {
+      "id": 33,
+      "name": "Limoncello"
     }
   ],
   "cities": [
@@ -80,116 +84,140 @@
   ],
   "event_acts": [
     {
-      "id": 1,
-      "event_id": 1,
-      "act_id": 1,
-      "act_time": null,
-      "sort_order": 1
-    },
-    {
       "id": 2,
       "event_id": 1,
       "act_id": 2,
-      "act_time": null,
-      "sort_order": 2
+      "start_time": null,
+      "sort_order": 2,
+      "end_time": null
+    },
+    {
+      "id": 1,
+      "event_id": 1,
+      "act_id": 1,
+      "start_time": "22:11:49",
+      "sort_order": 1,
+      "end_time": null
+    },
+    {
+      "id": 33,
+      "event_id": 1,
+      "act_id": 33,
+      "start_time": null,
+      "sort_order": 2,
+      "end_time": null
     },
     {
       "id": 3,
       "event_id": 1,
       "act_id": 3,
-      "act_time": null,
-      "sort_order": 3
+      "start_time": null,
+      "sort_order": 3,
+      "end_time": null
     },
     {
       "id": 4,
       "event_id": 1,
       "act_id": 4,
-      "act_time": null,
-      "sort_order": 4
+      "start_time": null,
+      "sort_order": 4,
+      "end_time": null
     },
     {
       "id": 5,
       "event_id": 1,
       "act_id": 5,
-      "act_time": null,
-      "sort_order": 5
+      "start_time": null,
+      "sort_order": 5,
+      "end_time": null
     },
     {
       "id": 6,
       "event_id": 1,
       "act_id": 6,
-      "act_time": null,
-      "sort_order": 6
+      "start_time": null,
+      "sort_order": 6,
+      "end_time": null
     },
     {
       "id": 7,
       "event_id": 1,
       "act_id": 7,
-      "act_time": null,
-      "sort_order": 7
+      "start_time": null,
+      "sort_order": 7,
+      "end_time": null
     },
     {
       "id": 8,
       "event_id": 1,
       "act_id": 8,
-      "act_time": null,
-      "sort_order": 8
+      "start_time": null,
+      "sort_order": 8,
+      "end_time": null
     },
     {
       "id": 9,
       "event_id": 1,
       "act_id": 9,
-      "act_time": null,
-      "sort_order": 9
+      "start_time": null,
+      "sort_order": 9,
+      "end_time": null
     },
     {
       "id": 10,
       "event_id": 1,
       "act_id": 10,
-      "act_time": null,
-      "sort_order": 10
+      "start_time": null,
+      "sort_order": 10,
+      "end_time": null
     },
     {
       "id": 11,
       "event_id": 1,
       "act_id": 11,
-      "act_time": null,
-      "sort_order": 11
+      "start_time": null,
+      "sort_order": 11,
+      "end_time": null
     },
     {
       "id": 12,
       "event_id": 1,
       "act_id": 12,
-      "act_time": null,
-      "sort_order": 12
+      "start_time": null,
+      "sort_order": 12,
+      "end_time": null
     },
     {
       "id": 13,
       "event_id": 1,
       "act_id": 13,
-      "act_time": null,
-      "sort_order": 13
+      "start_time": null,
+      "sort_order": 13,
+      "end_time": null
     },
     {
       "id": 14,
       "event_id": 1,
       "act_id": 14,
-      "act_time": null,
-      "sort_order": 14
+      "start_time": null,
+      "sort_order": 14,
+      "end_time": null
     },
     {
       "id": 15,
       "event_id": 1,
       "act_id": 15,
-      "act_time": null,
-      "sort_order": 15
+      "start_time": null,
+      "sort_order": 15,
+      "end_time": null
     },
     {
       "id": 16,
       "event_id": 1,
       "act_id": 16,
-      "act_time": null,
-      "sort_order": 16
+      "start_time": null,
+      "sort_order": 16,
+      "end_time": null
     }
   ],
   "events": [
@@ -197,7 +225,9 @@
       "id": 1,
       "club_id": 1,
       "event_date": "2026-02-27",
-      "event_name": "Candyflip x Wyldhearts"
+      "event_name": "Candyflip x Wyldhearts",
+      "time_start": "23:00:00",
+      "time_end": "09:00:00"
     }
   ],
   "items": [

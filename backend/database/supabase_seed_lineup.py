@@ -70,10 +70,18 @@ def _ensure_required_tables(supabase: Client) -> None:
         )
 
     try:
-        supabase.table("event_acts").select("act_time").limit(1).execute()
+        supabase.table("events").select("time_start,time_end").limit(1).execute()
     except APIError as exc:
         raise RuntimeError(
-            "Schema mismatch: 'event_acts.act_time' is missing. "
+            "Schema mismatch: 'events.time_start/time_end' fehlen. "
+            f"Run SQL from '{DEFAULT_SCHEMA_SQL}' in the Supabase SQL Editor to migrate."
+        ) from exc
+
+    try:
+        supabase.table("event_acts").select("start_time,end_time").limit(1).execute()
+    except APIError as exc:
+        raise RuntimeError(
+            "Schema mismatch: 'event_acts.start_time/end_time' fehlen. "
             f"Run SQL from '{DEFAULT_SCHEMA_SQL}' in the Supabase SQL Editor to migrate."
         ) from exc
 
@@ -116,7 +124,12 @@ def _get_or_create_club_id(supabase: Client, city_id: int, club_name: str) -> in
 
 
 def _get_or_create_event_id(
-    supabase: Client, club_id: int, event_date: str, event_name: str
+    supabase: Client,
+    club_id: int,
+    event_date: str,
+    event_name: str,
+    time_start: str | None,
+    time_end: str | None,
 ) -> int:
     try:
         found = (
@@ -129,7 +142,20 @@ def _get_or_create_event_id(
             .execute()
         )
         if found.data:
-            return int(found.data[0]["id"])
+            event_id = int(found.data[0]["id"])
+            update_payload: dict[str, Any] = {}
+            if time_start is not None:
+                update_payload["time_start"] = time_start
+            if time_end is not None:
+                update_payload["time_end"] = time_end
+            if update_payload:
+                (
+                    supabase.table("events")
+                    .update(update_payload)
+                    .eq("id", event_id)
+                    .execute()
+                )
+            return event_id
 
         created = (
             supabase.table("events")
@@ -138,6 +164,8 @@ def _get_or_create_event_id(
                     "club_id": club_id,
                     "event_date": event_date,
                     "event_name": event_name,
+                    "time_start": time_start,
+                    "time_end": time_end,
                 }
             )
             .execute()
@@ -160,23 +188,27 @@ def _get_or_create_act_id(supabase: Client, act_name: str) -> int:
         raise _api_error(f"Act upsert failed for '{act_name}'", exc) from exc
 
 
-def _parse_act(raw_act: Any) -> tuple[str, str | None]:
+def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None]:
     if isinstance(raw_act, str):
-        return raw_act.strip(), None
+        return raw_act.strip(), None, None
     if isinstance(raw_act, dict):
         name = str(raw_act.get("name", "")).strip()
         start_time = raw_act.get("start_time")
+        end_time = raw_act.get("end_time")
         if start_time is not None:
             start_time = str(start_time).strip()
-        return name, start_time or None
-    return "", None
+        if end_time is not None:
+            end_time = str(end_time).strip()
+        return name, start_time or None, end_time or None
+    return "", None, None
 
 
 def _upsert_event_act(
     supabase: Client,
     event_id: int,
     act_id: int,
-    act_time: str | None,
+    start_time: str | None,
+    end_time: str | None,
     sort_order: int,
 ) -> None:
     try:
@@ -190,8 +222,10 @@ def _upsert_event_act(
         )
         if existing.data:
             payload: dict[str, Any] = {"sort_order": sort_order}
-            if act_time is not None:
-                payload["act_time"] = act_time
+            if start_time is not None:
+                payload["start_time"] = start_time
+            if end_time is not None:
+                payload["end_time"] = end_time
             (
                 supabase.table("event_acts")
                 .update(payload)
@@ -203,7 +237,8 @@ def _upsert_event_act(
         payload = {
             "event_id": event_id,
             "act_id": act_id,
-            "act_time": act_time,
+            "start_time": start_time,
+            "end_time": end_time,
             "sort_order": sort_order,
         }
         supabase.table("event_acts").insert(payload).execute()
@@ -238,16 +273,31 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
             for event in club.get("events", []):
                 event_date = str(event.get("date", "")).strip()
                 event_name = str(event.get("name", "")).strip()
+                event_time_start = event.get("time_start")
+                event_time_end = event.get("time_end")
+                event_time_start = (
+                    str(event_time_start).strip() if event_time_start is not None else None
+                )
+                event_time_end = (
+                    str(event_time_end).strip() if event_time_end is not None else None
+                )
+                event_time_start = event_time_start or None
+                event_time_end = event_time_end or None
                 if not event_date:
                     continue
 
                 event_id = _get_or_create_event_id(
-                    supabase, club_id, event_date, event_name
+                    supabase,
+                    club_id,
+                    event_date,
+                    event_name,
+                    event_time_start,
+                    event_time_end,
                 )
                 counters["events"] += 1
 
                 for idx, raw_act in enumerate(event.get("acts", []), start=1):
-                    act_name, start_time = _parse_act(raw_act)
+                    act_name, act_start_time, act_end_time = _parse_act(raw_act)
                     if not act_name:
                         continue
                     act_id = _get_or_create_act_id(supabase, act_name)
@@ -257,7 +307,8 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                         supabase=supabase,
                         event_id=event_id,
                         act_id=act_id,
-                        act_time=start_time,
+                        start_time=act_start_time,
+                        end_time=act_end_time,
                         sort_order=idx,
                     )
                     counters["event_acts"] += 1

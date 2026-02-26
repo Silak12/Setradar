@@ -20,8 +20,13 @@ create table if not exists events (
     club_id bigint not null references clubs(id) on delete cascade,
     event_date date not null,
     event_name text not null default '',
+    time_start time null,
+    time_end time null,
     unique (club_id, event_date, event_name)
 );
+
+alter table events add column if not exists time_start time null;
+alter table events add column if not exists time_end time null;
 
 create table if not exists acts (
     id bigserial primary key,
@@ -32,7 +37,8 @@ create table if not exists event_acts (
     id bigserial primary key,
     event_id bigint not null references events(id) on delete cascade,
     act_id bigint not null references acts(id) on delete restrict,
-    act_time time null,
+    start_time time null,
+    end_time time null,
     sort_order integer not null default 0,
     unique (event_id, act_id)
 );
@@ -51,12 +57,31 @@ begin
         from information_schema.columns
         where table_schema = 'public'
           and table_name = 'event_acts'
-          and column_name = 'act_time'
+          and column_name = 'start_time'
     ) then
-        alter table event_acts rename column set_start_time to act_time;
+        alter table event_acts rename column set_start_time to start_time;
+    end if;
+
+    if exists (
+        select 1
+        from information_schema.columns
+        where table_schema = 'public'
+          and table_name = 'event_acts'
+          and column_name = 'act_time'
+    ) and not exists (
+        select 1
+        from information_schema.columns
+        where table_schema = 'public'
+          and table_name = 'event_acts'
+          and column_name = 'start_time'
+    ) then
+        alter table event_acts rename column act_time to start_time;
     end if;
 end
 $$;
+
+alter table event_acts add column if not exists start_time time null;
+alter table event_acts add column if not exists end_time time null;
 
 -- Grants for anon role
 grant usage on schema public to anon;
@@ -149,17 +174,19 @@ from cities c
 where c.name = 'Berlin'
 on conflict (city_id, name) do nothing;
 
-insert into events (club_id, event_date, event_name)
-select cl.id, '2026-02-27'::date, 'Candyflip x Wyldhearts'
+insert into events (club_id, event_date, event_name, time_start, time_end)
+select cl.id, '2026-02-27'::date, 'Candyflip x Wyldhearts', '23:00'::time, '09:00'::time
 from clubs cl
 join cities c on c.id = cl.city_id
 where c.name = 'Berlin' and cl.name = 'Lokschuppen'
-on conflict (club_id, event_date, event_name) do nothing;
+on conflict (club_id, event_date, event_name) do update set
+  time_start = coalesce(excluded.time_start, events.time_start),
+  time_end = coalesce(excluded.time_end, events.time_end);
 
 insert into acts (name) values ('DATSKO') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 1
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 1
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -169,13 +196,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('SZG') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 2
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 2
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -185,13 +213,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('BabaBass3000') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 3
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 3
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -201,13 +230,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('DJ Tallboy') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 4
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 4
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -217,13 +247,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('SUITSIDE') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 5
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 5
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -233,13 +264,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('HugoBass303') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 6
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 6
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -249,13 +281,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('Nachtwasser') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 7
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 7
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -265,13 +298,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('Atzendent') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 8
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 8
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -281,13 +315,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('OSKAMAXX') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 9
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 9
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -297,13 +332,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('MIMI404') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 10
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 10
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -313,13 +349,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('Blossmbae') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 11
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 11
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -329,13 +366,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('bbymeister') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 12
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 12
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -345,13 +383,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('jeanska') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 13
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 13
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -361,13 +400,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('subga') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 14
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 14
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -377,13 +417,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('elfie') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 15
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 15
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -393,13 +434,14 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 insert into acts (name) values ('Louv') on conflict (name) do nothing;
 
-insert into event_acts (event_id, act_id, act_time, sort_order)
-select e.id, a.id, null, 16
+insert into event_acts (event_id, act_id, start_time, end_time, sort_order)
+select e.id, a.id, null, null, 16
 from events e
 join clubs cl on cl.id = e.club_id
 join cities c on c.id = cl.city_id
@@ -409,7 +451,8 @@ where c.name = 'Berlin'
   and e.event_date = '2026-02-27'::date
   and e.event_name = 'Candyflip x Wyldhearts'
 on conflict (event_id, act_id) do update set
-  act_time = coalesce(excluded.act_time, event_acts.act_time),
+  start_time = coalesce(excluded.start_time, event_acts.start_time),
+  end_time = coalesce(excluded.end_time, event_acts.end_time),
   sort_order = excluded.sort_order;
 
 commit;
