@@ -33,7 +33,9 @@ function fmtTime(t) {
 function timeToMinutes(t) {
   if (!t) return Infinity;
   const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
+  const minutes = h * 60 + m;
+  // Alles vor 14:00 Uhr = früher Morgen = nach Mitternacht = +1440 min
+  return minutes < 14 * 60 ? minutes + 1440 : minutes;
 }
 
 function formatDateLabel(dateStr) {
