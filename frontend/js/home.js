@@ -1,6 +1,11 @@
+/**
+ * home.js — Setradar
+ */
+
 const SUPABASE_URL  = CONFIG.SUPABASE_URL;
 const SUPABASE_ANON = CONFIG.SUPABASE_ANON;
 
+// ── Demo-Daten ────────────────────────────────────────────────────────────────
 const DEMO_EVENTS = [
   {
     id: 1,
@@ -13,6 +18,7 @@ const DEMO_EVENTS = [
       { start_time: '02:00:00', end_time: '03:30:00', sort_order: 1, acts: { name: 'DATSKO' } },
       { start_time: null,       end_time: null,        sort_order: 2, acts: { name: 'SZG' } },
       { start_time: null,       end_time: null,        sort_order: 3, acts: { name: 'BabaBass3000' } },
+      { start_time: '23:00:00', end_time: '01:00:00',  sort_order: 4, acts: { name: 'DJ Tallboy' } },
     ]
   }
 ];
@@ -29,13 +35,20 @@ function fmtTime(t) {
   return t.slice(0, 5);
 }
 
-// Konvertiert "HH:MM" zu Minuten für Sortierung
+// Club-Nacht-Logik: alles vor 14:00 = nach Mitternacht = +24h
 function timeToMinutes(t) {
   if (!t) return Infinity;
   const [h, m] = t.split(':').map(Number);
-  const minutes = h * 60 + m;
-  // Alles vor 14:00 Uhr = früher Morgen = nach Mitternacht = +1440 min
-  return minutes < 14 * 60 ? minutes + 1440 : minutes;
+  const mins = h * 60 + m;
+  return mins < 14 * 60 ? mins + 1440 : mins;
+}
+
+function sortActs(acts) {
+  const withTime    = acts.filter(a => a.start_time)
+    .sort((a, b) => timeToMinutes(fmtTime(a.start_time)) - timeToMinutes(fmtTime(b.start_time)));
+  const withoutTime = acts.filter(a => !a.start_time)
+    .sort((a, b) => a.sort_order - b.sort_order);
+  return [...withTime, ...withoutTime];
 }
 
 function formatDateLabel(dateStr) {
@@ -65,22 +78,68 @@ function groupByDate(events) {
   return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
 }
 
-// ── Sortierung der Acts ───────────────────────────────────────────────────────
-// Acts mit Zeit → nach start_time sortiert oben
-// Acts ohne Zeit → nach sort_order unten
-function sortActs(acts) {
-  const withTime    = acts.filter(a => a.start_time).sort((a, b) =>
-    timeToMinutes(fmtTime(a.start_time)) - timeToMinutes(fmtTime(b.start_time))
-  );
-  const withoutTime = acts.filter(a => !a.start_time).sort((a, b) =>
-    a.sort_order - b.sort_order
-  );
-  return [...withTime, ...withoutTime];
+// ── Countdown ─────────────────────────────────────────────────────────────────
+// Gibt Minuten bis Set zurück, oder null wenn nicht relevant
+function getMinutesUntil(startTimeStr, eventDateStr) {
+  if (!startTimeStr || !eventDateStr) return null;
+  if (eventDateStr !== getDateStr(0)) return null;
+
+  const now    = new Date();
+  const [h, m] = startTimeStr.slice(0, 5).split(':').map(Number);
+  const setTime = new Date();
+  setTime.setHours(h, m, 0, 0);
+  if (h < 14) setTime.setDate(setTime.getDate() + 1);
+
+  const diffMin = Math.round((setTime - now) / 60000);
+  if (diffMin < 0) return null; // bereits vorbei
+  return diffMin;
+}
+
+function fmtCountdown(mins) {
+  if (mins < 60) return `in ${mins}min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `in ${h}:${String(m).padStart(2, '0')}h`;
+}
+
+// Findet die nächsten 3 Acts (über alle Events) die noch kommen
+function getNextActIds(events) {
+  const today = getDateStr(0);
+  const upcoming = [];
+
+  events.forEach(ev => {
+    if (ev.event_date !== today) return;
+    (ev.event_acts || []).forEach(a => {
+      const mins = getMinutesUntil(a.start_time, ev.event_date);
+      if (mins !== null) {
+        upcoming.push({ sortKey: timeToMinutes(fmtTime(a.start_time)), mins, key: `${ev.id}_${a.sort_order}` });
+      }
+    });
+  });
+
+  upcoming.sort((a, b) => a.sortKey - b.sortKey);
+  // Gib Set aus event_id + sort_order als eindeutigen Key zurück
+  return upcoming.slice(0, 3).map(u => u.key);
+}
+
+// ── Status Bar ────────────────────────────────────────────────────────────────
+function updateStatusBar() {
+  const bar = document.getElementById('statusBar');
+  if (!bar) return;
+  const todayEvents = allEvents.filter(ev => ev.event_date === getDateStr(0));
+  const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  bar.innerHTML = `
+    <div class="status-bar-left">
+      <span class="status-live-dot"></span>
+      <span>Live — ${todayEvents.length} Event${todayEvents.length !== 1 ? 's' : ''} heute</span>
+    </div>
+    <div class="status-bar-right">${time}</div>
+  `;
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let allEvents     = [];
-let activeDateIdx = 0;
+let allEvents      = [];
+let activeDateIdx  = 0;
 let supabaseClient = null;
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -96,7 +155,7 @@ function renderDateTabs(grouped) {
   });
 }
 
-function renderEventCard(ev) {
+function renderEventCard(ev, nextActKeys) {
   const acts      = sortActs(ev.event_acts || []);
   const hasTime   = acts.some(a => a.start_time);
   const venueName = ev.clubs?.name ?? '—';
@@ -104,16 +163,25 @@ function renderEventCard(ev) {
   const closeTime = fmtTime(ev.time_end);
 
   const artistRows = acts.map(a => {
-    const start = fmtTime(a.start_time);
-    const end   = fmtTime(a.end_time);
+    const start     = fmtTime(a.start_time);
+    const end       = fmtTime(a.end_time);
     const timeLabel = start && end ? `${start} – ${end}` : start ? `ab ${start}` : null;
 
+    // Countdown nur für die nächsten 3 acts
+    const actKey   = `${ev.id}_${a.sort_order}`;
+    const isNext   = nextActKeys.includes(actKey);
+    const mins     = isNext ? getMinutesUntil(start, ev.event_date) : null;
+    const countdown = mins !== null ? fmtCountdown(mins) : null;
+
     return `
-      <div class="artist-row ${start ? 'has-time' : ''}" data-start="${start || ''}">
-        <span class="artist-name">${a.acts?.name ?? '?'}</span>
+      <div class="artist-row ${start ? 'has-time' : ''}">
+        <span class="artist-name">
+          ${a.acts?.name ?? '?'}
+          ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
+        </span>
         ${timeLabel
           ? `<span class="artist-time confirmed">${timeLabel}</span>`
-          : `<span class="time-unknown">TBA</span>`
+          : `<span class="time-tba">TBA</span>`
         }
       </div>
     `;
@@ -134,15 +202,17 @@ function renderEventCard(ev) {
       </div>
       <div class="artist-list">
         <div class="artist-list-label">Artists</div>
-        ${artistRows || '<span class="time-unknown">Noch keine Infos</span>'}
+        ${artistRows || '<span class="time-tba">Noch keine Infos</span>'}
       </div>
     </div>
   `;
 }
 
 function renderAll() {
-  const grouped = groupByDate(allEvents);
+  const grouped    = groupByDate(allEvents);
+  const nextActKeys = getNextActIds(allEvents);
   renderDateTabs(grouped);
+  updateStatusBar();
 
   const main = document.getElementById('mainContent');
   if (!grouped.length) {
@@ -163,7 +233,7 @@ function renderAll() {
       </div>
       <div class="day-divider"></div>
       ${events.length
-        ? events.map(renderEventCard).join('')
+        ? events.map(ev => renderEventCard(ev, nextActKeys)).join('')
         : '<div class="no-events">Keine Events an diesem Tag</div>'
       }
     </div>
@@ -177,7 +247,7 @@ function renderAll() {
   }
 }
 
-// ── Supabase Laden ────────────────────────────────────────────────────────────
+// ── Supabase ──────────────────────────────────────────────────────────────────
 async function loadFromSupabase() {
   const { data, error } = await supabaseClient
     .from('events')
@@ -189,63 +259,28 @@ async function loadFromSupabase() {
     .gte('event_date', getDateStr(0))
     .lte('event_date', getDateStr(14))
     .order('event_date');
-
   if (error) throw error;
   return data ?? [];
 }
 
-// ── Realtime Subscription ─────────────────────────────────────────────────────
+// ── Realtime ──────────────────────────────────────────────────────────────────
 function subscribeRealtime() {
   supabaseClient
     .channel('event_acts_changes')
-    .on(
-      'postgres_changes',
+    .on('postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'event_acts' },
       async (payload) => {
-        console.log('[Realtime] event_acts UPDATE:', payload.new);
-
-        // Betroffenes Event in allEvents finden und updaten
-        const updatedActId  = payload.new.act_id;
-        const updatedEventId = payload.new.event_id;
-
-        allEvents = allEvents.map(ev => {
-          if (ev.id !== updatedEventId) return ev;
-          return {
-            ...ev,
-            event_acts: ev.event_acts.map(ea => {
-              // Matchen anhand event_id + act_id
-              if (ea.acts && payload.new.act_id) {
-                const isMatch = ev.id === updatedEventId &&
-                  ea.sort_order === payload.new.sort_order;
-                if (isMatch) {
-                  return {
-                    ...ea,
-                    start_time: payload.new.start_time,
-                    end_time:   payload.new.end_time,
-                  };
-                }
-              }
-              return ea;
-            })
-          };
-        });
-
-        // Wenn kein Match lokal — frisch aus DB laden
-        const matched = allEvents.some(ev =>
-          ev.id === updatedEventId &&
-          ev.event_acts.some(ea => ea.start_time === payload.new.start_time)
-        );
-
-        if (!matched) {
-          allEvents = await loadFromSupabase();
-        }
-
+        allEvents = await loadFromSupabase();
         renderAll();
+        const card = document.querySelector(`[data-event-id="${payload.new.event_id}"]`);
+        if (card) {
+          card.classList.remove('flash');
+          void card.offsetWidth;
+          card.classList.add('flash');
+        }
       }
     )
-    .subscribe((status) => {
-      console.log('[Realtime] Status:', status);
-    });
+    .subscribe();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -255,10 +290,9 @@ async function init() {
   if (isConfigured) {
     const { createClient } = supabase;
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON);
-
     try {
       allEvents = await loadFromSupabase();
-      subscribeRealtime(); // Realtime aktivieren
+      subscribeRealtime();
     } catch (err) {
       console.warn('Supabase Fehler, nutze Demo-Daten:', err.message);
       allEvents = DEMO_EVENTS;
@@ -269,6 +303,8 @@ async function init() {
   }
 
   renderAll();
+  setInterval(renderAll, 60 * 1000);
+  setInterval(updateStatusBar, 30 * 1000);
 }
 
 init();
