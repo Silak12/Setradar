@@ -1,9 +1,3 @@
-/**
- * components.js
- * Lädt navbar.html und footer.html in jede Seite.
- * Voraussetzung: <div id="navbar"></div> und <div id="footer"></div> im HTML.
- */
-
 async function loadComponent(id, path) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -17,13 +11,12 @@ async function loadComponent(id, path) {
 }
 
 async function loadComponents() {
-  // Pfad relativ zum Root — funktioniert auf GitHub Pages
-  const base = '/components';
+  // Relativer Pfad — funktioniert lokal UND auf GitHub Pages
+  const base = 'components';
   await Promise.all([
     loadComponent('navbar', `${base}/navbar.html`),
     loadComponent('footer', `${base}/footer.html`),
   ]);
 }
 
-// Sofort ausführen
 loadComponents();

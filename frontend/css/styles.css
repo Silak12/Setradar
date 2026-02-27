@@ -387,3 +387,25 @@ main {
   margin: 0 auto;
   padding: 0 0 calc(var(--footer-height) + 20px);
 }
+
+/* ── Artist Row Animation ────────────────────────────────────────────────── */
+.artist-row {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.artist-row.has-time {
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    background: rgba(255, 32, 32, 0.08);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    background: transparent;
+  }
+}

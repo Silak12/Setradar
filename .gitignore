@@ -32,7 +32,7 @@ __pycache__/
 
 
 # Secrets - NIEMALS pushen!
-.env
+
 service_account.json
 *.json.key
 
