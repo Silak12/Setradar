@@ -536,7 +536,7 @@ async function openArtistPopup(actId, actName) {
         .single();
       if (act) instaName = act.insta_name;
 
-      // Query 2: Welche event_ids hat dieser Act?
+      // Query 2: event_acts für diesen Act
       const { data: eventActRows } = await supabaseClient
         .from('event_acts')
         .select('id, start_time, end_time, event_id')
@@ -546,7 +546,7 @@ async function openArtistPopup(actId, actName) {
         const today    = getDateStr(0);
         const eventIds = eventActRows.map(r => r.event_id);
 
-        // Query 3: Events separat holen → kein RLS-Problem beim nested JOIN
+        // Query 3: Events separat – kein nested-JOIN RLS-Problem
         const { data: eventRows } = await supabaseClient
           .from('events')
           .select('id, event_name, event_date, time_start, clubs(name)')
@@ -557,7 +557,6 @@ async function openArtistPopup(actId, actName) {
         if (eventRows) {
           const eventMap = {};
           eventRows.forEach(ev => { eventMap[ev.id] = ev; });
-
           upcomingEvents = eventActRows
             .map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: eventMap[ea.event_id] ?? null }))
             .filter(ea => ea.events)
@@ -611,7 +610,7 @@ function renderArtistModal(name, instaName, upcomingEvents) {
       const end   = fmtTime(ea.end_time);
       const slot  = start && end ? `${start}–${end}` : start ? `ab ${start}` : null;
       return `
-        <div class="modal-event-row">
+        <div class="modal-event-row modal-event-row--link" data-event-date="${date}" data-event-id="${ev.id}">
           <div class="modal-event-date">
             <span class="med">${day}</span>
             <span class="mwday">${weekday}</span>
@@ -620,7 +619,10 @@ function renderArtistModal(name, instaName, upcomingEvents) {
             <div class="modal-event-name">${ev.event_name}</div>
             <div class="modal-event-venue">${ev.clubs?.name ?? '—'}</div>
           </div>
-          ${slot ? `<div class="modal-event-time">${slot}</div>` : ''}
+          <div class="modal-event-right">
+            ${slot ? `<div class="modal-event-time">${slot}</div>` : ''}
+            <span class="modal-event-goto">→</span>
+          </div>
         </div>
       `;
     }).join('');
@@ -650,60 +652,78 @@ function initArtistPopup() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeArtistPopup();
   });
+
+  // Klick auf Event-Zeile im Modal → zum richtigen Tag springen
+  document.getElementById('modalContent').addEventListener('click', e => {
+    const row = e.target.closest('.modal-event-row--link');
+    if (!row) return;
+    const targetDate  = row.dataset.eventDate;
+    const targetEvId  = row.dataset.eventId;
+    if (!targetDate) return;
+
+    const grouped = groupByDate(allEvents);
+    const idx     = grouped.findIndex(([d]) => d === targetDate);
+    if (idx === -1) return;
+
+    closeArtistPopup();
+    searchMode    = false;
+    activeDateIdx = idx;
+    clearSearch();
+    renderAll();
+
+    // Scroll zum Event-Card, kurze Verzögerung für DOM-Update
+    if (targetEvId) {
+      setTimeout(() => {
+        const card = document.querySelector(`[data-event-id="${targetEvId}"]`);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  });
 }
 
 // ── Swipe Navigation (Mobile) ─────────────────────────────────────────────────
 function initSwipe() {
-  const THRESHOLD   = 60;   // px bis Seitenwechsel ausgelöst wird
-  const MAX_RESIST  = 80;   // px maximale Auslenkung gegen Rand
-  let   startX = null, startY = null, curX = null;
-  let   swiping = false;
-
+  const THRESHOLD  = 60;
+  const MAX_RESIST = 70;
+  let startX = null, startY = null, curX = null;
+  let swiping = false;
   const main = document.getElementById('mainContent');
 
   function applyDrag(dx) {
     const grouped = groupByDate(allEvents);
     const atStart = activeDateIdx === 0;
     const atEnd   = activeDateIdx >= grouped.length - 1;
-
-    // Gummiband-Widerstand an den Rändern
+    // Gummiband an den Rändern
     let clamped = dx;
     if ((dx > 0 && atStart) || (dx < 0 && atEnd)) {
       clamped = dx > 0
-        ? Math.min(dx * 0.2, MAX_RESIST)
-        : Math.max(dx * 0.2, -MAX_RESIST);
+        ? Math.min(dx * 0.18, MAX_RESIST)
+        : Math.max(dx * 0.18, -MAX_RESIST);
     }
     main.style.transition = 'none';
-    main.style.transform  = `translateX(${clamped}px) rotate(${clamped * 0.015}deg)`;
-    main.style.opacity    = 1 - Math.min(Math.abs(clamped) / 300, 0.25);
+    main.style.transform  = `translateX(${clamped}px) rotate(${clamped * 0.012}deg)`;
+    main.style.opacity    = String(1 - Math.min(Math.abs(clamped) / 280, 0.28));
   }
 
-  function resetDrag(animate) {
-    main.style.transition = animate
-      ? 'transform 0.25s cubic-bezier(0.25,1,0.5,1), opacity 0.25s'
-      : 'none';
+  function resetDrag() {
+    main.style.transition = 'transform 0.25s cubic-bezier(0.25,1,0.5,1), opacity 0.2s';
     main.style.transform  = '';
     main.style.opacity    = '';
   }
 
-  function slideOut(direction, cb) {
-    // direction: -1 = links raus (nächster), +1 = rechts raus (vorheriger)
-    const px = direction * -120;
-    main.style.transition = 'transform 0.18s cubic-bezier(0.4,0,1,1), opacity 0.18s';
-    main.style.transform  = `translateX(${px}%) rotate(${direction * -3}deg)`;
+  function slideOut(dir, cb) {
+    main.style.transition = 'transform 0.17s cubic-bezier(0.4,0,1,1), opacity 0.17s';
+    main.style.transform  = `translateX(${dir * -110}%) rotate(${dir * -3}deg)`;
     main.style.opacity    = '0';
-    setTimeout(cb, 180);
+    setTimeout(cb, 170);
   }
 
-  function slideIn(direction) {
-    // Neue Seite von der anderen Seite reinkommen lassen
-    const fromPx = direction * 80;
+  function slideIn(fromDir) {
     main.style.transition = 'none';
-    main.style.transform  = `translateX(${fromPx}%) rotate(${direction * 2}deg)`;
+    main.style.transform  = `translateX(${fromDir * 75}%) rotate(${fromDir * 2}deg)`;
     main.style.opacity    = '0';
-    // Force reflow, dann animiert reinkommen
     void main.offsetWidth;
-    main.style.transition = 'transform 0.28s cubic-bezier(0.25,1,0.5,1), opacity 0.2s';
+    main.style.transition = 'transform 0.28s cubic-bezier(0.25,1,0.5,1), opacity 0.22s';
     main.style.transform  = '';
     main.style.opacity    = '';
   }
@@ -723,22 +743,24 @@ function initSwipe() {
     const dy = e.changedTouches[0].clientY - startY;
 
     if (!swiping) {
-      // Erst prüfen ob horizontale Bewegung dominiert
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
       if (Math.abs(dy) > Math.abs(dx)) { startX = null; return; }
       swiping = true;
     }
 
+    // Verhindert Browser-Zurück-Geste (iOS Edge-Swipe)
+    if (Math.abs(dx) > 10) e.preventDefault();
+
     curX = e.changedTouches[0].clientX;
     applyDrag(curX - startX);
-  }, { passive: true });
+  }, { passive: false }); // passive:false nötig für preventDefault()
 
   document.addEventListener('touchend', () => {
     if (startX === null || !swiping) { startX = null; return; }
-    const dx       = curX - startX;
-    const grouped  = groupByDate(allEvents);
-    const canNext  = activeDateIdx < grouped.length - 1;
-    const canPrev  = activeDateIdx > 0;
+    const dx      = curX - startX;
+    const grouped = groupByDate(allEvents);
+    const canNext = activeDateIdx < grouped.length - 1;
+    const canPrev = activeDateIdx > 0;
 
     if (dx < -THRESHOLD && canNext) {
       slideOut(-1, () => {
@@ -757,7 +779,7 @@ function initSwipe() {
         slideIn(-1);
       });
     } else {
-      resetDrag(true);
+      resetDrag();
     }
 
     startX = null; swiping = false;
