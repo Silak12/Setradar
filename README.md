@@ -72,10 +72,12 @@ Aus ihr wird SQL erzeugt (`backend/database/lineup_init.sql`) und danach nach Su
 Beispiel: neues Feld `insta_name` in jedem Act.
 
 1. JSON-Struktur erweitern
+
 - Feld in `backend/database/lineup_seed_example.json` an der passenden Stelle einfuegen.
 - Das Feld fuer alle relevanten Eintraege konsistent pflegen (gleiches Objekt-Schema).
 
 2. Schema-Generator anpassen
+
 - Datei: `backend/database/create_schema_from_json.py`
 - Parser erweitern (`parse_act` oder passende Parse-Funktion), damit das neue Feld eingelesen wird.
 - SQL-Header erweitern:
@@ -84,6 +86,7 @@ Beispiel: neues Feld `insta_name` in jedem Act.
 - Seed-SQL-Generierung erweitern (insert/upsert), damit das Feld in SQL mitgeschrieben wird.
 
 3. Supabase-Seeder anpassen
+
 - Datei: `backend/database/supabase_seed_lineup.py`
 - Parse-Funktion fuer das neue Feld erweitern.
 - Upsert/Create-Logik fuer die Zieltabelle erweitern.
@@ -96,6 +99,7 @@ python backend/database/create_schema_from_json.py --input backend/database/line
 ```
 
 5. SQL in Supabase ausfuehren
+
 - Inhalt von `backend/database/lineup_init.sql` im Supabase SQL Editor ausfuehren.
 - Dadurch wird die Spalte (ueber `add column if not exists`) auch bei bestehender DB nachgezogen.
 
