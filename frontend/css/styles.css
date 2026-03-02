@@ -1110,6 +1110,70 @@ button.venue-tag.active {
   background: rgba(255, 32, 32, 0.06);
 }
 
+.venue-name-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.club-follow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--grey);
+  background: transparent;
+  color: var(--grey-lt);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.club-follow-btn:hover {
+  border-color: var(--red-dim);
+  color: var(--white);
+}
+
+.club-follow-btn.active {
+  border-color: var(--red-dim);
+  color: var(--red);
+  background: rgba(255, 32, 32, 0.06);
+}
+
+.act-follow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--grey);
+  background: transparent;
+  color: var(--grey-lt);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.act-follow-btn:hover {
+  border-color: var(--red-dim);
+  color: var(--white);
+}
+
+.act-follow-btn.active {
+  border-color: var(--red-dim);
+  color: var(--red);
+  background: rgba(255, 32, 32, 0.06);
+}
+
 .event-actions {
   display: flex;
   align-items: center;

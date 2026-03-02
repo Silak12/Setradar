@@ -42,6 +42,7 @@ const DEMO_EVENTS = [
 let allEvents = [];
 let activeDateIdx = 0;
 let supabaseClient = null;
+let supabaseAnonClient = null;
 let searchMode = false;
 let searchFilter = 'all';
 let sessionUser = null;
@@ -56,6 +57,7 @@ let pendingActionKeys = new Set();
 let activeSearch = null;
 let authMode = AUTH_MODES.LOGIN;
 let demoMode = false;
+let _dataLoaded = false;
 
 function fmtTime(t) { return t ? String(t).slice(0, 5) : null; }
 function timeToMinutes(t) { if (!t) return Infinity; const [h, m] = t.split(':').map(Number); const mins = h * 60 + m; return mins < 14 * 60 ? mins + 1440 : mins; }
@@ -304,16 +306,11 @@ async function onAuthSubmit(event) {
 async function onNavAuthClick() {
   if (!sessionUser) { openAuthModal(AUTH_MODES.LOGIN); return; }
   if (!supabaseClient) return;
-  try {
-    const { error } = await supabaseClient.auth.signOut();
-    if (error) throw error;
-    sessionUser = null;
-    userProfile = null;
-    clearUserCollections();
-    rerenderView({ preserveDateNavScroll: true });
-  } catch (err) {
-    console.warn('Logout error:', err.message || err);
-  }
+  sessionUser = null;
+  userProfile = null;
+  clearUserCollections();
+  rerenderView({ preserveDateNavScroll: true });
+  supabaseClient.auth.signOut().catch(err => console.warn('Logout error:', err.message || err));
 }
 function initAuthUi() {
   document.getElementById('authOverlayBg')?.addEventListener('click', closeAuthModal);
@@ -335,6 +332,7 @@ function subscribeAuthState() {
     sessionUser = session?.user || null;
     if (sessionUser) await fetchUserProfile();
     else { userProfile = null; clearUserCollections(); }
+    if (!_dataLoaded) return;
     await loadUserCollections(allEvents);
     rerenderView({ preserveDateNavScroll: true });
   });
@@ -365,6 +363,10 @@ function renderDateTabs(grouped, { syncToActive = true, smoothSync = true } = {}
   });
   if (syncToActive) syncDateNav({ smooth: smoothSync });
 }
+function truncateWords(text, max = 5) {
+  const words = String(text || '').trim().split(/\s+/);
+  return words.length <= max ? text : words.slice(0, max).join(' ') + '…';
+}
 function renderPopularEvents() {
   const rail = document.getElementById('popularRail');
   if (!rail) return;
@@ -382,7 +384,7 @@ function renderPopularEvents() {
           return `
             <button class="popular-item" type="button" data-popular-event-id="${ev.id}" data-popular-event-date="${ev.event_date}">
               <div class="popular-item-date">${d.weekday} ${d.day}.${d.month}</div>
-              <div class="popular-item-name">${ev.event_name}</div>
+              <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
               <div class="popular-item-meta">
                 <span>${ev.clubs?.name || '-'}</span>
                 <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `Hype ${item.hype.total_hype}`}</span>
@@ -402,10 +404,9 @@ function renderEventCard(ev, nextActKeys) {
   const close = fmtTime(ev.time_end);
   const hype = getHype(ev.id);
   const isHyped = userHypedEventIds.has(Number(ev.id));
-  const isEventFavorite = favoriteEventIds.has(Number(ev.id));
   const isClubFavorite = ev.clubs?.id ? favoriteClubIds.has(Number(ev.clubs.id)) : false;
   const venueHtml = ev.clubs?.id
-    ? `<button class="venue-tag${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${venue}</button>`
+    ? `<span class="venue-name-group"><span class="venue-tag">${venue}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
     : `<span class="venue-tag">${venue}</span>`;
   const artistRows = acts.map(a => {
     const start = fmtTime(a.start_time), end = fmtTime(a.end_time), label = start && end ? `${start} - ${end}` : start ? `ab ${start}` : null;
@@ -413,10 +414,15 @@ function renderEventCard(ev, nextActKeys) {
     const mins = nextActKeys.includes(actKey) ? getMinutesUntil(start, ev.event_date) : null;
     const countdown = mins !== null ? fmtCountdown(mins) : null;
     const actId = a.acts?.id ?? null;
+    const isActFavorite = actId ? favoriteActIds.has(Number(actId)) : false;
+    const actFollowBtn = actId
+      ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '−' : '+'}</button>`
+      : '';
     return `
       <div class="artist-row ${start ? 'has-time' : ''}">
         <span class="artist-name">
           <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
+          ${actFollowBtn}
           ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
         </span>
         ${label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
@@ -439,11 +445,6 @@ function renderEventCard(ev, nextActKeys) {
             <span class="spark-icon">&#10022;</span><span>Hype</span><span class="hype-count">${hype.total_hype}</span>
           </button>
         </div>
-        <div class="event-actions-right">
-          <button class="event-action-button icon-action${isEventFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-event" data-event-id="${ev.id}" aria-pressed="${isEventFavorite}">
-            <span class="event-action-icon">${isEventFavorite ? '&#9733;' : '&#9734;'}</span><span>Save</span>
-          </button>
-        </div>
       </div>
       <div class="artist-list"><div class="artist-list-label">Artists</div>${artistRows || '<span class="time-tba">Noch keine Infos</span>'}</div>
     </div>
@@ -457,8 +458,10 @@ function renderAll({ preserveDateNavScroll = false } = {}) {
   renderDateTabs(grouped, { syncToActive: !preserveDateNavScroll, smoothSync: !preserveDateNavScroll });
   renderPopularEvents();
   updateStatusBar();
+  const scrollY = window.scrollY;
   if (!grouped.length) {
     main.innerHTML = `<div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    window.scrollTo(0, scrollY);
     setLastUpdated();
     return;
   }
@@ -471,6 +474,7 @@ function renderAll({ preserveDateNavScroll = false } = {}) {
       ${events.length ? events.map(ev => renderEventCard(ev, nextActKeys)).join('') : '<div class="no-events">Keine Events an diesem Tag</div>'}
     </div>
   `;
+  window.scrollTo(0, scrollY);
   setLastUpdated();
   bindArtistClicks();
 }
@@ -670,7 +674,7 @@ async function toggleHype(id) {
   pendingActionKeys.add(key);
   if (active) { userHypedEventIds.delete(eventId); bumpHype(eventId, -1); }
   else { userHypedEventIds.add(eventId); bumpHype(eventId, 1); }
-  rerenderView({ preserveDateNavScroll: true });
+  syncHypeButton(eventId); buildPopularEvents(); renderPopularEvents();
   try {
     if (active) {
       const { error } = await supabaseClient.from('event_hypes').delete().eq('user_id', sessionUser.id).eq('event_id', eventId);
@@ -685,7 +689,7 @@ async function toggleHype(id) {
     console.warn('Hype toggle error:', err.message || err);
     if (active) { userHypedEventIds.add(eventId); bumpHype(eventId, 1); }
     else { userHypedEventIds.delete(eventId); bumpHype(eventId, -1); }
-    rerenderView({ preserveDateNavScroll: true });
+    syncHypeButton(eventId); buildPopularEvents(); renderPopularEvents();
     return false;
   } finally {
     pendingActionKeys.delete(key);
@@ -700,6 +704,33 @@ function syncActFavoriteButton(actId) {
   const label = button.querySelector('.modal-act-favorite-label');
   if (label) label.textContent = active ? 'Saved' : 'Save';
 }
+function syncHypeButton(eventId) {
+  const isHyped = userHypedEventIds.has(Number(eventId));
+  const hype = getHype(eventId);
+  document.querySelectorAll(`[data-action="toggle-hype"][data-event-id="${eventId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isHyped);
+    btn.setAttribute('aria-pressed', String(isHyped));
+    const count = btn.querySelector('.hype-count');
+    if (count) count.textContent = hype.total_hype;
+  });
+}
+function syncClubFollowButtons(clubId) {
+  const isActive = favoriteClubIds.has(Number(clubId));
+  document.querySelectorAll(`[data-action="toggle-favorite-club"][data-club-id="${clubId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    btn.textContent = isActive ? '−' : '+';
+  });
+}
+function syncActFollowButtons(actId) {
+  const isActive = favoriteActIds.has(Number(actId));
+  document.querySelectorAll(`[data-action="toggle-favorite-act"][data-act-id="${actId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    btn.textContent = isActive ? '−' : '+';
+  });
+  syncActFavoriteButton(actId);
+}
 function bindActionHandlers() {
   document.getElementById('mainContent')?.addEventListener('click', async e => {
     const target = e.target.closest('[data-action]');
@@ -707,7 +738,14 @@ function bindActionHandlers() {
     e.preventDefault();
     if (target.dataset.action === 'toggle-hype') await toggleHype(target.dataset.eventId);
     if (target.dataset.action === 'toggle-favorite-event') await toggleFavorite('event', target.dataset.eventId);
-    if (target.dataset.action === 'toggle-favorite-club') await toggleFavorite('club', target.dataset.clubId);
+    if (target.dataset.action === 'toggle-favorite-club') {
+      const clubId = Number(target.dataset.clubId);
+      await toggleFavorite('club', clubId, { rerender: false, onChange: () => syncClubFollowButtons(clubId) });
+    }
+    if (target.dataset.action === 'toggle-favorite-act') {
+      const actId = Number(target.dataset.actId);
+      await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFollowButtons(actId) });
+    }
   });
   document.getElementById('popularRail')?.addEventListener('click', e => {
     const item = e.target.closest('[data-popular-event-id]');
@@ -817,7 +855,7 @@ function initSwipe() {
   const out = (dir, cb) => { main.style.transition = 'transform 0.17s cubic-bezier(0.4,0,1,1), opacity 0.17s'; main.style.transform = `translateX(${dir * -110}%) rotate(${dir * -3}deg)`; main.style.opacity = '0'; setTimeout(cb, 170); };
   const inp = dir => { main.style.transition = 'none'; main.style.transform = `translateX(${dir * 75}%) rotate(${dir * 2}deg)`; main.style.opacity = '0'; void main.offsetWidth; main.style.transition = 'transform 0.28s cubic-bezier(0.25,1,0.5,1), opacity 0.22s'; main.style.transform = ''; main.style.opacity = ''; };
   document.addEventListener('touchstart', e => {
-    if (document.getElementById('artistOverlay')?.classList.contains('open') || document.getElementById('authOverlay')?.classList.contains('open') || e.target.closest('.date-nav')) return;
+    if (document.getElementById('artistOverlay')?.classList.contains('open') || document.getElementById('authOverlay')?.classList.contains('open') || e.target.closest('.date-nav') || e.target.closest('.popular-rail')) return;
     startX = e.changedTouches[0].clientX; startY = e.changedTouches[0].clientY; curX = startX; swiping = false;
   }, { passive: true });
   document.addEventListener('touchmove', e => {
@@ -855,9 +893,10 @@ function loadDemoHypes() {
 async function loadPublicHypes(events = allEvents) {
   const ids = visibleEventIds(events), nextMap = new Map();
   ids.forEach(id => nextMap.set(id, zeroHype()));
-  if (!supabaseClient || !ids.length) { hypeTotalsByEventId = nextMap; return; }
+  const publicClient = supabaseAnonClient || supabaseClient;
+  if (!publicClient || !ids.length) { hypeTotalsByEventId = nextMap; return; }
   try {
-    const { data, error } = await supabaseClient.from('event_hype_totals').select('event_id,total_hype,real_hype,seed_hype').in('event_id', ids);
+    const { data, error } = await publicClient.from('event_hype_totals').select('event_id,total_hype,real_hype,seed_hype').in('event_id', ids);
     if (error) throw error;
     (data || []).forEach(row => nextMap.set(Number(row.event_id), {
       seed_hype: Number(row.seed_hype) || 0,
@@ -897,7 +936,7 @@ async function loadUserCollections(events = allEvents) {
   }
 }
 async function loadFromSupabase() {
-  const { data, error } = await supabaseClient
+  const { data, error } = await (supabaseAnonClient || supabaseClient)
     .from('events')
     .select(`
       id, event_name, event_date, time_start, time_end,
@@ -928,6 +967,7 @@ async function refreshEventData({ preserveDateNavScroll = false, flashEventId = 
   else await loadPublicHypes(allEvents);
   await loadUserCollections(allEvents);
   rerenderView({ preserveDateNavScroll });
+  _dataLoaded = true;
   if (flashEventId) flashEventCard(flashEventId);
 }
 function subscribeRealtime() {
@@ -949,6 +989,9 @@ async function init() {
   if (configured) {
     const { createClient } = supabase;
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseAnonClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
     await hydrateSession();
     subscribeAuthState();
   } else if (legacy) {
