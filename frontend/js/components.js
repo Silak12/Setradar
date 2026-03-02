@@ -19,4 +19,4 @@ async function loadComponents() {
   ]);
 }
 
-loadComponents();
+window.componentsReady = loadComponents();

@@ -35,6 +35,8 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
+  <section class="popular-rail" id="popularRail"></section>
+
   <nav class="date-nav" id="dateNav"></nav>
 
   <main id="mainContent">
@@ -58,6 +60,43 @@
         </svg>
       </button>
       <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <div class="auth-overlay" id="authOverlay" aria-hidden="true">
+    <div class="auth-overlay-bg" id="authOverlayBg"></div>
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="auth-modal-topline"></div>
+      <button class="auth-close" id="authModalClose" type="button" aria-label="Schließen">
+        <span>ESC</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="auth-content">
+        <div class="auth-eyebrow">Account</div>
+        <h2 class="auth-title" id="authTitle">Join the Radar</h2>
+        <div class="auth-switcher" role="tablist" aria-label="Auth Modus">
+          <button class="auth-tab active" id="authModeLogin" type="button" data-auth-mode="login">Login</button>
+          <button class="auth-tab" id="authModeSignup" type="button" data-auth-mode="signup">Signup</button>
+        </div>
+        <form class="auth-form" id="authForm">
+          <label class="auth-field">
+            <span>E-Mail</span>
+            <input id="authEmail" name="email" type="email" autocomplete="email" required />
+          </label>
+          <label class="auth-field auth-field-optional" id="authDisplayNameRow">
+            <span>Name</span>
+            <input id="authDisplayName" name="display_name" type="text" autocomplete="nickname" />
+          </label>
+          <label class="auth-field">
+            <span>Passwort</span>
+            <input id="authPassword" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <div class="auth-message" id="authMessage" aria-live="polite"></div>
+          <button class="auth-submit" id="authSubmit" type="submit">Login</button>
+        </form>
+      </div>
     </div>
   </div>
 
