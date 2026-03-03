@@ -1782,3 +1782,295 @@ body.live-mode-active main {
   color: var(--red);
   border-color: var(--red-dim);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROFILE PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* user-pill als Link */
+a.user-pill {
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+a.user-pill[href]:hover {
+  color: var(--white);
+  border-color: var(--red-dim);
+}
+
+/* Not logged in state */
+.profile-not-logged-in {
+  padding: 48px 16px;
+  text-align: center;
+}
+.profile-nl-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.profile-nl-title {
+  font-family: var(--display);
+  font-size: 42px;
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
+}
+.profile-nl-text {
+  font-size: 12px;
+  color: var(--grey-lt);
+  margin-bottom: 20px;
+}
+.profile-nl-link {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--red);
+  text-decoration: none;
+  border-bottom: 1px solid var(--red-dim);
+  padding-bottom: 2px;
+  transition: color 0.15s;
+}
+.profile-nl-link:hover { color: var(--white); }
+
+/* Profile page wrapper */
+.profile-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding-bottom: calc(var(--footer-height) + 24px);
+}
+
+/* Header */
+.profile-header {
+  padding: 20px 16px 12px;
+}
+.profile-header-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.profile-name {
+  font-family: var(--display);
+  font-size: 48px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.profile-since {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+}
+
+/* Level block */
+.profile-level-block {
+  padding: 12px 16px;
+  border-top: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1e1e1e;
+  background: rgba(255,32,32,0.02);
+}
+.profile-level-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.profile-level-label {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+.profile-level-progress {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--grey-lt);
+}
+.profile-level-bar-wrap {
+  height: 3px;
+  background: #222;
+  position: relative;
+  overflow: hidden;
+}
+.profile-level-bar-fill {
+  height: 100%;
+  background: var(--red);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 6px rgba(255,32,32,0.4);
+}
+
+/* Stats row */
+.profile-stats {
+  display: flex;
+  align-items: stretch;
+  padding: 0 16px;
+  margin: 12px 0;
+}
+.profile-stat {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+}
+.profile-stat-divider {
+  width: 1px;
+  background: #222;
+  margin: 8px 0;
+}
+.profile-stat-value {
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--white);
+}
+.profile-stat-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+  margin-top: 4px;
+}
+
+/* Tabs */
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--grey);
+  padding: 0 16px;
+  margin-top: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.profile-tabs::-webkit-scrollbar { display: none; }
+
+.profile-tab {
+  flex-shrink: 0;
+  padding: 10px 14px 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.profile-tab:hover  { color: var(--white); }
+.profile-tab.active { color: var(--white); border-bottom-color: var(--red); }
+
+/* Tab panels */
+.profile-tab-panel {
+  padding: 16px 16px 0;
+  animation: fadeIn 0.2s ease forwards;
+}
+.profile-tab-panel[hidden] { display: none; }
+
+.profile-section-label {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+  margin-bottom: 10px;
+  border-left: 2px solid var(--red);
+  padding-left: 8px;
+}
+
+/* List items */
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.profile-list-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--off-black);
+  border: 1px solid #1e1e1e;
+  transition: border-color 0.15s;
+}
+.profile-list-item:hover { border-color: #333; }
+
+.profile-list-item--event {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.profile-list-event-date {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+}
+.profile-list-name {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+}
+.profile-list-meta {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--grey-lt);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+a.profile-list-meta:hover { color: var(--white); }
+
+/* Empty state */
+.profile-empty {
+  padding: 24px 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--grey-lt);
+  text-align: center;
+  line-height: 1.8;
+}
+
+/* Loading */
+.profile-list-loading {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--grey);
+  padding: 16px 0;
+  text-transform: uppercase;
+}
+
+/* Badges grid */
+.profile-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.profile-badge {
+  border: 1px solid #2a2a2a;
+  background: var(--off-black);
+  padding: 14px 12px;
+  text-align: center;
+  transition: border-color 0.15s;
+  animation: fadeIn 0.3s ease forwards;
+}
+.profile-badge:hover { border-color: var(--grey); }
+.profile-badge-icon {
+  font-size: 22px;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+.profile-badge-name {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.profile-badge-desc {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--grey-lt);
+  line-height: 1.4;
+}

@@ -238,7 +238,18 @@ function closeAuthModal() {
 function updateAuthUi() {
   const user = document.getElementById('navUserState');
   const button = document.getElementById('navAuthButton');
-  if (user) user.textContent = userLabel();
+  if (user) {
+    user.textContent = userLabel();
+    if (sessionUser) {
+      user.setAttribute('href', 'profile.html');
+      user.style.cursor = 'pointer';
+      user.title = 'Profil ansehen';
+    } else {
+      user.removeAttribute('href');
+      user.style.cursor = 'default';
+      user.removeAttribute('title');
+    }
+  }
   if (button) button.textContent = sessionUser ? 'Logout' : 'Login';
 }
 async function fetchUserProfile() {
