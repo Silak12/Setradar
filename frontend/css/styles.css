@@ -1174,6 +1174,24 @@ button.venue-tag.active {
   background: rgba(255, 32, 32, 0.06);
 }
 
+.act-rate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: #444;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.act-rate-btn:hover { color: var(--red); }
+
 .event-actions {
   display: flex;
   align-items: center;
@@ -2073,4 +2091,218 @@ a.profile-list-meta:hover { color: var(--white); }
   letter-spacing: 0.06em;
   color: var(--grey-lt);
   line-height: 1.4;
+}
+
+/* ── Rating Modal ──────────────────────────────────────────────────────────── */
+.rating-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  align-items: flex-end;
+  justify-content: center;
+}
+.rating-overlay.open { display: flex; }
+.rating-overlay-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(4px);
+}
+.rating-modal {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  background: var(--off-black);
+  border-top: 1px solid #2a2a2a;
+  padding: 0 0 env(safe-area-inset-bottom, 0);
+  animation: slideUp 0.22s cubic-bezier(0.25,1,0.5,1);
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.rating-modal-topline {
+  height: 2px;
+  background: var(--red);
+  width: 100%;
+}
+.rating-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: var(--grey);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.rating-close:hover { border-color: var(--grey); color: var(--white); }
+.rating-content {
+  padding: 20px 20px 24px;
+}
+.rating-eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.rating-act-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.05em;
+  color: var(--white);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.rating-event-name {
+  font-size: 10px;
+  color: var(--grey);
+  letter-spacing: 0.08em;
+  margin-bottom: 20px;
+}
+.rating-stars {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.rating-star {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #333;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.1s, transform 0.1s;
+}
+.rating-star.active,
+.rating-star.hover { color: var(--red); }
+.rating-star:hover { transform: scale(1.15); }
+.rating-flags {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.rating-flag-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--grey-lt);
+}
+.rating-flag-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--red);
+  cursor: pointer;
+}
+.rating-flag-label:hover { color: var(--white); }
+.rating-message {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--grey);
+  min-height: 14px;
+  margin-bottom: 14px;
+}
+.rating-submit {
+  width: 100%;
+  background: var(--red);
+  color: var(--white);
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.rating-submit:disabled { opacity: 0.3; cursor: default; }
+.rating-submit:not(:disabled):hover { opacity: 0.85; }
+
+/* ── Artist modal: stat block ───────────────────────────────────────────────── */
+.modal-act-stats {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid #1e1e1e;
+  margin-bottom: 12px;
+}
+.modal-act-stats-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.modal-act-stars {
+  font-size: 14px;
+  color: var(--red);
+  letter-spacing: 1px;
+}
+.modal-act-avg {
+  font-size: 13px;
+  color: var(--white);
+  letter-spacing: 0.06em;
+}
+.modal-act-count {
+  font-size: 10px;
+  color: var(--grey);
+  letter-spacing: 0.06em;
+}
+.modal-act-flags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.modal-act-flag {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(255,32,32,0.12);
+  color: var(--red);
+  border: 1px solid rgba(255,32,32,0.25);
+  padding: 2px 7px;
+}
+.modal-act-flag--surprise {
+  background: rgba(255,214,10,0.08);
+  color: #ffd60a;
+  border-color: rgba(255,214,10,0.2);
+}
+
+/* ── Artist modal: past events row ─────────────────────────────────────────── */
+.modal-event-row--past {
+  opacity: 0.75;
+}
+.modal-event-row--past:hover { opacity: 1; }
+.modal-events-label--past {
+  margin-top: 16px;
+}
+.modal-rate-btn {
+  background: none;
+  border: 1px solid #2a2a2a;
+  color: var(--grey);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.modal-rate-btn:hover { border-color: var(--red); color: var(--red); }
+.modal-rated-stars {
+  font-size: 12px;
+  color: var(--red);
+  letter-spacing: 1px;
 }

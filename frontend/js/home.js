@@ -63,6 +63,10 @@ let userPresence = null;          // { user_id, event_id, status } | null
 let liveEventData = { queue: null, buckets: [], mood: null };
 let livePollingId = null;
 let livePanelExpanded = false;
+// ── Phase 3: Ratings state ────────────────────────────────────────────────
+let ratingState = null;           // { actId, actName, eventId, eventName } | null
+let selectedRating = 0;
+let userActRatings = new Map();   // key: `${actId}:${eventId}` → rating row
 
 function fmtTime(t) { return t ? String(t).slice(0, 5) : null; }
 function timeToMinutes(t) { if (!t) return Infinity; const [h, m] = t.split(':').map(Number); const mins = h * 60 + m; return mins < 14 * 60 ? mins + 1440 : mins; }
@@ -114,6 +118,7 @@ function clearUserCollections() {
   favoriteClubIds = new Set();
   favoriteActIds = new Set();
   userPresence = null;
+  userActRatings = new Map();
 }
 function favoriteSet(type) {
   if (type === 'event') return favoriteEventIds;
@@ -142,7 +147,8 @@ function setLastUpdated() {
 function syncBodyLock() {
   const artistOpen = document.getElementById('artistOverlay')?.classList.contains('open');
   const authOpen = document.getElementById('authOverlay')?.classList.contains('open');
-  document.body.style.overflow = artistOpen || authOpen ? 'hidden' : '';
+  const ratingOpen = document.getElementById('ratingOverlay')?.classList.contains('open');
+  document.body.style.overflow = artistOpen || authOpen || ratingOpen ? 'hidden' : '';
 }
 function getMinutesUntil(startTimeStr, eventDateStr) {
   if (!startTimeStr || !eventDateStr || eventDateStr !== getDateStr(0)) return null;
@@ -446,11 +452,15 @@ function renderEventCard(ev, nextActKeys) {
     const actFollowBtn = actId
       ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '−' : '+'}</button>`
       : '';
+    const actRateBtn = actId && sessionUser
+      ? `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewerten">★</button>`
+      : '';
     return `
       <div class="artist-row ${start ? 'has-time' : ''}">
         <span class="artist-name">
           <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
           ${actFollowBtn}
+          ${actRateBtn}
           ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
         </span>
         ${label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
@@ -778,6 +788,14 @@ function bindActionHandlers() {
     if (target.dataset.action === 'set-presence') {
       await setPresenceStatus(Number(target.dataset.eventId), target.dataset.nextStatus);
     }
+    if (target.dataset.action === 'open-rating') {
+      openRatingModal({
+        actId: Number(target.dataset.actId),
+        actName: target.dataset.actName,
+        eventId: Number(target.dataset.eventId),
+        eventName: target.dataset.eventName,
+      });
+    }
   });
   document.getElementById('popularRail')?.addEventListener('click', e => {
     const item = e.target.closest('[data-popular-event-id]');
@@ -799,7 +817,7 @@ async function openArtistPopup(actId, actName) {
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   syncBodyLock();
-  let instaName = null, upcomingEvents = [];
+  let instaName = null, upcomingEvents = [], pastEvents = [], ratingStats = null;
   if (supabaseClient && actId) {
     const pubClient = supabaseAnonClient || supabaseClient;
     try {
@@ -808,11 +826,32 @@ async function openArtistPopup(actId, actName) {
       const { data: eventActRows } = await pubClient.from('event_acts').select('id, start_time, end_time, event_id').eq('act_id', actId);
       if (eventActRows?.length) {
         const eventIds = eventActRows.map(r => r.event_id);
-        const { data: eventRows } = await pubClient.from('events').select('id, event_name, event_date, time_start, clubs(id, name)').in('id', eventIds).gte('event_date', getDateStr(0)).order('event_date');
-        if (eventRows) {
+        const [upRes, pastRes] = await Promise.all([
+          pubClient.from('events').select('id, event_name, event_date, time_start, clubs(id, name)').in('id', eventIds).gte('event_date', getDateStr(0)).order('event_date'),
+          pubClient.from('events').select('id, event_name, event_date, clubs(id, name)').in('id', eventIds).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
+        ]);
+        if (upRes.data) {
           const eventMap = {};
-          eventRows.forEach(ev => { eventMap[ev.id] = ev; });
+          upRes.data.forEach(ev => { eventMap[ev.id] = ev; });
           upcomingEvents = eventActRows.map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: eventMap[ea.event_id] || null })).filter(ea => ea.events).sort((a, b) => a.events.event_date.localeCompare(b.events.event_date)).slice(0, 8);
+        }
+        if (pastRes.data) {
+          const pastEventMap = {};
+          pastRes.data.forEach(ev => { pastEventMap[ev.id] = ev; });
+          pastEvents = eventActRows.map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: pastEventMap[ea.event_id] || null })).filter(ea => ea.events).sort((a, b) => b.events.event_date.localeCompare(a.events.event_date)).slice(0, 8);
+        }
+      }
+      // Fetch public rating stats
+      const { data: stats } = await pubClient.from('act_rating_stats').select('rating_count, avg_rating, best_act_pct, surprise_pct').eq('act_id', actId).maybeSingle();
+      ratingStats = stats || null;
+      // Fetch user's own ratings for this act
+      if (sessionUser && supabaseClient) {
+        const { data: ownRatings } = await supabaseClient.from('act_ratings').select('act_id, event_id, rating, was_best_act, was_surprise').eq('user_id', sessionUser.id).eq('act_id', actId);
+        if (ownRatings) {
+          ownRatings.forEach(r => {
+            const key = `${r.act_id}:${r.event_id ?? 'null'}`;
+            userActRatings.set(key, r);
+          });
         }
       }
     } catch (err) {
@@ -824,9 +863,9 @@ async function openArtistPopup(actId, actName) {
       if (act) { upcomingEvents.push({ start_time: act.start_time, end_time: act.end_time, events: ev }); instaName = act.acts.insta_name; }
     });
   }
-  renderArtistModal(actName, instaName, upcomingEvents, actId);
+  renderArtistModal(actName, instaName, upcomingEvents, actId, pastEvents, ratingStats);
 }
-function renderArtistModal(name, instaName, upcomingEvents, actId) {
+function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = [], ratingStats = null) {
   const content = document.getElementById('modalContent');
   if (!content) return;
   const numericActId = Number(actId), isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
@@ -836,19 +875,65 @@ function renderArtistModal(name, instaName, upcomingEvents, actId) {
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
     : '';
+
+  // Rating stats block
+  let statsHtml = '';
+  if (ratingStats && ratingStats.rating_count > 0) {
+    const stars = '★'.repeat(Math.round(ratingStats.avg_rating)) + '☆'.repeat(5 - Math.round(ratingStats.avg_rating));
+    statsHtml = `
+      <div class="modal-act-stats">
+        <div class="modal-act-stats-row">
+          <span class="modal-act-stars" title="${ratingStats.avg_rating} / 5">${stars}</span>
+          <span class="modal-act-avg">${ratingStats.avg_rating}</span>
+          <span class="modal-act-count">(${ratingStats.rating_count})</span>
+        </div>
+        <div class="modal-act-flags">
+          ${ratingStats.best_act_pct > 0 ? `<span class="modal-act-flag">Bester Act ${ratingStats.best_act_pct}%</span>` : ''}
+          ${ratingStats.surprise_pct > 0 ? `<span class="modal-act-flag modal-act-flag--surprise">Überraschung ${ratingStats.surprise_pct}%</span>` : ''}
+        </div>
+      </div>`;
+  }
+
   const rows = upcomingEvents.length
     ? upcomingEvents.map(ea => {
       const ev = ea.events ?? ea, d = formatDateLabel(ev.event_date), start = fmtTime(ea.start_time), end = fmtTime(ea.end_time), slot = start && end ? `${start}-${end}` : start ? `ab ${start}` : null;
-      return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${ev.clubs?.name ?? '-'}</div></div><div class="modal-event-right">${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
+      const ratingKey = `${numericActId}:${ev.id}`;
+      const existingRating = userActRatings.get(ratingKey);
+      const rateBtn = sessionUser
+        ? existingRating
+          ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
+          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">★</button>`
+        : '';
+      return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${ev.clubs?.name ?? '-'}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
     }).join('')
     : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
+
+  // Past events with rating buttons (only when logged in)
+  let pastHtml = '';
+  if (pastEvents.length) {
+    const pastRows = pastEvents.map(ea => {
+      const ev = ea.events ?? ea, d = formatDateLabel(ev.event_date);
+      const ratingKey = `${numericActId}:${ev.id}`;
+      const existingRating = userActRatings.get(ratingKey);
+      const rateBtn = sessionUser
+        ? existingRating
+          ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
+          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">Bewerten</button>`
+        : '';
+      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${ev.clubs?.name ?? '-'}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
+    }).join('');
+    pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
+  }
+
   content.innerHTML = `
     <div class="modal-artist-tag">// ARTIST</div>
     <div class="artist-modal-header"><div class="modal-artist-name">${name}</div><div class="modal-head-actions">${favHtml}</div></div>
     <div class="modal-divider"></div>
     ${igHtml}
+    ${statsHtml}
     <div class="modal-events-label">Kommende Events (${upcomingEvents.length})</div>
     ${rows}
+    ${pastHtml}
     <div class="modal-scanner"></div>
   `;
 }
@@ -871,6 +956,17 @@ function initArtistPopup() {
       e.preventDefault();
       const actId = Number(fav.dataset.favoriteActId);
       await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFavoriteButton(actId) });
+      return;
+    }
+    const rateBtn = e.target.closest('[data-action="open-rating"]');
+    if (rateBtn) {
+      e.preventDefault();
+      openRatingModal({
+        actId: Number(rateBtn.dataset.actId),
+        actName: rateBtn.dataset.actName,
+        eventId: Number(rateBtn.dataset.eventId),
+        eventName: rateBtn.dataset.eventName,
+      });
       return;
     }
     const row = e.target.closest('.modal-event-row--link');
@@ -1353,11 +1449,136 @@ function buildPresenceBtn(evId) {
   return '';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 3: ACT RATINGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function openRatingModal({ actId, actName, eventId, eventName }) {
+  if (!ensureAuthenticated('Bewertungen')) return;
+  ratingState = { actId, actName, eventId, eventName };
+  selectedRating = 0;
+
+  const existing = userActRatings.get(`${actId}:${eventId}`);
+
+  document.getElementById('ratingActName').textContent = actName;
+  document.getElementById('ratingEventName').textContent = eventName;
+  document.getElementById('ratingFlagBest').checked = existing?.was_best_act ?? false;
+  document.getElementById('ratingFlagSurprise').checked = existing?.was_surprise ?? false;
+  document.getElementById('ratingMessage').textContent = '';
+
+  if (existing) {
+    selectedRating = existing.rating;
+  }
+  updateRatingStars(selectedRating);
+
+  const overlay = document.getElementById('ratingOverlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  syncBodyLock();
+}
+
+function closeRatingModal() {
+  ratingState = null;
+  selectedRating = 0;
+  const overlay = document.getElementById('ratingOverlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
+  syncBodyLock();
+}
+
+function updateRatingStars(value) {
+  selectedRating = value;
+  document.querySelectorAll('.rating-star').forEach(btn => {
+    const star = Number(btn.dataset.star);
+    btn.classList.toggle('active', star <= value);
+  });
+  const submit = document.getElementById('ratingSubmit');
+  if (submit) submit.disabled = value === 0;
+}
+
+async function submitActRating() {
+  if (!ratingState || selectedRating === 0 || !supabaseClient || !sessionUser) return;
+  const submit = document.getElementById('ratingSubmit');
+  if (submit) submit.disabled = true;
+  const msgEl = document.getElementById('ratingMessage');
+  if (msgEl) msgEl.textContent = 'Wird gespeichert...';
+
+  const { actId, actName, eventId } = ratingState;
+  const wasBest = document.getElementById('ratingFlagBest')?.checked ?? false;
+  const wasSurprise = document.getElementById('ratingFlagSurprise')?.checked ?? false;
+
+  try {
+    // Check if rating already exists for this (user, act, event)
+    const { data: existingRow } = await supabaseClient
+      .from('act_ratings')
+      .select('id')
+      .eq('user_id', sessionUser.id)
+      .eq('act_id', actId)
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (existingRow) {
+      const { error } = await supabaseClient
+        .from('act_ratings')
+        .update({ rating: selectedRating, was_best_act: wasBest, was_surprise: wasSurprise })
+        .eq('user_id', sessionUser.id)
+        .eq('act_id', actId)
+        .eq('event_id', eventId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient
+        .from('act_ratings')
+        .insert({ user_id: sessionUser.id, act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: wasBest, was_surprise: wasSurprise });
+      if (error) throw error;
+    }
+
+    // Update local cache
+    const key = `${actId}:${eventId}`;
+    userActRatings.set(key, { act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: wasBest, was_surprise: wasSurprise });
+
+    if (msgEl) msgEl.textContent = 'Gespeichert!';
+    setTimeout(() => {
+      closeRatingModal();
+      // Reopen artist popup to refresh stats
+      openArtistPopup(actId, actName);
+    }, 700);
+  } catch (err) {
+    console.warn('Rating submit error:', err.message || err);
+    if (msgEl) msgEl.textContent = 'Fehler beim Speichern.';
+    if (submit) submit.disabled = false;
+  }
+}
+
+function initRatingModal() {
+  document.getElementById('ratingOverlayBg')?.addEventListener('click', closeRatingModal);
+  document.getElementById('ratingModalClose')?.addEventListener('click', closeRatingModal);
+  document.getElementById('ratingSubmit')?.addEventListener('click', submitActRating);
+  document.getElementById('ratingStars')?.addEventListener('click', e => {
+    const star = e.target.closest('.rating-star');
+    if (star) updateRatingStars(Number(star.dataset.star));
+  });
+  document.getElementById('ratingStars')?.addEventListener('mouseover', e => {
+    const star = e.target.closest('.rating-star');
+    if (!star) return;
+    const val = Number(star.dataset.star);
+    document.querySelectorAll('.rating-star').forEach(btn => {
+      btn.classList.toggle('hover', Number(btn.dataset.star) <= val);
+    });
+  });
+  document.getElementById('ratingStars')?.addEventListener('mouseleave', () => {
+    document.querySelectorAll('.rating-star').forEach(btn => btn.classList.remove('hover'));
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('ratingOverlay')?.classList.contains('open')) closeRatingModal();
+  });
+}
+
 async function init() {
   if (window.componentsReady?.then) await window.componentsReady;
   initAuthUi();
   initSearch();
   initArtistPopup();
+  initRatingModal();
   initSwipe();
   initLivePanel();
   bindActionHandlers();
