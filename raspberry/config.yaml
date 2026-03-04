@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────
+#  Instagram Story Bot – Konfiguration
+# ─────────────────────────────────────────
+
+# Google Drive Ordner-ID (aus der URL: drive.google.com/drive/folders/HIER)
+google_drive_folder_id: ""
+
+# ADB Device (leer lassen wenn nur 1 Phone angeschlossen)
+adb_device: ""
+
+# Verhalten / Timing
+behavior:
+  # Session-Länge in Minuten (min, max)
+  session_duration_min: 20
+  session_duration_max: 45
+
+  # Pause zwischen Sessions in Minuten (min, max)
+  break_duration_min: 15
+  break_duration_max: 90
+
+  # Nachtruhe (Stunden, 24h Format)
+  sleep_start_hour: 1
+  sleep_end_hour: 8
+
+  # Wahrscheinlichkeit Feed scrollen statt Stories (0.0 - 1.0)
+  feed_scroll_chance: 0.15
+
+  # Delays zwischen Aktionen in Sekunden
+  delay_min: 1.5
+  delay_max: 4.0
+
+  # Zufällig lange Pause ("nachdenken")
+  deep_pause_chance: 0.08
+
+# Screenshot Einstellungen
+screenshots:
+  local_output_dir: "./captured_stories"
+  keep_local_copy: true
+
+# Logging
+logging:
+  level: "INFO"
+  log_file: "./logs/bot.log"

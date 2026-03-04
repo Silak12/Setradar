@@ -1,0 +1,23 @@
+2026-03-04 21:23:21,440 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-04 21:26:32,706 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-04 21:27:11,841 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-04 21:27:13,541 [INFO] main: Phone verbunden: {'serial': 'RR8X602KP8L', 'sdk': 34, 'brand': 'samsung', 'model': 'SM-A155F', 'arch': 'arm64-v8a', 'version': 14}
+2026-03-04 21:27:15,900 [ERROR] bot.uploader: Drive-Fehler: Invalid client secrets file ('Error opening file', 'client_secrets.json', 'No such file or directory', 2)
+2026-03-04 21:27:15,900 [INFO] main: Story-Leiste wird abgescannt...
+2026-03-04 21:27:21,418 [INFO] bot.stories: Keine neuen Stories in der Leiste
+2026-03-04 21:27:21,419 [INFO] main: 0 Stories gespeichert
+2026-03-04 21:27:21,420 [INFO] main: Keine neuen Stories – warte 13 Min
+2026-03-04 21:27:31,395 [INFO] main: Bot gestoppt
+2026-03-04 21:28:30,293 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-04 21:28:32,071 [INFO] main: Phone verbunden: {'serial': 'RR8X602KP8L', 'sdk': 34, 'brand': 'samsung', 'model': 'SM-A155F', 'arch': 'arm64-v8a', 'version': 14}
+2026-03-04 21:28:34,611 [ERROR] bot.uploader: Drive-Fehler: Invalid client secrets file ('Error opening file', 'client_secrets.json', 'No such file or directory', 2)
+2026-03-04 21:28:34,611 [INFO] main: Story-Leiste wird abgescannt...
+2026-03-04 21:28:41,885 [INFO] bot.stories: Keine neuen Stories in der Leiste
+2026-03-04 21:28:41,886 [INFO] main: 0 Stories gespeichert
+2026-03-04 21:28:41,887 [INFO] main: Keine neuen Stories – warte 18 Min
+2026-03-04 21:28:56,916 [INFO] main: Bot gestoppt
+2026-03-04 21:30:17,218 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-04 21:30:19,050 [INFO] main: Phone verbunden: {'serial': 'RR8X602KP8L', 'sdk': 34, 'brand': 'samsung', 'model': 'SM-A155F', 'arch': 'arm64-v8a', 'version': 14}
+2026-03-04 21:30:20,735 [ERROR] bot.uploader: Drive-Fehler: Invalid client secrets file ('Error opening file', 'client_secrets.json', 'No such file or directory', 2)
+2026-03-04 21:30:20,736 [INFO] main: Story-Leiste wird abgescannt...
+2026-03-04 21:30:32,290 [INFO] main: Bot gestoppt
