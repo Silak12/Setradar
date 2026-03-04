@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SETRADAR — Profil</title>
+  <meta name="description" content="Dein Setradar Profil." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <div class="status-bar" id="statusBar">
+    <div class="status-bar-left">
+      <span class="status-live-dot"></span>
+      <span>Profil</span>
+    </div>
+    <div class="status-bar-right" id="statusBarRight">—</div>
+  </div>
+
+  <main id="mainContent">
+    <!-- Loading -->
+    <div class="loading-screen" id="profileLoading">
+      <div class="loading-bar"></div>
+      <span>Lade Profil</span>
+    </div>
+
+    <!-- Not logged in -->
+    <div class="profile-not-logged-in" id="profileNotLoggedIn" style="display:none">
+      <div class="profile-nl-eyebrow">// PROFIL</div>
+      <div class="profile-nl-title">Nicht eingeloggt</div>
+      <p class="profile-nl-text">Login erforderlich um dein Profil zu sehen.</p>
+      <a class="profile-nl-link" href="index.html">Zurück zur Startseite →</a>
+    </div>
+
+    <!-- Profile content -->
+    <div class="profile-page" id="profileContent" style="display:none">
+
+      <!-- Header -->
+      <div class="profile-header">
+        <div class="profile-header-eyebrow">// PROFIL</div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-since" id="profileSince">—</div>
+      </div>
+
+      <!-- Level -->
+      <div class="profile-level-block" id="profileLevel">
+        <div class="profile-level-row">
+          <span class="profile-level-label" id="levelLabel">—</span>
+          <span class="profile-level-progress" id="levelProgress">—</span>
+        </div>
+        <div class="profile-level-bar-wrap">
+          <div class="profile-level-bar-fill" id="levelBarFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="statHypes">0</div>
+          <div class="profile-stat-label">Hypes</div>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="statActs">0</div>
+          <div class="profile-stat-label">Acts</div>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="statClubs">0</div>
+          <div class="profile-stat-label">Clubs</div>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat">
+          <div class="profile-stat-value" id="statFavEvents">0</div>
+          <div class="profile-stat-label">Events</div>
+        </div>
+      </div>
+
+      <div class="day-divider"></div>
+
+      <!-- Tabs -->
+      <div class="profile-tabs" role="tablist">
+        <button class="profile-tab active" data-tab="acts" role="tab" aria-selected="true">Acts</button>
+        <button class="profile-tab" data-tab="clubs" role="tab" aria-selected="false">Clubs</button>
+        <button class="profile-tab" data-tab="hypes" role="tab" aria-selected="false">Hypes</button>
+        <button class="profile-tab" data-tab="badges" role="tab" aria-selected="false">Badges</button>
+      </div>
+
+      <!-- Acts Tab -->
+      <div class="profile-tab-panel active" id="tabActs" role="tabpanel">
+        <div class="profile-section-label">Gefolgte Acts</div>
+        <div class="profile-list" id="actsList">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+
+        <div class="profile-section-label" style="margin-top:24px">Top Acts</div>
+        <div class="profile-list" id="topActsList">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+
+        <div class="profile-section-label" style="margin-top:24px">Empfehlungen</div>
+        <div class="profile-list" id="recommendationsList">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+      </div>
+
+      <!-- Clubs Tab -->
+      <div class="profile-tab-panel" id="tabClubs" role="tabpanel" hidden>
+        <div class="profile-section-label">Gefolgte Clubs</div>
+        <div class="profile-list" id="clubsList">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+      </div>
+
+      <!-- Hypes Tab -->
+      <div class="profile-tab-panel" id="tabHypes" role="tabpanel" hidden>
+        <div class="profile-section-label">Gehypte Events</div>
+        <div class="profile-list" id="hypesList">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+      </div>
+
+      <!-- Badges Tab -->
+      <div class="profile-tab-panel" id="tabBadges" role="tabpanel" hidden>
+        <div class="profile-section-label">Badges</div>
+        <div class="profile-badges-grid" id="badgesGrid">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/profile.js"></script>
+</body>
+</html>
