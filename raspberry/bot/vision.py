@@ -4,63 +4,78 @@ import logging
 
 log = logging.getLogger(__name__)
 
-# Story-Leiste Y-Koordinaten (angepasst auf Samsung A15)
-STORY_BAR_Y1 = 155
-STORY_BAR_Y2 = 390
+# Nur der obere Ring-Bogen der Story-Avatare (Samsung A15, 1080x2340px).
+# Schmalerer Crop = kein Profilfoto-Inhalt im Scan → weniger False Positives.
+STORY_BAR_Y1 = 237
+STORY_BAR_Y2 = 268
+
+# Für Avatar-Klick: Mittelpunkt der Avatare
+STORY_BAR_CENTER_Y = 305
+
+
+def _gradient_masks(hsv):
+    """Gibt die vier Instagram-Gradient Farb-Masken zurück."""
+    rot_a  = cv2.inRange(hsv, np.array([0,   120, 120]), np.array([10,  255, 255]))
+    rot_b  = cv2.inRange(hsv, np.array([160, 120, 120]), np.array([180, 255, 255]))
+    orange = cv2.inRange(hsv, np.array([10,  120, 120]), np.array([35,  255, 255]))
+    lila   = cv2.inRange(hsv, np.array([130,  60, 120]), np.array([160, 255, 255]))
+    return rot_a, rot_b, orange, lila
 
 
 class StoryVision:
 
     def screenshot_to_numpy(self, device):
-        img = device.screenshot(format="opencv")
-        return img
+        return device.screenshot(format="opencv")
 
     def has_unseen_stories(self, img):
+        """
+        Erkennt Instagram Story-Ringe im oberen Ring-Bogen.
+
+        Anti-False-Positive: Es müssen mindestens ZWEI verschiedene
+        Farbzonen des Gradienten vorhanden sein (z.B. Orange + Lila).
+        Ein rotes Profilfoto triggert nur Rot-A/B, nicht Orange oder Lila.
+        """
         if img is None:
             return False
 
         bar = img[STORY_BAR_Y1:STORY_BAR_Y2, :]
         hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
+        rot_a, rot_b, orange, lila = _gradient_masks(hsv)
 
-        # Rot (zwei HSV-Bereiche)
-        mask1 = cv2.inRange(hsv, np.array([0, 100, 100]),
-                                  np.array([10, 255, 255]))
-        mask2 = cv2.inRange(hsv, np.array([160, 100, 100]),
-                                  np.array([180, 255, 255]))
-        # Instagram Gradient: Orange/Pink/Lila (OpenCV HSV: H 0-179)
-        mask3 = cv2.inRange(hsv, np.array([10,  100, 100]),
-                                  np.array([35,  255, 255]))
-        mask4 = cv2.inRange(hsv, np.array([130,  50, 100]),
-                                  np.array([160, 255, 255]))
+        counts = {
+            "rot":    cv2.countNonZero(cv2.bitwise_or(rot_a, rot_b)),
+            "orange": cv2.countNonZero(orange),
+            "lila":   cv2.countNonZero(lila),
+        }
+        log.debug(f"Story-Bar Pixel: {counts}")
 
-        combined = cv2.bitwise_or(mask1, mask2)
-        combined = cv2.bitwise_or(combined, mask3)
-        combined = cv2.bitwise_or(combined, mask4)
+        # Mindestens 2 Zonen mit je >80 Pixeln → echter Instagram-Gradient
+        total_pixels = (STORY_BAR_Y2 - STORY_BAR_Y1) * img.shape[1]
+        # Eine Zone >90% der Fläche = kein echter Gradient (z.B. falscher Screen)
+        if any(v > total_pixels * 0.9 for v in counts.values()):
+            log.debug("Eine Zone dominiert gesamte Fläche – kein Instagram-Screen")
+            return False
 
-        red_pixels = cv2.countNonZero(combined)
-        log.debug(f"Gradient-Pixel in Story-Bar: {red_pixels}")
-
-        return red_pixels > 300
+        zones_active = sum(1 for v in counts.values() if v > 80)
+        return zones_active >= 2
 
     def find_first_story_avatar(self, img):
+        """
+        Sucht den linkesten Story-Avatar anhand des Gradient-Rings.
+        Gibt relative (x, y) Koordinaten des Avatar-Mittelpunkts zurück.
+        """
         if img is None:
             return None
 
         h, w = img.shape[:2]
         bar = img[STORY_BAR_Y1:STORY_BAR_Y2, :]
         hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
+        rot_a, rot_b, orange, lila = _gradient_masks(hsv)
 
-        mask1 = cv2.inRange(hsv, np.array([0, 100, 100]),
-                                  np.array([10, 255, 255]))
-        mask2 = cv2.inRange(hsv, np.array([160, 100, 100]),
-                                  np.array([180, 255, 255]))
-        mask3 = cv2.inRange(hsv, np.array([10,  100, 100]),
-                                  np.array([35,  255, 255]))
-        mask4 = cv2.inRange(hsv, np.array([130,  50, 100]),
-                                  np.array([160, 255, 255]))
-
-        mask = cv2.bitwise_or(cv2.bitwise_or(mask1, mask2),
-                              cv2.bitwise_or(mask3, mask4))
+        mask = cv2.bitwise_or(
+            cv2.bitwise_or(rot_a, rot_b),
+            cv2.bitwise_or(orange, lila)
+        )
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
                                         cv2.CHAIN_APPROX_SIMPLE)
@@ -74,12 +89,10 @@ class StoryVision:
         if M["m00"] == 0:
             return None
 
+        # X aus Ring-Bogen, Y auf Avatar-Mitte setzen (nicht Ring-Bogen-Mitte)
         cx = int(M["m10"] / M["m00"])
-        cy = int(M["m01"] / M["m00"]) + STORY_BAR_Y1  # offset zurückrechnen
-
-        # Relative Koordinaten (0.0 - 1.0)
         rel_x = cx / w
-        rel_y = cy / h
-        log.debug(f"Erster Avatar bei: ({rel_x:.2f}, {rel_y:.2f})")
+        rel_y = STORY_BAR_CENTER_Y / h
 
+        log.debug(f"Erster Avatar bei: ({rel_x:.2f}, {rel_y:.2f})")
         return (rel_x, rel_y)

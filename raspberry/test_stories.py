@@ -31,9 +31,10 @@ log = logging.getLogger("test_stories")
 OUTPUT_DIR = Path("./test_captures")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# Story-Leiste Y-Bereich (anpassen falls nötig)
-STORY_BAR_Y1 = 155
-STORY_BAR_Y2 = 390
+# Nur oberer Ring-Bogen der Story-Avatare (Samsung A15, 1080x2340px)
+STORY_BAR_Y1 = 237
+STORY_BAR_Y2 = 268
+STORY_BAR_CENTER_Y = 305  # Avatar-Mittelpunkt zum Anklicken
 
 MAX_STORIES = 50
 
@@ -51,45 +52,54 @@ def save(img, name):
     return path
 
 
+def _gradient_masks(hsv):
+    rot_a  = cv2.inRange(hsv, np.array([0,   120, 120]), np.array([10,  255, 255]))
+    rot_b  = cv2.inRange(hsv, np.array([160, 120, 120]), np.array([180, 255, 255]))
+    orange = cv2.inRange(hsv, np.array([10,  120, 120]), np.array([35,  255, 255]))
+    lila   = cv2.inRange(hsv, np.array([130,  60, 120]), np.array([160, 255, 255]))
+    return rot_a, rot_b, orange, lila
+
+
 def analyze_story_bar(img):
     """Gibt detaillierte Debug-Infos zur Story-Leiste aus."""
     h, w = img.shape[:2]
     log.info(f"Bild: {w}x{h}px")
+    log.info(f"Scan-Bereich: Y={STORY_BAR_Y1}-{STORY_BAR_Y2} (nur oberer Ring-Bogen)")
 
     bar = img[STORY_BAR_Y1:STORY_BAR_Y2, :]
     hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
 
-    avg_hsv = hsv.mean(axis=(0, 1))
-    log.info(f"Story-Bar HSV Durchschnitt: H={avg_hsv[0]:.1f} S={avg_hsv[1]:.1f} V={avg_hsv[2]:.1f}")
-
-    # Instagram Gradient: Rot (0-10 + 160-179), Orange/Gelb (10-35), Pink/Lila (130-160)
-    masks = {
-        "Rot-A    (H  0-10)":  cv2.inRange(hsv, np.array([0,   100, 100]), np.array([10,  255, 255])),
-        "Rot-B    (H160-179)": cv2.inRange(hsv, np.array([160, 100, 100]), np.array([179, 255, 255])),
-        "Orange   (H 10-35)":  cv2.inRange(hsv, np.array([10,  100, 100]), np.array([35,  255, 255])),
-        "Pink/Lila(H130-160)": cv2.inRange(hsv, np.array([130,  50, 100]), np.array([160, 255, 255])),
+    rot_a, rot_b, orange, lila = _gradient_masks(hsv)
+    counts = {
+        "Rot   (H  0-10 + 160-180)": cv2.countNonZero(cv2.bitwise_or(rot_a, rot_b)),
+        "Orange(H  10-35)          ": cv2.countNonZero(orange),
+        "Lila  (H 130-160)         ": cv2.countNonZero(lila),
     }
 
-    total = 0
-    for name, mask in masks.items():
-        count = cv2.countNonZero(mask)
-        log.info(f"  {name}: {count} Pixel")
-        total += count
+    zones_active = 0
+    for name, count in counts.items():
+        active = count > 80
+        if active:
+            zones_active += 1
+        log.info(f"  {name}: {count} Pixel {'✓' if active else '✗'}")
 
-    log.info(f"  ─── Gesamt Gradient-Pixel: {total} (Schwellwert: 300)")
-    return total > 300, bar, masks
+    found = zones_active >= 2
+    log.info(f"  ─── Aktive Zonen: {zones_active}/3 → Stories: {'JA' if found else 'NEIN'}")
+    log.info(f"  (Anti-FP: rotes Profilfoto = nur 1 Zone → kein Trigger)")
+
+    all_masks = {"rot_a": rot_a, "rot_b": rot_b, "orange": orange, "lila": lila}
+    return found, bar, all_masks
 
 
 def find_first_avatar(img):
     h, w = img.shape[:2]
     bar = img[STORY_BAR_Y1:STORY_BAR_Y2, :]
     hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
+    rot_a, rot_b, orange, lila = _gradient_masks(hsv)
 
-    mask = (
-        cv2.inRange(hsv, np.array([0,   100, 100]), np.array([10,  255, 255])) |
-        cv2.inRange(hsv, np.array([160, 100, 100]), np.array([179, 255, 255])) |
-        cv2.inRange(hsv, np.array([10,  100, 100]), np.array([35,  255, 255])) |
-        cv2.inRange(hsv, np.array([130,  50, 100]), np.array([160, 255, 255]))
+    mask = cv2.bitwise_or(
+        cv2.bitwise_or(rot_a, rot_b),
+        cv2.bitwise_or(orange, lila)
     )
 
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -101,12 +111,11 @@ def find_first_avatar(img):
     if M["m00"] == 0:
         return None
 
+    # X aus Ring-Bogen, Y auf Avatar-Mittelpunkt setzen
     cx = int(M["m10"] / M["m00"])
-    cy = int(M["m01"] / M["m00"]) + STORY_BAR_Y1
-
     rel_x = cx / w
-    rel_y = cy / h
-    log.info(f"Erster Avatar bei Pixel ({cx}, {cy}) → relativ ({rel_x:.2f}, {rel_y:.2f})")
+    rel_y = STORY_BAR_CENTER_Y / h
+    log.info(f"Erster Avatar: Ring bei x={cx}px → klicke ({rel_x:.2f}, {rel_y:.2f})")
     return rel_x, rel_y
 
 
@@ -145,28 +154,20 @@ def main():
     info = d.device_info
     log.info(f"Verbunden: {info['brand']} {info['model']} (Android {info['version']})")
 
-    # Instagram öffnen
-    log.info("Öffne Instagram...")
+    # Instagram neu starten → garantiert Home-Feed (app_start behält letzten Tab)
+    log.info("Starte Instagram neu (garantierter Home-Feed)...")
+    d.app_stop("com.instagram.android")
+    time.sleep(2)
     d.app_start("com.instagram.android")
-    time.sleep(4)
+    time.sleep(6)
 
-    # Sicherstellen dass Instagram nicht gecrasht ist
     cur_app = d.app_current()
     log.info(f"Aktive App: {cur_app}")
     if "instagram" not in cur_app.get("package", "").lower():
-        log.error("Instagram läuft nicht! Versuche neu zu starten...")
-        d.app_stop("com.instagram.android")
-        time.sleep(2)
-        d.app_start("com.instagram.android")
-        time.sleep(5)
+        log.error("Instagram startet nicht – Abbruch")
+        return
 
-    # Home-Tab
-    try:
-        d(description="Home").click()
-        log.info("Home-Tab geklickt")
-    except Exception:
-        log.warning("Home-Tab nicht gefunden (evtl. schon aktiv)")
-    time.sleep(3)
+    time.sleep(1)
 
     # Screenshot + Debug
     log.info("Mache Screenshot...")
@@ -214,34 +215,69 @@ def main():
 
     # Stories durchlaufen
     count = 0
+    skipped = 0
+    last_img = None
+    stuck_count = 0
+    seen_hashes = []
     log.info("Starte Story-Capture...")
 
     for i in range(MAX_STORIES):
         open_now, _ = is_story_open(d)
         if not open_now:
-            log.info(f"Keine Story mehr offen nach {count} Screenshots.")
+            log.info(f"Keine Story mehr offen nach {count} Screenshots ({skipped} Duplikate übersprungen).")
             break
 
         try:
-            # 1. Screenshot machen
             img = d.screenshot(format="opencv")
+
+            # ── Stuck-Erkennung (Suggestion-Screen, eingefroren) ──────────────
+            if last_img is not None:
+                diff = cv2.absdiff(img, last_img)
+                if diff.mean() / 255.0 < 0.02:  # <2% Unterschied
+                    stuck_count += 1
+                    log.warning(f"Bild fast identisch zum vorherigen – stuck={stuck_count}")
+                    if stuck_count >= 3:
+                        log.warning("Feststeckend (Suggestion-Screen?) → Back")
+                        d.press("back")
+                        time.sleep(1)
+                        break
+                    d.click(0.85, 0.5)
+                    time.sleep(random.uniform(0.3, 1.0))
+                    continue
+                else:
+                    stuck_count = 0
+            last_img = img
+
+            # ── Duplikat-Erkennung via Perceptual Hash ────────────────────────
+            thumb = cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), (16, 16))
+            phash = (thumb > thumb.mean()).flatten()
+            is_dup = any(
+                np.count_nonzero(phash != h) < 20  # <20 von 256 Bits verschieden
+                for h in seen_hashes
+            )
+            if is_dup:
+                skipped += 1
+                log.info(f"Duplikat übersprungen (gesamt {skipped})")
+                d.click(0.85, 0.5)
+                time.sleep(random.uniform(0.3, 1.0))
+                continue
+            seen_hashes.append(phash)
+
+            # ── Speichern ─────────────────────────────────────────────────────
             save(img, f"story_{i:03d}")
             count += 1
             log.info(f"Story {count} gespeichert")
 
-            # 2. Sofort nächste Story klicken (nicht warten)
+            # Nächste Story klicken
             d.click(0.85, 0.5)
-
-            # 3. Kurz random warten während Story lädt
             time.sleep(random.uniform(0.3, 1.5))
 
         except Exception as e:
             log.warning(f"Fehler bei Story {i}: {e}")
-            # Prüfen ob Instagram noch läuft
             try:
                 cur = d.app_current()
                 if "instagram" not in cur.get("package", "").lower():
-                    log.error("Instagram gecrasht! Neustart...")
+                    log.error("Instagram gecrasht!")
                     d.app_start("com.instagram.android")
                     time.sleep(4)
                     break
@@ -249,7 +285,11 @@ def main():
                 log.error("Verbindung zum Phone verloren")
                 break
 
-    log.info(f"=== Fertig: {count} Stories gespeichert in {OUTPUT_DIR} ===")
+    # Nach Story-Loop: sicherstellen dass wir nicht auf Reels gelandet sind
+    d.press("back")
+    time.sleep(0.5)
+
+    log.info(f"=== Fertig: {count} gespeichert, {skipped} Duplikate übersprungen ===")
 
 
 if __name__ == "__main__":
