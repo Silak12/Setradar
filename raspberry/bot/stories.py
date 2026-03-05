@@ -10,6 +10,22 @@ import numpy as np
 log = logging.getLogger(__name__)
 
 
+def _next_story_tap():
+    """
+    Zufälliger Tipp-Punkt für 'nächste Story'.
+    X: weit rechts (0.87–0.96).
+    Y: oberes oder unteres Drittel – NICHT Mitte (0.35–0.65),
+       damit wir bei 'Suggested Accounts'-Screens keine Profile antippen.
+    """
+    x = random.uniform(0.87, 0.96)
+    # Zufällig oben (0.12-0.32) oder unten (0.68-0.88)
+    if random.random() < 0.5:
+        y = random.uniform(0.12, 0.32)
+    else:
+        y = random.uniform(0.68, 0.88)
+    return x, y
+
+
 class StoryCapture:
     def __init__(self, device, vision, human, cfg):
         self.d = device
@@ -80,12 +96,15 @@ class StoryCapture:
                             self.d.press("back")
                             self.h.delay(1, 1.5)
                             return total
-                        self.d.click(0.85, 0.5)
+                        self.d.click(*_next_story_tap())
                         self.h.delay(0.3, 1.0)
                         continue
                     else:
                         stuck_count = 0
                 last_img = img
+
+                # Warten bis Text-Overlays / Einblend-Animationen fertig sind
+                self.h.delay(0.5, 1.3)
 
                 filepath = self._save_screenshot("story")
                 total += 1
@@ -93,7 +112,7 @@ class StoryCapture:
                 if uploader:
                     uploader.upload_async(filepath, "stories")
 
-                self.d.click(0.85, 0.5)
+                self.d.click(*_next_story_tap())
                 self.h.delay(0.5, 2.0)
 
             except Exception as e:

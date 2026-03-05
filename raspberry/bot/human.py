@@ -3,6 +3,8 @@ import random
 import logging
 from datetime import datetime
 
+import cv2
+
 log = logging.getLogger(__name__)
 
 
@@ -67,6 +69,47 @@ class HumanBehavior:
         if start < end:
             return start <= now_min < end
         return now_min >= start or now_min < end
+
+    # ── Zum Feed-Anfang scrollen ──────────────────────────────────
+    def scroll_to_top(self):
+        """Scrollt nach oben mit großen, schnellen Swipes.
+        Stoppt früh wenn sich das Bild nicht mehr ändert (= bereits oben)."""
+        log.debug("Scroll to top...")
+        last = None
+        for _ in range(6):
+            # Großer Swipe: ~80% der Bildschirmhöhe, sehr schnell
+            speed = random.uniform(0.10, 0.18)
+            self.d.swipe(0.5, random.uniform(0.12, 0.20),
+                         0.5, random.uniform(0.88, 0.95), duration=speed)
+            time.sleep(random.uniform(0.15, 0.30))
+
+            # Screenshot vergleichen – wenn keine Änderung → oben angekommen
+            img = self.d.screenshot(format="opencv")
+            if last is not None:
+                diff = cv2.absdiff(img, last).mean()
+                if diff < 0.5:
+                    log.debug("Oben angekommen (kein Scroll-Effekt mehr)")
+                    break
+            last = img
+        time.sleep(0.3)
+
+    # ── Pull-to-Refresh ───────────────────────────────────────────
+    def pull_to_refresh(self):
+        """
+        Pull-to-Refresh Geste + wartet bis Instagram die Stories geladen hat.
+        Setzt voraus dass wir bereits ganz oben im Feed sind.
+        """
+        self.d.swipe(0.5, 0.12, 0.5, 0.55, duration=0.8)
+        log.debug("Pull-to-Refresh – warte auf Laden...")
+        # Instagram zeigt Loading-Kreis und schiebt Stories kurz weg →
+        # mindestens 4-6s warten bis alles wieder sichtbar ist
+        time.sleep(random.uniform(4.0, 6.0))
+
+    # ── Nach oben scrollen + aktualisieren ───────────────────────
+    def scroll_to_top_and_refresh(self):
+        """Scroll to top, dann Pull-to-Refresh. Für Nutzung nach Feed-Scroll."""
+        self.scroll_to_top()
+        self.pull_to_refresh()
 
     # ── Feed scrollen zwischen Mini-Sessions ─────────────────────
     def scroll_feed_light(self):

@@ -52,6 +52,13 @@ def save(img, name):
     return path
 
 
+def _next_story_tap():
+    """Zufälliger Tipp rechts, oben oder unten – nicht Mitte (Suggested Accounts)."""
+    x = random.uniform(0.87, 0.96)
+    y = random.uniform(0.12, 0.32) if random.random() < 0.5 else random.uniform(0.68, 0.88)
+    return x, y
+
+
 def _gradient_masks(hsv):
     rot_a  = cv2.inRange(hsv, np.array([0,   120, 120]), np.array([10,  255, 255]))
     rot_b  = cv2.inRange(hsv, np.array([160, 120, 120]), np.array([180, 255, 255]))
@@ -241,7 +248,7 @@ def main():
                         d.press("back")
                         time.sleep(1)
                         break
-                    d.click(0.85, 0.5)
+                    d.click(*_next_story_tap())
                     time.sleep(random.uniform(0.3, 1.0))
                     continue
                 else:
@@ -258,7 +265,7 @@ def main():
             if is_dup:
                 skipped += 1
                 log.info(f"Duplikat übersprungen (gesamt {skipped})")
-                d.click(0.85, 0.5)
+                d.click(*_next_story_tap())
                 time.sleep(random.uniform(0.3, 1.0))
                 continue
             seen_hashes.append(phash)
@@ -269,7 +276,7 @@ def main():
             log.info(f"Story {count} gespeichert")
 
             # Nächste Story klicken
-            d.click(0.85, 0.5)
+            d.click(*_next_story_tap())
             time.sleep(random.uniform(0.3, 1.5))
 
         except Exception as e:

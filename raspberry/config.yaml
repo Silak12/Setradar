@@ -29,6 +29,9 @@ behavior:
   mini_session_pause_min: 20
   mini_session_pause_max: 60
 
+  # Nach wie vielen Mini-Sessions Instagram neu gestartet wird (Sicherheits-Reset)
+  restart_every_sessions: 4
+
   # Wartezeit wenn keine Stories gefunden (Minuten)
   no_story_wait_min: 3
 

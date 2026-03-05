@@ -114,12 +114,13 @@ def main():
         return
 
     # ── Setup ─────────────────────────────────────────────────────────────────
-    scrape_duration = b.get("scrape_duration_min", 25) * 60
-    shots_min       = b.get("mini_session_shots_min", 5)
-    shots_max       = b.get("mini_session_shots_max", 10)
-    pause_min       = b.get("mini_session_pause_min", 20)
-    pause_max       = b.get("mini_session_pause_max", 60)
-    no_story_wait   = b.get("no_story_wait_min", 3) * 60
+    scrape_duration   = b.get("scrape_duration_min", 25) * 60
+    shots_min         = b.get("mini_session_shots_min", 5)
+    shots_max         = b.get("mini_session_shots_max", 10)
+    pause_min         = b.get("mini_session_pause_min", 20)
+    pause_max         = b.get("mini_session_pause_max", 60)
+    no_story_wait     = b.get("no_story_wait_min", 3) * 60
+    restart_every     = b.get("restart_every_sessions", 4)
 
     log.info(f"=== Scraping startet ({scrape_duration//60} Min) ===")
 
@@ -134,10 +135,10 @@ def main():
     if not start_instagram_fresh(device, log):
         return
 
-    session_start     = time.time()
-    total_captured    = 0
-    mini_sessions     = 0
-    consecutive_empty = 0
+    session_start    = time.time()
+    total_captured   = 0
+    mini_sessions    = 0
+    need_scroll_up   = False  # True nachdem wir den Feed runtergeschrollt haben
 
     while time.time() - session_start < scrape_duration:
         elapsed   = (time.time() - session_start) / 60
@@ -150,20 +151,19 @@ def main():
                 log.info("Schlafzeit während Session – beende")
                 break
 
+            # Nur hochscrollen wenn wir vorher den Feed runtergescrollt haben
+            if need_scroll_up:
+                human.scroll_to_top_and_refresh()
+                need_scroll_up = False
+            else:
+                human.pull_to_refresh()
+
             img = vision.screenshot_to_numpy(device)
             if img is None or not vision.has_unseen_stories(img):
-                consecutive_empty += 1
-                log.info(f"Keine Stories (#{consecutive_empty}) – "
-                         f"warte {no_story_wait//60:.0f} Min")
-                if consecutive_empty >= 3:
-                    log.info("Feed hängt vermutlich – starte Instagram neu")
-                    start_instagram_fresh(device, log)
-                    consecutive_empty = 0
-                else:
-                    time.sleep(no_story_wait)
-                continue
+                log.info("Keine Stories – schließe Instagram und beende Session")
+                device.app_stop("com.instagram.android")
+                break
 
-            consecutive_empty = 0
             shots = random.randint(shots_min, shots_max)
             log.info(f"Mini-Session #{mini_sessions + 1}: max {shots} Shots")
 
@@ -175,6 +175,13 @@ def main():
 
             if random.random() < 0.75:
                 human.scroll_feed_light()
+                need_scroll_up = True
+
+            # Periodischer Sicherheits-Neustart damit wir nicht iwo falsch abbiegen
+            if mini_sessions % restart_every == 0:
+                log.info(f"Periodischer Neustart nach {mini_sessions} Mini-Sessions")
+                start_instagram_fresh(device, log)
+                need_scroll_up = False
 
             pause = random.uniform(pause_min, pause_max)
             log.info(f"Pause {pause:.0f}s...")
