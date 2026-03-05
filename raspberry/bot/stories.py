@@ -1,9 +1,11 @@
 import time
 import random
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
+
+import cv2
+import numpy as np
 
 log = logging.getLogger(__name__)
 
@@ -17,105 +19,42 @@ class StoryCapture:
         self.output_dir = Path(cfg["screenshots"]["local_output_dir"])
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def _save_screenshot(self, account_name):
+    def _save_screenshot(self, label="story"):
         ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"{account_name}_{ts}.png"
+        filename = f"{label}_{ts}.png"
         filepath = self.output_dir / filename
         self.d.screenshot(str(filepath))
         log.info(f"Screenshot: {filename}")
         return str(filepath)
 
-    def open_story_of_account(self, account_name):
-        """Öffnet das Profil eines Accounts und klickt den Story-Ring an."""
-        log.info(f"Öffne Story: @{account_name}")
-
-        # Profil via Suche öffnen
-        self.d.app_start("com.instagram.android")
-        self.h.delay(2, 3)
-
-        # Such-Tab
-        self.d(description="Search and explore").click()
-        self.h.delay(1, 2)
-
-        # Suchfeld
-        self.d(resourceId="com.instagram.android:id/action_bar_search_edit_text").click()
-        self.h.delay(0.5, 1)
-        self.d.send_keys(account_name)
-        self.h.delay(1.5, 2.5)
-
-        # Ersten Treffer anklicken
-        try:
-            self.d(resourceId="com.instagram.android:id/row_search_user_username"
-                   ).click()
-        except Exception:
-            log.warning(f"Account {account_name} nicht gefunden")
-            return False
-
-        self.h.delay(1.5, 2.5)
-
-        # Story-Ring antippen (oben links im Profil)
-        self.d.click(0.18, 0.22)
-        self.h.delay(1, 2)
-        return True
-
-    def capture_all_stories_of_account(self, account_name, uploader=None):
-        """
-        Öffnet alle Stories eines Accounts, screenshottet jede einzelne
-        und lädt sie hoch.
-        """
-        if not self.open_story_of_account(account_name):
-            return 0
-
-        captured = 0
-        max_stories = 50  # Sicherheits-Limit
-
-        for i in range(max_stories):
-            img = self.v.screenshot_to_numpy(self.d)
-
-            # Prüfe ob wir noch in einer Story sind
-            if not self._is_story_open(img):
-                log.info(f"@{account_name}: alle Stories gesehen ({captured} Stk)")
-                break
-
-            # Screenshot machen
-            filepath = self._save_screenshot(account_name)
-            captured += 1
-
-            # Upload
-            if uploader:
-                uploader.upload_async(filepath, account_name)
-
-            self.h.delay(1.2, 3.0)
-
-            # Zur nächsten Story wischen
-            self.d.click(0.85, 0.5)
-            self.h.delay(0.8, 1.8)
-
-        return captured
-
-    def _is_story_open(self, img):
-        """Erkennt ob gerade eine Story angezeigt wird."""
+    def _is_story_open(self):
+        """Erkennt ob gerade eine Story angezeigt wird (weiße Progress-Bar oben)."""
+        img = self.v.screenshot_to_numpy(self.d)
         if img is None:
             return False
-
-        h, w = img.shape[:2]
-        # Story-Progress-Bar = sehr oben, heller Bereich
-        top_strip = img[0:8, :]
-        brightness = top_strip.mean()
-        return brightness > 180
+        # Samsung A15 (2340px): Status-Bar ~80px, Progress-Bar bei y=80-150
+        scan = img[80:150, :]
+        white_mask = cv2.inRange(scan, np.array([200, 200, 200]), np.array([255, 255, 255]))
+        white_pixels = cv2.countNonZero(white_mask)
+        log.debug(f"Story Progress-Bar weiße Pixel: {white_pixels}")
+        return white_pixels > 100
 
     def process_story_bar(self, uploader=None):
         """
-        Schaut auf die Story-Leiste im Feed,
-        öffnet alle Accounts mit rotem Ring.
+        Öffnet Instagram, scannt Story-Leiste,
+        screenshottet alle ungesehenen Stories.
         """
+        # Instagram öffnen & auf Home sicherstellen
         self.d.app_start("com.instagram.android")
-        self.h.delay(2, 4)
+        self.h.delay(3, 5)
 
-        # Home-Tab
-        self.d(description="Home").click()
-        self.h.delay(1, 2)
+        try:
+            self.d(description="Home").click()
+            self.h.delay(2, 3)
+        except Exception:
+            pass  # Home bereits aktiv
 
+        # Screenshot für Analyse
         img = self.v.screenshot_to_numpy(self.d)
 
         if not self.v.has_unseen_stories(img):
@@ -124,30 +63,46 @@ class StoryCapture:
 
         # Ersten roten Avatar antippen
         pos = self.v.find_first_story_avatar(img)
-        if pos:
-            self.d.click(pos[0], pos[1])
-            self.h.delay(1, 2)
+        if not pos:
+            log.warning("Avatar nicht gefunden obwohl Stories erkannt")
+            return 0
 
+        log.info(f"Tippe Story-Avatar bei {pos}")
+        self.d.click(pos[0], pos[1])
+        self.h.delay(1.5, 2.5)
+
+        # Alle Stories durchlaufen bis keine mehr offen
         total = 0
-        # Jetzt durch alle Stories navigieren bis alles grau
-        max_accounts = 50
-        for _ in range(max_accounts):
-            img = self.v.screenshot_to_numpy(self.d)
+        max_stories = 200  # Sicherheits-Limit für 100-200 Accounts
 
-            if not self._is_story_open(img):
+        for i in range(max_stories):
+            if not self._is_story_open():
+                log.info(f"Alle Stories gesehen ({total} Screenshots)")
                 break
 
-            # Screenshot
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            filepath = self.output_dir / f"feed_story_{ts}.png"
-            self.d.screenshot(str(filepath))
-            total += 1
+            try:
+                # 1. Screenshot
+                filepath = self._save_screenshot("story")
+                total += 1
 
-            if uploader:
-                uploader.upload_async(str(filepath), "feed")
+                if uploader:
+                    uploader.upload_async(filepath, "stories")
 
-            self.h.delay(1.5, 3.5)
-            self.d.click(0.85, 0.5)
-            self.h.delay(0.8, 1.5)
+                # 2. Sofort nächste Story klicken
+                self.d.click(0.85, 0.5)
+
+                # 3. Kurz random warten
+                self.h.delay(0.3, 1.5)
+
+            except Exception as e:
+                log.warning(f"Fehler bei Story {i}: {e}")
+                try:
+                    cur = self.d.app_current()
+                    if "instagram" not in cur.get("package", "").lower():
+                        log.error("Instagram gecrasht – breche Story-Loop ab")
+                        break
+                except Exception:
+                    log.error("Verbindung zum Phone verloren")
+                    break
 
         return total

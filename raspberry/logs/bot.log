@@ -21,3 +21,33 @@
 2026-03-04 21:30:20,735 [ERROR] bot.uploader: Drive-Fehler: Invalid client secrets file ('Error opening file', 'client_secrets.json', 'No such file or directory', 2)
 2026-03-04 21:30:20,736 [INFO] main: Story-Leiste wird abgescannt...
 2026-03-04 21:30:32,290 [INFO] main: Bot gestoppt
+2026-03-05 12:35:43,726 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-05 12:35:45,455 [INFO] main: Phone verbunden: {'serial': 'RR8X602KP8L', 'sdk': 34, 'brand': 'samsung', 'model': 'SM-A155F', 'arch': 'arm64-v8a', 'version': 14}
+2026-03-05 12:35:45,456 [ERROR] bot.uploader: Drive-Fehler: [Errno 2] No such file or directory: 'c:\\Users\\lmleo\\Documents\\htdocs\\Lineup-Berlin\\raspberry\\service_account.json'
+2026-03-05 12:35:45,456 [INFO] main: Story-Leiste wird abgescannt...
+2026-03-05 12:35:51,897 [INFO] bot.stories: Keine neuen Stories in der Leiste
+2026-03-05 12:35:51,897 [INFO] main: 0 Stories gespeichert
+2026-03-05 12:35:51,897 [INFO] main: Keine neuen Stories – warte 20 Min
+2026-03-05 12:36:56,690 [INFO] main: Bot gestoppt
+2026-03-05 12:37:03,431 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-05 12:37:05,107 [INFO] main: Phone verbunden: {'serial': 'RR8X602KP8L', 'sdk': 34, 'brand': 'samsung', 'model': 'SM-A155F', 'arch': 'arm64-v8a', 'version': 14}
+2026-03-05 12:37:05,175 [INFO] googleapiclient.discovery_cache: file_cache is only supported with oauth2client<4.0.0
+2026-03-05 12:37:05,178 [INFO] bot.uploader: Google Drive via Service Account verbunden
+2026-03-05 12:37:05,179 [INFO] bot.human: Feed scrollen...
+2026-03-05 12:38:34,006 [INFO] bot.human: Feed: 8 Scrolls
+2026-03-05 12:38:36,530 [INFO] main: Story-Leiste wird abgescannt...
+2026-03-05 12:38:44,190 [INFO] bot.stories: Keine neuen Stories in der Leiste
+2026-03-05 12:38:44,191 [INFO] main: 0 Stories gespeichert
+2026-03-05 12:38:44,191 [INFO] main: Keine neuen Stories – warte 13 Min
+2026-03-05 12:39:59,766 [INFO] main: Bot gestoppt
+2026-03-05 12:46:17,280 [INFO] main: === Instagram Story Bot gestartet ===
+2026-03-05 12:46:18,994 [INFO] main: Phone verbunden: {'serial': 'RR8X602KP8L', 'sdk': 34, 'brand': 'samsung', 'model': 'SM-A155F', 'arch': 'arm64-v8a', 'version': 14}
+2026-03-05 12:46:19,054 [INFO] googleapiclient.discovery_cache: file_cache is only supported with oauth2client<4.0.0
+2026-03-05 12:46:19,057 [INFO] bot.uploader: Google Drive via Service Account verbunden
+2026-03-05 12:46:19,058 [INFO] bot.human: Feed scrollen...
+2026-03-05 12:49:27,524 [INFO] bot.human: Feed: 14 Scrolls
+2026-03-05 12:49:32,476 [INFO] main: Story-Leiste wird abgescannt...
+2026-03-05 12:49:40,541 [INFO] bot.stories: Keine neuen Stories in der Leiste
+2026-03-05 12:49:40,543 [INFO] main: 0 Stories gespeichert
+2026-03-05 12:49:40,543 [INFO] main: Keine neuen Stories – warte 11 Min
+2026-03-05 12:54:56,172 [INFO] main: Bot gestoppt
