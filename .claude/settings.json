@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(del \"c:\\\\Users\\\\lmleo\\\\Documents\\\\htdocs\\\\Lineup-Berlin\\\\raspberry\\\\dedup.py\")"
     ]
   }
 }

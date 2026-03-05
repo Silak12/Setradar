@@ -10,20 +10,27 @@ adb_device: ""
 
 # Verhalten / Timing
 behavior:
-  # Session-Länge in Minuten (min, max)
-  session_duration_min: 20
-  session_duration_max: 45
+  # Schlafzeit – kein Scraping in diesem Zeitraum (HH:MM Format)
+  sleep_start: "0:30"
+  sleep_end: "10:00"
 
-  # Pause zwischen Sessions in Minuten (min, max)
-  break_duration_min: 15
-  break_duration_max: 90
+  # Zufälliger Delay nach Crontab-Start (Minuten) – macht Login-Rhythmus unregelmäßig
+  startup_delay_min: 0
+  startup_delay_max: 25
 
-  # Nachtruhe (Stunden, 24h Format)
-  sleep_start_hour: 1
-  sleep_end_hour: 8
+  # Wie lange pro Stunde gescrapt wird (nach dem Delay, Minuten)
+  scrape_duration_min: 25
 
-  # Wahrscheinlichkeit Feed scrollen statt Stories (0.0 - 1.0)
-  feed_scroll_chance: 0.15
+  # Mini-Session: zufällige Anzahl Screenshots pro Durchgang
+  mini_session_shots_min: 5
+  mini_session_shots_max: 10
+
+  # Pause zwischen Mini-Sessions (Sekunden)
+  mini_session_pause_min: 20
+  mini_session_pause_max: 60
+
+  # Wartezeit wenn keine Stories gefunden (Minuten)
+  no_story_wait_min: 3
 
   # Delays zwischen Aktionen in Sekunden
   delay_min: 1.5

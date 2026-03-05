@@ -39,6 +39,77 @@ class StoryCapture:
         log.debug(f"Story Progress-Bar weiße Pixel: {white_pixels}")
         return white_pixels > 100
 
+    def run_mini_session(self, uploader=None, max_shots=7):
+        """
+        Mini-Session: Ersten Story-Avatar antippen, max_shots Screenshots machen,
+        dann zurück zum Feed. Setzt voraus dass Instagram auf dem Home-Feed ist.
+
+        Stuck-Erkennung (Suggestion-Screen) ist live eingebaut.
+        Dedup läuft offline via dedup.py.
+        """
+        img = self.v.screenshot_to_numpy(self.d)
+        pos = self.v.find_first_story_avatar(img)
+        if not pos:
+            log.info("Kein Story-Avatar gefunden")
+            return 0
+
+        log.info(f"Mini-Session: Tippe Avatar bei {pos}, max {max_shots} Shots")
+        self.d.click(pos[0], pos[1])
+        self.h.delay(1.5, 2.5)
+
+        total = 0
+        last_img = None
+        stuck_count = 0
+
+        for i in range(max_shots):
+            if not self._is_story_open():
+                log.info(f"Story-Viewer geschlossen nach {total} Shots")
+                break
+
+            try:
+                img = self.v.screenshot_to_numpy(self.d)
+
+                # Stuck-Erkennung (Suggestion-Screen, eingefroren)
+                if last_img is not None:
+                    diff = cv2.absdiff(img, last_img)
+                    if diff.mean() / 255.0 < 0.02:
+                        stuck_count += 1
+                        log.warning(f"Bild identisch – stuck={stuck_count}")
+                        if stuck_count >= 3:
+                            log.warning("Feststeckend → Back")
+                            self.d.press("back")
+                            self.h.delay(1, 1.5)
+                            return total
+                        self.d.click(0.85, 0.5)
+                        self.h.delay(0.3, 1.0)
+                        continue
+                    else:
+                        stuck_count = 0
+                last_img = img
+
+                filepath = self._save_screenshot("story")
+                total += 1
+
+                if uploader:
+                    uploader.upload_async(filepath, "stories")
+
+                self.d.click(0.85, 0.5)
+                self.h.delay(0.5, 2.0)
+
+            except Exception as e:
+                log.warning(f"Fehler bei Shot {i}: {e}")
+                try:
+                    if "instagram" not in self.d.app_current().get("package", "").lower():
+                        log.error("Instagram gecrasht")
+                        return total
+                except Exception:
+                    return total
+
+        # Zurück zum Feed
+        self.d.press("back")
+        self.h.delay(0.5, 1.0)
+        return total
+
     def process_story_bar(self, uploader=None):
         """
         Öffnet Instagram, scannt Story-Leiste,

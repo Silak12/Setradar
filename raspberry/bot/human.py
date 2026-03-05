@@ -53,29 +53,32 @@ class HumanBehavior:
 
     # ── Nachtruhe? ───────────────────────────────────────────────
     def is_sleep_time(self):
-        hour = datetime.now().hour
-        start = self.cfg["sleep_start_hour"]
-        end = self.cfg["sleep_end_hour"]
-        return start <= hour < end
+        now = datetime.now()
+        now_min = now.hour * 60 + now.minute
 
-    # ── Feed scrollen (Tarnung) ───────────────────────────────────
-    def scroll_feed(self):
-        log.info("Feed scrollen...")
-        self.d.app_start("com.instagram.android")
-        self.delay(2, 4)
+        def to_min(val):
+            if isinstance(val, str) and ":" in val:
+                h, m = val.split(":")
+                return int(h) * 60 + int(m)
+            return int(val) * 60
 
-        # Home-Tab antippen
-        self.d(description="Home").click()
-        self.delay(1, 2)
+        start = to_min(self.cfg.get("sleep_start", "0:30"))
+        end   = to_min(self.cfg.get("sleep_end",   "10:00"))
+        if start < end:
+            return start <= now_min < end
+        return now_min >= start or now_min < end
 
-        scrolls = random.randint(4, 14)
+    # ── Feed scrollen zwischen Mini-Sessions ─────────────────────
+    def scroll_feed_light(self):
+        """
+        Leichtes Scrollen auf dem aktuellen Screen (kein Tab-Klick).
+        Setzt voraus dass Instagram bereits auf dem Feed ist.
+        """
+        scrolls = random.randint(3, 8)
+        log.debug(f"Feed: {scrolls} Scrolls")
         for _ in range(scrolls):
-            speed = random.uniform(0.3, 1.0)
+            speed = random.uniform(0.3, 0.9)
             self.d.swipe(0.5, 0.72, 0.5, 0.28, duration=speed)
-            self.delay(2, 7)
-
-            # Manchmal kurz bei einem Post hängen bleiben
-            if random.random() < 0.25:
-                time.sleep(random.uniform(5, 15))
-
-        log.info(f"Feed: {scrolls} Scrolls")
+            self.delay(1.5, 5.0)
+            if random.random() < 0.15:
+                time.sleep(random.uniform(3, 10))
