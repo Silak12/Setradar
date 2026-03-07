@@ -402,6 +402,8 @@ body::before {
 }
 
 .artist-time.confirmed { color: var(--white); }
+.artist-time.canceled { color: var(--red); letter-spacing: 0.05em; }
+.act-canceled .artist-name-link { text-decoration: line-through; opacity: 0.5; }
 
 /* TBA — subtil */
 .time-tba {

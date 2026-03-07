@@ -481,7 +481,7 @@ function renderEventCard(ev, nextActKeys) {
           ${actFollowBtn}
           ${actRateBtn}
           ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
-          ${label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
+          ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
         </span>
       </div>
     `;
@@ -1120,7 +1120,7 @@ async function loadFromSupabase() {
     .select(`
       id, event_name, event_date, time_start, time_end,
       clubs ( id, name ),
-      event_acts ( start_time, end_time, sort_order, acts ( id, name, insta_name ) )
+      event_acts ( start_time, end_time, sort_order, canceled, acts ( id, name, insta_name ) )
     `)
     .gte('event_date', getDateStr(0))
     .lte('event_date', getDateStr(60))
@@ -1438,7 +1438,7 @@ function renderLivePanel() {
           ? `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewerten">★</button>`
           : '';
         return `
-          <div class="live-act-row${isActFavorite ? ' artist-row--followed' : ''}">
+          <div class="live-act-row${isActFavorite ? ' artist-row--followed' : ''}${a.canceled ? ' act-canceled' : ''}">
             <span class="artist-name">
               <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
               ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
@@ -1446,7 +1446,7 @@ function renderLivePanel() {
             <span class="artist-row-right">
               ${followBtn}
               ${rateBtn}
-              <span class="live-act-time">${t}</span>
+              ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : `<span class="live-act-time">${t}</span>`}
             </span>
           </div>`;
       }).join('')
