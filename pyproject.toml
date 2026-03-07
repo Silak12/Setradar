@@ -4,12 +4,19 @@ version = "0.1.0"
 description = "Automated DJ timetable aggregator for Berlin clubs"
 requires-python = ">=3.12"
 dependencies = [
+    # Existing
     "google-api-python-client==2.190.0",
     "google-auth==2.48.0",
     "openai==2.24.0",
     "python-dotenv==1.2.1",
     "requests==2.32.5",
     "supabase==2.28.0",
+    # Instagram Story Bot
+    "uiautomator2>=3.0",
+    "opencv-python>=4.8",
+    "numpy>=1.24",
+    "pydrive2>=1.6",
+    "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]

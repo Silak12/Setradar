@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────
+#  Instagram Story Bot – Konfiguration
+# ─────────────────────────────────────────
+
+# Google Drive Ordner-ID (aus der URL: drive.google.com/drive/folders/HIER)
+google_drive_folder_id: ""
+
+# ADB Device (leer lassen wenn nur 1 Phone angeschlossen)
+adb_device: ""
+
+# Verhalten / Timing
+behavior:
+  # Schlafzeit – kein Scraping in diesem Zeitraum (HH:MM Format)
+  sleep_start: "0:30"
+  sleep_end: "10:00"
+
+  # Zufälliger Delay nach Crontab-Start (Minuten) – macht Login-Rhythmus unregelmäßig
+  startup_delay_min: 0
+  startup_delay_max: 10
+
+  # Wie lange pro Stunde gescrapt wird (nach dem Delay, Minuten)
+  scrape_duration_min: 45
+
+  # Mini-Session: zufällige Anzahl Screenshots pro Durchgang
+  mini_session_shots_min: 8
+  mini_session_shots_max: 15
+
+  # Pause zwischen Mini-Sessions (Sekunden)
+  mini_session_pause_min: 10
+  mini_session_pause_max: 30
+
+  # Nach wie vielen Mini-Sessions Instagram neu gestartet wird (Sicherheits-Reset)
+  restart_every_sessions: 4
+
+  # Wartezeit wenn keine Stories gefunden (Minuten)
+  no_story_wait_min: 3
+
+  # Delays zwischen Aktionen in Sekunden
+  delay_min: 1.5
+  delay_max: 4.0
+
+  # Zufällig lange Pause ("nachdenken")
+  deep_pause_chance: 0.08
+
+# Screenshot Einstellungen
+screenshots:
+  local_output_dir: "./captured_stories"
+  keep_local_copy: true
+
+# Logging
+logging:
+  level: "INFO"
+  log_file: "./logs/bot.log"

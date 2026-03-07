@@ -41,6 +41,10 @@ processed_files.json
 timetable_results.json
 events_raw.json
 
+# Raspberry - Captured Stories & Logs
+raspberry/captured_stories/
+raspberry/logs/
+
 venv/
 
 
