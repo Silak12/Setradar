@@ -13,7 +13,6 @@ import time
 import random
 import logging
 import logging.handlers
-import os
 import yaml
 from datetime import datetime
 from pathlib import Path
@@ -41,10 +40,6 @@ def load_config():
     load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
     with open("config.yaml", "r") as f:
         cfg = yaml.safe_load(f)
-    folder_id = os.getenv("DRIVE_FOLDER_ID", "")
-    if not folder_id:
-        raise ValueError("DRIVE_FOLDER_ID fehlt in .env!")
-    cfg["DRIVE_FOLDER_ID"] = folder_id
     return cfg
 
 
