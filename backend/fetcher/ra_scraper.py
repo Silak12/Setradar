@@ -12,49 +12,27 @@ Usage:
 
 import argparse
 import json
+import logging
 import sys
 import time
 from datetime import date, timedelta
 from pathlib import Path
 
-import requests
+try:
+    from .ra_client import gql
+    from .transform import build_lineup_json
+    from .venues_config import VenuesConfigError, load_venues_config
+except ImportError:
+    from ra_client import gql
+    from transform import build_lineup_json
+    from venues_config import VenuesConfigError, load_venues_config
 
 # ── Konfiguration ─────────────────────────────────────────────────────────────
-
-RA_GRAPHQL_URL = "https://ra.co/graphql"
-
-# area_id = RA interne ID (Berlin = 34, ermittelt via Introspection)
-VENUES = [
-    {
-        "city":     "Berlin",
-        "club":     "Lokschuppen",
-        "venue_id": 17071,
-        "area_id":  34,
-    },
-    {
-        "city":     "Berlin",
-        "club":     "RSO",
-        "venue_id": 185172,
-        "area_id":  34,
-    },
-    {
-        "city":     "Berlin",
-        "club":     "OST",
-        "venue_id": 141987,
-        "area_id":  34,
-    },
-    {
-        "city":     "Berlin",
-        "club":     "Ritter Butzke",
-        "venue_id": 6950,
-        "area_id":  34,
-    }
-    # { "city": "Hamburg", "club": "Übel & Gefährlich", "venue_id": 12345, "area_id": 14 },
-]
 
 DEFAULT_OUTPUT = Path(__file__).parent / "lineup_seed_example.json"
 REQUEST_DELAY  = 1.0
 DEFAULT_WEEKS  = 8
+LOGGER = logging.getLogger(__name__)
 
 # ── GraphQL Queries ────────────────────────────────────────────────────────────
 #
@@ -110,21 +88,6 @@ query GET_EVENT_DETAIL($id: ID!) {
 }
 """
 
-# ── HTTP ──────────────────────────────────────────────────────────────────────
-
-HEADERS = {
-    "Content-Type":        "application/json",
-    "Accept":              "application/json",
-    "Referer":             "https://ra.co/",
-    "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/122.0.0.0 Safari/537.36"
-    ),
-    "ra-content-language": "de",
-}
-
-
 def configure_console_output() -> None:
     """
     Force UTF-8 output on Python 3.7+ so Windows cp1252 consoles do not crash on
@@ -143,22 +106,11 @@ def configure_console_output() -> None:
                 pass
 
 
-def gql(query: str, variables: dict, retries: int = 3) -> dict:
-    payload = {"query": query, "variables": variables}
-    for attempt in range(1, retries + 1):
-        try:
-            resp = requests.post(RA_GRAPHQL_URL, headers=HEADERS, json=payload, timeout=15)
-            resp.raise_for_status()
-            data = resp.json()
-            if "errors" in data:
-                msgs = [e.get("message", "") for e in data["errors"]]
-                print(f"  [GQL Errors] {msgs}")
-            return data
-        except requests.RequestException as e:
-            print(f"  [!] Request-Fehler (Versuch {attempt}/{retries}): {e}")
-            if attempt < retries:
-                time.sleep(2 ** attempt)
-    return {}
+def configure_logging(debug: bool) -> None:
+    logging.basicConfig(
+        level=logging.DEBUG if debug else logging.INFO,
+        format="%(message)s",
+    )
 
 
 # ── Scraping ──────────────────────────────────────────────────────────────────
@@ -173,7 +125,7 @@ def fetch_venue_events(venue_id: int, weeks_ahead: int = DEFAULT_WEEKS) -> list[
     # Großzügiges Limit: selbst bei täglich Events wären 8 Wochen = ~60 Events
     limit  = max(weeks_ahead * 10, 50)
 
-    print(f"  Lade Events via venue-Query (venue_id={venue_id}, LATEST, limit={limit})...")
+    LOGGER.info("  Lade Events via venue-Query (venue_id=%s, LATEST, limit=%s)...", venue_id, limit)
     data = gql(VENUE_EVENTS_QUERY, {"id": venue_id, "limit": limit})
 
     if not data:
@@ -181,7 +133,7 @@ def fetch_venue_events(venue_id: int, weeks_ahead: int = DEFAULT_WEEKS) -> list[
 
     venue_data = (data.get("data") or {}).get("venue")
     if not venue_data:
-        print("  [–] Keine venue-Daten erhalten.")
+        LOGGER.warning("  [–] Keine venue-Daten erhalten.")
         return []
 
     raw = venue_data.get("events") or []
@@ -199,7 +151,13 @@ def fetch_venue_events(venue_id: int, weeks_ahead: int = DEFAULT_WEEKS) -> list[
         if today <= event_date <= cutoff:
             result.append(event)
 
-    print(f"  → {len(raw)} Events von RA erhalten, {len(result)} im Zeitfenster ({today} – {cutoff})")
+    LOGGER.info(
+        "  -> %s Events von RA erhalten, %s im Zeitfenster (%s - %s)",
+        len(raw),
+        len(result),
+        today,
+        cutoff,
+    )
     return result
 
 
@@ -210,7 +168,7 @@ def enrich_artists(event: dict) -> dict:
     event_id = event.get("id")
     if not event_id:
         return event
-    print(f"    Detail-Query für Event {event_id} ({event.get('title', '')[:40]})...")
+    LOGGER.debug("    Detail-Query fuer Event %s (%s)...", event_id, event.get("title", "")[:40])
     data   = gql(EVENT_DETAIL_QUERY, {"id": event_id})
     detail = (data.get("data") or {}).get("event")
     return detail if detail else event
@@ -221,7 +179,7 @@ def scrape_venue(venue_cfg: dict, weeks_ahead: int) -> list[dict]:
     events   = fetch_venue_events(venue_id, weeks_ahead)
 
     if not events:
-        print(f"  [–] Keine Events im Zeitfenster für venue_id={venue_id}")
+        LOGGER.info("  [–] Keine Events im Zeitfenster fuer venue_id=%s", venue_id)
         return []
 
     enriched = []
@@ -229,65 +187,6 @@ def scrape_venue(venue_cfg: dict, weeks_ahead: int) -> list[dict]:
         time.sleep(REQUEST_DELAY * 0.3)
         enriched.append(enrich_artists(event))
     return enriched
-
-
-# ── JSON-Aufbau ───────────────────────────────────────────────────────────────
-
-def event_to_acts(event: dict) -> list[dict]:
-    acts = []
-    for artist in (event.get("artists") or []):
-        name = (artist.get("name") or "").strip()
-        if name:
-            acts.append({
-                "name":       name,
-                "insta_name": "",
-                "start_time": None,
-                "end_time":   None,
-            })
-    # Fallback: lineup-String parsen (kommagetrennte Namen)
-    if not acts:
-        for name in [n.strip() for n in (event.get("lineup") or "").split(",") if n.strip()]:
-            acts.append({"name": name, "insta_name": "", "start_time": None, "end_time": None})
-    return acts
-
-
-def parse_time(raw: str | None) -> str | None:
-    if not raw:
-        return None
-    return raw[11:16] if "T" in raw else raw[:5]
-
-
-def build_lineup_json(venues_cfg: list[dict], scraped: dict[int, list[dict]]) -> dict:
-    cities_map: dict[str, dict] = {}
-    for venue_cfg in venues_cfg:
-        city_name = venue_cfg["city"]
-        club_name = venue_cfg["club"]
-        venue_id  = venue_cfg["venue_id"]
-
-        if city_name not in cities_map:
-            cities_map[city_name] = {"name": city_name, "clubs": []}
-        city = cities_map[city_name]
-
-        club = next((c for c in city["clubs"] if c["name"] == club_name), None)
-        if club is None:
-            club = {"name": club_name, "events": []}
-            city["clubs"].append(club)
-
-        for event in (scraped.get(venue_id) or []):
-            club["events"].append({
-                "date":       (event.get("date") or "")[:10],
-                "name":       (event.get("title") or "").strip(),
-                "time_start": parse_time(event.get("startTime")),
-                "time_end":   parse_time(event.get("endTime")),
-                "acts":       event_to_acts(event),
-                "ra_id":      event.get("id"),
-                "ra_url":     f"https://ra.co/events/{event.get('id')}",
-            })
-
-    return {
-        "scraped_at": date.today().isoformat() + "T00:00:00Z",
-        "cities":     list(cities_map.values()),
-    }
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -301,18 +200,26 @@ def main():
                         help=f"Output JSON (default: {DEFAULT_OUTPUT})")
     parser.add_argument("--dry-run", action="store_true",
                         help="Nur scrapen + JSON schreiben, kein DB-Seed")
+    parser.add_argument("--debug", action="store_true", help="Debug Logging aktivieren")
     args = parser.parse_args()
 
-    print(f"[★] RA Scraper – {args.weeks} Wochen voraus\n")
+    configure_logging(args.debug)
+    try:
+        venues = load_venues_config()
+    except VenuesConfigError as exc:
+        LOGGER.error("[!] Ungueltige Venue-Konfiguration: %s", exc)
+        sys.exit(2)
+
+    LOGGER.info("[*] RA Scraper - %s Wochen voraus", args.weeks)
 
     scraped: dict[int, list[dict]] = {}
-    for venue_cfg in VENUES:
-        print(f"── {venue_cfg['club']}, {venue_cfg['city']} (venue_id={venue_cfg['venue_id']}) ──")
+    for venue_cfg in venues:
+        LOGGER.info("== %s, %s (venue_id=%s) ==", venue_cfg["club"], venue_cfg["city"], venue_cfg["venue_id"])
         events = scrape_venue(venue_cfg, args.weeks)
         scraped[venue_cfg["venue_id"]] = events
-        print(f"  [✓] {len(events)} Event(s) im Zeitfenster\n")
+        LOGGER.info("  [ok] %s Event(s) im Zeitfenster", len(events))
 
-    payload = build_lineup_json(VENUES, scraped)
+    payload = build_lineup_json(venues, scraped)
 
     total_events = sum(len(club["events"]) for city in payload["cities"] for club in city["clubs"])
     total_acts   = sum(
@@ -321,23 +228,23 @@ def main():
         for club in city["clubs"]
         for e in club["events"]
     )
-    print(f"[✓] Gesamt: {total_events} Event(s), {total_acts} Act-Slot(s)")
+    LOGGER.info("[ok] Gesamt: %s Event(s), %s Act-Slot(s)", total_events, total_acts)
 
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[✓] JSON gespeichert: {args.output}")
+    LOGGER.info("[ok] JSON gespeichert: %s", args.output)
 
     if not args.dry_run:
-        import subprocess, sys
+        import subprocess
         seed = Path(__file__).parent.parent / "database" / "supabase_seed_lineup.py"
         if seed.exists():
-            print("\n[→] Starte supabase_seed_lineup.py...")
+            LOGGER.info("[->] Starte supabase_seed_lineup.py...")
             subprocess.run([sys.executable, str(seed), "--input", str(args.output)])
         else:
-            print(f"\n[!] supabase_seed_lineup.py nicht gefunden.")
-            print(f"    Manuell: python supabase_seed_lineup.py --input {args.output}")
+            LOGGER.warning("[!] supabase_seed_lineup.py nicht gefunden.")
+            LOGGER.info("    Manuell: python supabase_seed_lineup.py --input %s", args.output)
     else:
-        print(f"\n[dry-run] Manuell seeden:")
-        print(f"  python supabase_seed_lineup.py --input {args.output}")
+        LOGGER.info("[dry-run] Manuell seeden:")
+        LOGGER.info("  python supabase_seed_lineup.py --input %s", args.output)
 
 
 if __name__ == "__main__":

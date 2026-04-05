@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-04-04T00:00:00Z",
+  "scraped_at": "2026-04-05T00:00:00Z",
   "cities": [
     {
       "name": "Berlin",
@@ -7,178 +7,6 @@
         {
           "name": "Lokschuppen",
           "events": [
-            {
-              "date": "2026-04-04",
-              "name": "Happy Easter x Happy Hardcore Vol. 2",
-              "time_start": "20:00",
-              "time_end": "10:00",
-              "acts": [
-                {
-                  "name": "Remzcore",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Joey Riot",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "1luu",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "99jakes",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "nanobii",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "LØUS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Gretchen B",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "YOVA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Alliezz",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "IceLipzz",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Henk",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "m?y?a",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "ZYNTAX",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Dj Wifi (3)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "EUROPLUS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Baby Rocket",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Angel Rider",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Nanno",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Dagobird",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "KLOSSY",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Osiris (2)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "m4tsch1",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Makinarium",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "UV400",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Florelle",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Ranzey",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DiskoJochen",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2304772",
-              "ra_url": "https://ra.co/events/2304772"
-            },
             {
               "date": "2026-04-05",
               "name": "ACCELERATE w. DAYTIME OPEN AIR: Kø:lab feat. Anuuk & DonChoppa, Neon Graveyard, Durdenhauer",
@@ -416,6 +244,28 @@
               ],
               "ra_id": "2173763",
               "ra_url": "https://ra.co/events/2173763"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "Act like Adults",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Justin Tinderdate",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Elotrance",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2410633",
+              "ra_url": "https://ra.co/events/2410633"
             },
             {
               "date": "2026-04-11",
@@ -1835,88 +1685,6 @@
           "name": "RSO",
           "events": [
             {
-              "date": "2026-04-04",
-              "name": "XTRUDE x Fucktopia w/ Sol Ortega, Olivia Mendez, Henning Baer, DJ Fuckoff",
-              "time_start": "23:59",
-              "time_end": "08:00",
-              "acts": [
-                {
-                  "name": "Chontane",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Cirkle",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Henning Baer",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Mathys Lenne",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Olivia Mendez",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Pushmann",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "RUIZ OSC1",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Sol Ortega",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ AYA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Fuckoff",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "X-Coast",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Dj Warning",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2390205",
-              "ra_url": "https://ra.co/events/2390205"
-            },
-            {
               "date": "2026-04-10",
               "name": "Open2Close: Chlär all night long",
               "time_start": "23:00",
@@ -2723,70 +2491,6 @@
         {
           "name": "OST",
           "events": [
-            {
-              "date": "2026-04-04",
-              "name": "EUPHORIK x WIR SIND DIE NACHT with O.B.I., Noise Not War, Death of Mars & Morelia",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "O.B.I. (DE)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Noise Not War",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Death of Mars",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DTEXX",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "SIKXTO",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Filialleiter",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Morelia",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Boltcore",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "FLEXTASY",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2374039",
-              "ra_url": "https://ra.co/events/2374039"
-            },
             {
               "date": "2026-04-05",
               "name": "OST Easter Special w. Canelle Doublekick, DETOXX, DJ Sweedee, YOVA",
@@ -4183,34 +3887,6 @@
           "name": "Ritter Butzke",
           "events": [
             {
-              "date": "2026-04-04",
-              "name": "Markus Kavka & Babette Conrady",
-              "time_start": "22:00",
-              "time_end": "07:00",
-              "acts": [
-                {
-                  "name": "Markus Kavka",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "CENKK",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Jil Tanner",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2395163",
-              "ra_url": "https://ra.co/events/2395163"
-            },
-            {
               "date": "2026-04-10",
               "name": "Jannowitz Records Showcase",
               "time_start": "22:00",
@@ -5033,6 +4709,572 @@
               ],
               "ra_id": "2370867",
               "ra_url": "https://ra.co/events/2370867"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Karlsruhe",
+      "clubs": [
+        {
+          "name": "Gotec",
+          "events": [
+            {
+              "date": "2026-04-10",
+              "name": "Serafina ALL NIGHT LONG",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Serafina",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390269",
+              "ra_url": "https://ra.co/events/2390269"
+            },
+            {
+              "date": "2026-04-17",
+              "name": "davyboi ALL NIGHT LONG",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "davyboi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2339762",
+              "ra_url": "https://ra.co/events/2339762"
+            },
+            {
+              "date": "2026-04-18",
+              "name": "dasstudach ALL NIGHT LONG , KARAH , JAZZY and many more",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "dasstudach",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GAAAS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "JAZZY (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KARAH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Luna Fields",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Prauze",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390275",
+              "ra_url": "https://ra.co/events/2390275"
+            },
+            {
+              "date": "2026-04-25",
+              "name": "BCCO",
+              "time_start": "22:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "future.666",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ÜBERKIKZ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "AEREA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "PETERBLUE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Noise Mafia",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Fenrick",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "L.zwo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NYRA (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2333397",
+              "ra_url": "https://ra.co/events/2333397"
+            },
+            {
+              "date": "2026-05-01",
+              "name": "Teletech",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "4000 Hz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Alex Farell",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MXGN",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GLASSBASS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KLOUD",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KRUELTY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LILLIVEE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "O.B.I. (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ornella",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SAIKA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shanixx",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "snoritz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Svetec",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Yoshiko",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390287",
+              "ra_url": "https://ra.co/events/2390287"
+            },
+            {
+              "date": "2026-05-08",
+              "name": "2HOT2PLAY ALL NIGHT LONG",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "2HOT2PLAY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390295",
+              "ra_url": "https://ra.co/events/2390295"
+            },
+            {
+              "date": "2026-05-09",
+              "name": "SCHRANZ TILL I DIE - Neon Graveyard ALL NIGHT LONG",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "DRAKK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "In Verruf",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mez (US)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "RYX (1)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "TASSERY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tham",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Per Pleks",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Neon Graveyard",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CALLUSH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Obscure Shape",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390300",
+              "ra_url": "https://ra.co/events/2390300"
+            },
+            {
+              "date": "2026-05-13",
+              "name": "HIVE x Gotec",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "A.N.I.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ally (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hades",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "IGDA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nicolas Julian",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NOTMYTYPE (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SLVL",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2358508",
+              "ra_url": "https://ra.co/events/2358508"
+            },
+            {
+              "date": "2026-05-15",
+              "name": "EXTATICA - EUPHORIC COLLAPS",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "GROOVESICK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Source Code (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nastaran",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390309",
+              "ra_url": "https://ra.co/events/2390309"
+            },
+            {
+              "date": "2026-05-16",
+              "name": "JOWI ALL NIGHT LONG",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "JOWI ALL NIGHT LONG",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390312",
+              "ra_url": "https://ra.co/events/2390312"
+            },
+            {
+              "date": "2026-05-23",
+              "name": "44 AFTERSHOW",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Obscure Shape",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ben Techy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "co:co",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nazz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Blush",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ROT.TON",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GROOVESICK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "In Verruf",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DRAKK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Noise Not War",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SAIKA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Somewhen",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "TASSERY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tham",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kander",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390316",
+              "ra_url": "https://ra.co/events/2390316"
+            },
+            {
+              "date": "2026-05-29",
+              "name": "Vladimir Cauchemar , Raxeller , SANTØS",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Vladimir Cauchemar",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Raxeller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SANTØS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390317",
+              "ra_url": "https://ra.co/events/2390317"
+            },
+            {
+              "date": "2026-05-30",
+              "name": "SESH pres. MCR-T ALL NIGHT LONG",
+              "time_start": "22:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "MCR-T",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390319",
+              "ra_url": "https://ra.co/events/2390319"
             }
           ]
         }
