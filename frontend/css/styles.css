@@ -270,17 +270,17 @@ body::before {
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 .footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+  max-width: 600px;
+  margin: 28px auto 0;
   background: rgba(8,8,8,0.95);
   border-top: 1px solid var(--grey);
-  padding: 0 16px;
-  height: var(--footer-height);
+  padding: 10px 16px;
+  min-height: var(--footer-height);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   backdrop-filter: blur(8px);
-  z-index: 100;
 }
 
 .footer-text {
@@ -288,12 +288,16 @@ body::before {
   color: var(--grey);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  min-width: 0;
 }
 
 .last-updated {
   font-size: 9px;
   color: var(--grey);
   letter-spacing: 0.06em;
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-align: right;
 }
 
 /* ── Date Tabs ───────────────────────────────────────────────────────────── */
@@ -741,9 +745,7 @@ body::before {
 main {
   max-width: 600px;
   margin: 0 auto;
-  padding: 0 0 calc(var(--footer-height) + 20px);
-  /* Swipe-Animation */
-  will-change: transform, opacity;
+  padding: 0;
   transform-origin: center 25%;
   backface-visibility: hidden;
 }
@@ -1671,11 +1673,11 @@ button.venue-tag.active {
   background: transparent;
   color: var(--grey-lt);
   cursor: pointer;
-  font-family: var(--display);
-  font-size: 18px;
+  font-family: inherit;
+  font-size: 14px;
   line-height: 1;
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
@@ -1683,7 +1685,7 @@ button.venue-tag.active {
 .modal-act-favorite.active,
 .modal-act-favorite:hover {
   border-color: var(--red-dim);
-  color: var(--white);
+  color: var(--red);
   background: rgba(255, 32, 32, 0.06);
 }
 
@@ -1920,13 +1922,13 @@ button.venue-tag.active {
 
 /* When live panel is open, push main content up so it's not hidden under panel */
 body.live-mode-active main {
-  padding-bottom: calc(var(--footer-height) + var(--live-panel-topbar) + 24px);
+  padding-bottom: calc(var(--live-panel-topbar) + 24px);
 }
 
 /* ── Live Panel (bottom sheet) ───────────────────────────────────────────── */
 .live-panel {
   position: fixed;
-  bottom: var(--footer-height);
+  bottom: 0;
   left: 0; right: 0;
   top: auto;
   max-width: 600px;
@@ -2362,7 +2364,7 @@ a.user-pill[href]:hover {
 .profile-page {
   max-width: 600px;
   margin: 0 auto;
-  padding-bottom: calc(var(--footer-height) + 24px);
+  padding-bottom: 0;
 }
 
 /* Header */
@@ -2564,6 +2566,13 @@ a.user-pill[href]:hover {
   align-items: flex-start;
   gap: 3px;
 }
+.profile-act-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
 .profile-list-event-date {
   font-size: 9px;
   letter-spacing: 0.1em;
@@ -2688,6 +2697,30 @@ a.profile-list-meta:hover { color: var(--white); }
 
 .profile-list-item--top-act .profile-list-name {
   flex: 1;
+}
+
+.profile-act-follow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: 1px solid var(--grey);
+  background: transparent;
+  color: var(--grey-lt);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.profile-act-follow-btn:hover,
+.profile-act-follow-btn.active {
+  border-color: var(--red-dim);
+  color: var(--red);
+  background: rgba(255, 32, 32, 0.06);
 }
 
 .profile-top-act-rating {

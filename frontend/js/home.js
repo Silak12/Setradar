@@ -97,6 +97,7 @@ let eventHighlights = new Map();  // event_id → { bestActId, surpriseActId }
 let expandedEventIds = new Set(); // event IDs with timetable open
 let myQueueStartTime = null;      // Date when current user joined queue
 let myClubEntryTime  = null;      // Date when current user entered club
+let artistPopupRequestId = 0;
 
 function fmtTime(t) { return t ? String(t).slice(0, 5) : null; }
 function formatTimeInput(d) { if (!d) return ''; return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
@@ -294,6 +295,10 @@ function updateStatusBar() {
 function setLastUpdated() {
   const el = document.getElementById('lastUpdated');
   if (el) el.textContent = 'Stand: ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+function refreshAmbientUi() {
+  updateStatusBar();
+  setLastUpdated();
 }
 function syncBodyLock() {
   const artistOpen = document.getElementById('artistOverlay')?.classList.contains('open');
@@ -1033,6 +1038,7 @@ function bindArtistClicks() {
 async function openArtistPopup(actId, actName) {
   const overlay = document.getElementById('artistOverlay'), content = document.getElementById('modalContent');
   if (!overlay || !content) return;
+  const requestId = ++artistPopupRequestId;
   content.innerHTML = `<div class="modal-artist-tag">// ARTIST</div><div class="modal-artist-name">${actName}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
@@ -1091,6 +1097,7 @@ async function openArtistPopup(actId, actName) {
       if (act) { upcomingEvents.push({ start_time: act.start_time, end_time: act.end_time, events: ev }); instaName = act.acts.insta_name; }
     });
   }
+  if (requestId !== artistPopupRequestId || !document.getElementById('artistOverlay')?.classList.contains('open')) return;
   renderArtistModal(actName, instaName, upcomingEvents, actId, pastEvents, ratingStats, scUrl);
 }
 function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = [], ratingStats = null, scUrl = null) {
@@ -1213,39 +1220,68 @@ function initSwipe() {
   if (!main) return;
   const THRESHOLD = 60, MAX_RESIST = 70;
   let startX = null, startY = null, curX = null, swiping = false;
+  let suppressClickUntil = 0;
+  const isOverlayOpen = () => document.getElementById('artistOverlay')?.classList.contains('open') || document.getElementById('authOverlay')?.classList.contains('open');
+  const isSwipeBlockedTarget = target => target?.closest('.date-nav, .popular-rail, .live-panel, button, a, input, textarea, select, [data-favorite-act-id], .artist-name-link');
   const reset = () => { main.style.transition = 'transform 0.25s cubic-bezier(0.25,1,0.5,1), opacity 0.2s'; main.style.transform = ''; main.style.opacity = ''; };
   const out = (dir, cb) => { main.style.transition = 'transform 0.17s cubic-bezier(0.4,0,1,1), opacity 0.17s'; main.style.transform = `translateX(${dir * -110}%) rotate(${dir * -3}deg)`; main.style.opacity = '0'; setTimeout(cb, 170); };
   const inp = dir => { main.style.transition = 'none'; main.style.transform = `translateX(${dir * 75}%) rotate(${dir * 2}deg)`; main.style.opacity = '0'; void main.offsetWidth; main.style.transition = 'transform 0.28s cubic-bezier(0.25,1,0.5,1), opacity 0.22s'; main.style.transform = ''; main.style.opacity = ''; };
-  document.addEventListener('touchstart', e => {
-    if (document.getElementById('artistOverlay')?.classList.contains('open') || document.getElementById('authOverlay')?.classList.contains('open') || e.target.closest('.date-nav') || e.target.closest('.popular-rail') || e.target.closest('.live-panel')) return;
-    startX = e.changedTouches[0].clientX; startY = e.changedTouches[0].clientY; curX = startX; swiping = false;
-  }, { passive: true });
-  document.addEventListener('touchmove', e => {
-    if (startX === null || document.getElementById('artistOverlay')?.classList.contains('open') || document.getElementById('authOverlay')?.classList.contains('open')) return;
-    const dx = e.changedTouches[0].clientX - startX, dy = e.changedTouches[0].clientY - startY;
+  const beginSwipe = (x, y) => {
+    startX = x;
+    startY = y;
+    curX = x;
+    swiping = false;
+  };
+  const moveSwipe = (x, y, preventDefault = null) => {
+    if (startX === null || isOverlayOpen()) return;
+    const dx = x - startX, dy = y - startY;
     if (!swiping) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
       if (Math.abs(dy) > Math.abs(dx)) { startX = null; return; }
       swiping = true;
     }
-    if (Math.abs(dx) > 10) e.preventDefault();
-    curX = e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 10 && preventDefault) preventDefault();
+    curX = x;
     const grouped = groupByDate(getVisibleEvents()), atStart = activeDateIdx === 0, atEnd = activeDateIdx >= grouped.length - 1;
     let clamped = dx;
     if ((dx > 0 && atStart) || (dx < 0 && atEnd)) clamped = dx > 0 ? Math.min(dx * 0.18, MAX_RESIST) : Math.max(dx * 0.18, -MAX_RESIST);
     main.style.transition = 'none';
     main.style.transform = `translateX(${clamped}px) rotate(${clamped * 0.012}deg)`;
     main.style.opacity = String(1 - Math.min(Math.abs(clamped) / 280, 0.28));
-  }, { passive: false });
-  document.addEventListener('touchend', () => {
+  };
+  const endSwipe = () => {
     if (startX === null || !swiping) { startX = null; return; }
     const dx = curX - startX, grouped = groupByDate(getVisibleEvents()), canNext = activeDateIdx < grouped.length - 1, canPrev = activeDateIdx > 0;
     if (searchMode) { reset(); startX = null; swiping = false; return; }
+    if (Math.abs(dx) > 10) suppressClickUntil = Date.now() + 250;
     if (dx < -THRESHOLD && canNext) out(-1, () => { activeDateIdx += 1; renderAll({ preserveDateNavScroll: true, syncDateNavToActive: true }); inp(1); });
     else if (dx > THRESHOLD && canPrev) out(1, () => { activeDateIdx -= 1; renderAll({ preserveDateNavScroll: true, syncDateNavToActive: true }); inp(-1); });
     else reset();
     startX = null; swiping = false;
+  };
+  main.addEventListener('click', e => {
+    if (Date.now() < suppressClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+  document.addEventListener('touchstart', e => {
+    if (isOverlayOpen() || isSwipeBlockedTarget(e.target)) return;
+    beginSwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    moveSwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY, () => e.preventDefault());
+  }, { passive: false });
+  document.addEventListener('touchend', endSwipe);
+  main.addEventListener('mousedown', e => {
+    if (e.button !== 0 || isOverlayOpen() || isSwipeBlockedTarget(e.target)) return;
+    beginSwipe(e.clientX, e.clientY);
   });
+  document.addEventListener('mousemove', e => {
+    if (startX === null) return;
+    moveSwipe(e.clientX, e.clientY, () => e.preventDefault());
+  });
+  document.addEventListener('mouseup', endSwipe);
 }
 function loadDemoHypes() {
   const nextMap = new Map();
@@ -2033,9 +2069,11 @@ async function init() {
   const hasUrl = !isPlaceholderValue(SUPABASE_URL), hasKey = !isPlaceholderValue(SUPABASE_KEY), legacy = isLegacyJwtKey(SUPABASE_KEY), configured = hasUrl && hasKey && !legacy;
   if (configured) {
     const { createClient } = supabase;
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { storageKey: 'setradar-auth' },
+    });
     supabaseAnonClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'setradar-anon-auth' },
     });
     await hydrateSession();
     subscribeAuthState();
@@ -2060,7 +2098,6 @@ async function init() {
     else if (_club) showClubSearch(_club);
   }
   if (supabaseClient && !demoMode) subscribeRealtime();
-  setInterval(() => rerenderView({ preserveDateNavScroll: true }), 60 * 1000);
-  setInterval(updateStatusBar, 30 * 1000);
+  setInterval(refreshAmbientUi, 30 * 1000);
 }
 init();

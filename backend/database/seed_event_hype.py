@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 from collections import Counter
 from datetime import date, timedelta
@@ -10,7 +11,7 @@ from postgrest.exceptions import APIError
 from supabase import Client, create_client
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
-SEED_SOURCE = "ra_fake_v1"
+SEED_SOURCE = "interested_jitter_v1"
 
 load_dotenv(ROOT_ENV_FILE)
 
@@ -42,7 +43,7 @@ def _load_upcoming_events(supabase: Client) -> list[dict]:
     try:
         response = (
             supabase.table("events")
-            .select("id,event_date")
+            .select("id,event_date,interested_count")
             .gte("event_date", today.isoformat())
             .lte("event_date", max_date.isoformat())
             .order("event_date")
@@ -86,6 +87,24 @@ def _clamp(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
 
 
+def _stable_unit_interval(key: str) -> float:
+    digest = hashlib.sha256(key.encode("utf-8")).digest()
+    raw = int.from_bytes(digest[:8], "big")
+    return raw / float((1 << 64) - 1)
+
+
+def _jittered_interested_seed(event_id: int, event_date: date, interested_count: int) -> int:
+    ratio = _stable_unit_interval(
+        f"{SEED_SOURCE}:{event_id}:{event_date.isoformat()}:{interested_count}"
+    )
+    centered = (ratio * 2.0) - 1.0
+    if interested_count <= 20:
+        spread = max(1, min(3, round(interested_count * 0.15)))
+        return max(0, interested_count + round(centered * spread))
+    factor = 1.0 + (centered * 0.15)
+    return max(0, round(interested_count * factor))
+
+
 def _build_seed_rows(events: list[dict], act_counts: Counter[int]) -> list[dict]:
     today = date.today()
     rows: list[dict] = []
@@ -95,12 +114,20 @@ def _build_seed_rows(events: list[dict], act_counts: Counter[int]) -> list[dict]
         event_date = date.fromisoformat(str(event["event_date"]))
         days_until = max(0, (event_date - today).days)
         act_count = int(act_counts.get(event_id, 0))
+        interested_count = event.get("interested_count")
 
-        seed_count = _clamp(
-            _base_seed(days_until) + min(act_count, 8) * 4 + (event_id % 11),
-            8,
-            120,
-        )
+        if interested_count is not None:
+            seed_count = _jittered_interested_seed(
+                event_id,
+                event_date,
+                max(0, int(interested_count)),
+            )
+        else:
+            seed_count = _clamp(
+                _base_seed(days_until) + min(act_count, 8) * 4 + (event_id % 11),
+                8,
+                120,
+            )
 
         rows.append(
             {
