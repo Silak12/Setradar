@@ -465,9 +465,10 @@ function getDateStr(daysOffset = 0) {
 }
 
 function syncBodyLock() {
-  const artistOpen = document.getElementById('artistOverlay')?.classList.contains('open');
-  const ratingOpen = document.getElementById('ratingOverlay')?.classList.contains('open');
-  document.body.style.overflow = artistOpen || ratingOpen ? 'hidden' : '';
+  const artistOpen   = document.getElementById('artistOverlay')?.classList.contains('open');
+  const ratingOpen   = document.getElementById('ratingOverlay')?.classList.contains('open');
+  const settingsOpen = document.getElementById('settingsOverlay')?.classList.contains('open');
+  document.body.style.overflow = artistOpen || ratingOpen || settingsOpen ? 'hidden' : '';
 }
 
 async function openArtistPopup(actId, actName) {
@@ -1033,6 +1034,161 @@ async function loadProfile() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+// ── Settings Modal ────────────────────────────────────────────────────────────
+function setFeedback(id, msg, isErr = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('err', isErr);
+}
+
+function openSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  syncBodyLock();
+  // Pre-fill name with current display name
+  const nameEl = document.getElementById('profileName');
+  const nameInput = document.getElementById('settingsNameInput');
+  if (nameEl && nameInput) {
+    nameInput.value = nameEl.textContent !== '—' ? nameEl.textContent : '';
+  }
+  // Mark active language
+  const currentLang = localStorage.getItem('setradar_lang') || 'de';
+  document.querySelectorAll('.settings-lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === currentLang);
+  });
+}
+
+function closeSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  syncBodyLock();
+  document.getElementById('settingsDeleteConfirm')?.classList.remove('open');
+}
+
+function initSettings() {
+  const btn = document.getElementById('profileSettingsBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', openSettings);
+  document.getElementById('settingsClose')?.addEventListener('click', closeSettings);
+  document.getElementById('settingsOverlayBg')?.addEventListener('click', closeSettings);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('settingsOverlay')?.classList.contains('open')) closeSettings();
+  });
+
+  // Change display name
+  document.getElementById('settingsNameSave')?.addEventListener('click', async () => {
+    const input = document.getElementById('settingsNameInput');
+    const val = input?.value.trim();
+    if (!val) { setFeedback('settingsNameFeedback', 'Bitte Namen eingeben.', true); return; }
+    const saveBtn = document.getElementById('settingsNameSave');
+    saveBtn.disabled = true;
+    setFeedback('settingsNameFeedback', '');
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ display_name: val })
+      .eq('user_id', sessionUser.id);
+    saveBtn.disabled = false;
+    if (error) {
+      setFeedback('settingsNameFeedback', 'Fehler: ' + error.message, true);
+    } else {
+      document.getElementById('profileName').textContent = val.toUpperCase();
+      updateNavbar(val);
+      setFeedback('settingsNameFeedback', 'Name gespeichert.');
+    }
+  });
+
+  // Change email
+  document.getElementById('settingsEmailSave')?.addEventListener('click', async () => {
+    const input = document.getElementById('settingsEmailInput');
+    const val = input?.value.trim();
+    if (!val) { setFeedback('settingsEmailFeedback', 'Bitte E-Mail eingeben.', true); return; }
+    const saveBtn = document.getElementById('settingsEmailSave');
+    saveBtn.disabled = true;
+    setFeedback('settingsEmailFeedback', '');
+    const { error } = await supabaseClient.auth.updateUser({ email: val });
+    saveBtn.disabled = false;
+    if (error) {
+      setFeedback('settingsEmailFeedback', 'Fehler: ' + error.message, true);
+    } else {
+      setFeedback('settingsEmailFeedback', 'Bestätigungsmail gesendet.');
+      input.value = '';
+    }
+  });
+
+  // Change password
+  document.getElementById('settingsPasswordSave')?.addEventListener('click', async () => {
+    const input = document.getElementById('settingsPasswordInput');
+    const val = input?.value;
+    if (!val || val.length < 6) { setFeedback('settingsPasswordFeedback', 'Min. 6 Zeichen erforderlich.', true); return; }
+    const saveBtn = document.getElementById('settingsPasswordSave');
+    saveBtn.disabled = true;
+    setFeedback('settingsPasswordFeedback', '');
+    const { error } = await supabaseClient.auth.updateUser({ password: val });
+    saveBtn.disabled = false;
+    if (error) {
+      setFeedback('settingsPasswordFeedback', 'Fehler: ' + error.message, true);
+    } else {
+      setFeedback('settingsPasswordFeedback', 'Passwort geändert.');
+      input.value = '';
+    }
+  });
+
+  // Language
+  document.getElementById('settingsLangOptions')?.addEventListener('click', e => {
+    const btn = e.target.closest('.settings-lang-btn');
+    if (!btn) return;
+    const lang = btn.dataset.lang;
+    localStorage.setItem('setradar_lang', lang);
+    document.querySelectorAll('.settings-lang-btn').forEach(b => b.classList.toggle('active', b === btn));
+    setFeedback('settingsLangFeedback', lang === 'de' ? 'Sprache gespeichert.' : 'Language saved.');
+  });
+
+  // Logout
+  document.getElementById('settingsLogout')?.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut().catch(() => {});
+    window.location.href = 'index.html';
+  });
+
+  // Delete — step 1
+  document.getElementById('settingsDeleteBtn')?.addEventListener('click', () => {
+    document.getElementById('settingsDeleteConfirm')?.classList.add('open');
+    setFeedback('settingsDeleteFeedback', '');
+  });
+
+  // Delete — cancel
+  document.getElementById('settingsCancelDelete')?.addEventListener('click', () => {
+    document.getElementById('settingsDeleteConfirm')?.classList.remove('open');
+  });
+
+  // Delete — confirm
+  document.getElementById('settingsConfirmDelete')?.addEventListener('click', async () => {
+    const confirmBtn = document.getElementById('settingsConfirmDelete');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Wird gelöscht…';
+    setFeedback('settingsDeleteFeedback', '');
+    try {
+      await Promise.all([
+        supabaseClient.from('favorites').delete().eq('user_id', sessionUser.id),
+        supabaseClient.from('event_hypes').delete().eq('user_id', sessionUser.id),
+        supabaseClient.from('act_ratings').delete().eq('user_id', sessionUser.id),
+        supabaseClient.from('profiles').delete().eq('user_id', sessionUser.id),
+      ]);
+      const { error: rpcErr } = await supabaseClient.rpc('delete_my_account');
+      if (rpcErr) throw rpcErr;
+      await supabaseClient.auth.signOut().catch(() => {});
+      window.location.href = 'index.html';
+    } catch (err) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Ja, Account endgültig löschen';
+      setFeedback('settingsDeleteFeedback', 'Fehler: ' + (err.message || 'Unbekannter Fehler'), true);
+    }
+  });
+}
+
 async function init() {
   if (window.componentsReady?.then) await window.componentsReady;
 
@@ -1087,6 +1243,8 @@ async function init() {
   } catch (err) {
     console.error('Profil laden Fehler:', err);
   }
+
+  initSettings();
 }
 
 init();

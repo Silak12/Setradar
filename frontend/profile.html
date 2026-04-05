@@ -41,7 +41,10 @@
       <!-- Header -->
       <div class="profile-header">
         <div class="profile-header-eyebrow">// PROFIL</div>
-        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-name-row">
+          <div class="profile-name" id="profileName">—</div>
+          <button class="profile-settings-btn" id="profileSettingsBtn" aria-label="Einstellungen">⚙</button>
+        </div>
         <div class="profile-since" id="profileSince">—</div>
       </div>
 
@@ -213,6 +216,82 @@
         </div>
         <div class="rating-message" id="ratingMessage" aria-live="polite"></div>
         <button class="rating-submit" id="ratingSubmit" type="button" disabled>Bewerten</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-overlay-bg" id="settingsOverlayBg"></div>
+    <div class="settings-drawer" id="settingsDrawer">
+      <div class="settings-topline"></div>
+      <div class="settings-header">
+        <span class="settings-title">// EINSTELLUNGEN</span>
+        <button class="settings-close" id="settingsClose">✕ SCHLIESSEN</button>
+      </div>
+
+      <div class="settings-body">
+
+        <!-- Anzeigename -->
+        <div class="settings-section">
+          <div class="settings-section-label">Anzeigename</div>
+          <div class="settings-input-row">
+            <input class="settings-input" id="settingsNameInput" type="text" placeholder="Neuer Anzeigename" autocomplete="off" />
+            <button class="settings-save-btn" id="settingsNameSave">Speichern</button>
+          </div>
+          <div class="settings-feedback" id="settingsNameFeedback"></div>
+        </div>
+
+        <!-- E-Mail -->
+        <div class="settings-section">
+          <div class="settings-section-label">E-Mail-Adresse</div>
+          <div class="settings-input-row">
+            <input class="settings-input" id="settingsEmailInput" type="email" placeholder="Neue E-Mail" autocomplete="off" />
+            <button class="settings-save-btn" id="settingsEmailSave">Speichern</button>
+          </div>
+          <div class="settings-feedback" id="settingsEmailFeedback"></div>
+        </div>
+
+        <!-- Passwort -->
+        <div class="settings-section">
+          <div class="settings-section-label">Passwort</div>
+          <div class="settings-input-row">
+            <input class="settings-input" id="settingsPasswordInput" type="password" placeholder="Neues Passwort (min. 6 Zeichen)" autocomplete="new-password" />
+            <button class="settings-save-btn" id="settingsPasswordSave">Speichern</button>
+          </div>
+          <div class="settings-feedback" id="settingsPasswordFeedback"></div>
+        </div>
+
+        <!-- Sprache -->
+        <div class="settings-section">
+          <div class="settings-section-label">Sprache / Language</div>
+          <div class="settings-lang-options" id="settingsLangOptions">
+            <button class="settings-lang-btn" data-lang="de">🇩🇪 Deutsch</button>
+            <button class="settings-lang-btn" data-lang="en">🇬🇧 English</button>
+          </div>
+          <div class="settings-feedback" id="settingsLangFeedback"></div>
+        </div>
+
+        <div class="settings-sep"></div>
+
+        <!-- Ausloggen -->
+        <button class="settings-action-row settings-action-row--logout" id="settingsLogout">
+          <span>Ausloggen</span>
+          <span class="settings-action-arrow">→</span>
+        </button>
+
+        <!-- Account löschen -->
+        <button class="settings-action-row settings-action-row--delete" id="settingsDeleteBtn">
+          <span>Account löschen</span>
+          <span class="settings-action-arrow">→</span>
+        </button>
+        <div class="settings-delete-confirm" id="settingsDeleteConfirm">
+          <div class="settings-delete-warning">Achtung: Alle deine Daten werden unwiderruflich gelöscht.</div>
+          <button class="settings-confirm-delete-btn" id="settingsConfirmDelete">Ja, Account endgültig löschen</button>
+          <button class="settings-cancel-delete-btn" id="settingsCancelDelete">Abbrechen</button>
+        </div>
+        <div class="settings-feedback" id="settingsDeleteFeedback"></div>
+
       </div>
     </div>
   </div>
