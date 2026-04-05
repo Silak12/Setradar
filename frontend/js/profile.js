@@ -1149,14 +1149,12 @@ async function initPushSettings() {
         const reg = await registerServiceWorker();
         if (reg) {
           const sub = await subscribeToPush(reg);
-          if (sub) {
-            await savePushSubscription(sub);
-            enableBtn.style.display = 'none';
-            statusEl.textContent = 'Aktiviert';
-            statusEl.classList.add('settings-push-status--ok');
-            await showNotifToggles(notifList, feedbackEl);
-          }
+          if (sub) await savePushSubscription(sub);
         }
+        enableBtn.style.display = 'none';
+        statusEl.textContent = 'Aktiviert';
+        statusEl.classList.add('settings-push-status--ok');
+        await showNotifToggles(notifList, feedbackEl);
       } else {
         enableBtn.disabled = false;
         enableBtn.textContent = 'Benachrichtigungen aktivieren →';
