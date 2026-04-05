@@ -341,6 +341,33 @@ function getProfileEventCardContext(events) {
   };
 }
 
+function renderProfileActFollowButton(actId) {
+  const numericId = Number(actId);
+  const isActive = Number.isFinite(numericId) && favoriteActIds.has(numericId);
+  return `<button class="profile-act-follow-btn${isActive ? ' active' : ''}" type="button" data-profile-act-follow="${numericId}" aria-pressed="${isActive}" aria-label="${isActive ? 'Artist entfolgen' : 'Artist folgen'}" title="${isActive ? 'Artist entfolgen' : 'Artist folgen'}">${isActive ? '♥' : '♡'}</button>`;
+}
+
+function upsertFollowedAct({ id, name, insta_name = null }) {
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId)) return;
+  const index = allFollowedActs.findIndex(act => Number(act.id) === numericId);
+  if (index === -1) {
+    allFollowedActs = [...allFollowedActs, { id: numericId, name: name || '—', insta_name }];
+    return;
+  }
+  allFollowedActs[index] = {
+    ...allFollowedActs[index],
+    id: numericId,
+    name: name || allFollowedActs[index].name,
+    insta_name: insta_name ?? allFollowedActs[index].insta_name ?? null,
+  };
+}
+
+function syncProfileActStats() {
+  const el = document.getElementById('statActs');
+  if (el) el.textContent = String(favoriteActIds.size);
+}
+
 function renderFollowedActsPage(animDir = 0) {
   const page    = document.getElementById('followedActsPage');
   const nav     = document.getElementById('followedActsNav');
@@ -375,8 +402,10 @@ function renderFollowedActsPage(animDir = 0) {
     }
     page.innerHTML = slice.map(a => `
       <div class="profile-list-item profile-act-link" data-act-id="${a.id}" data-act-name="${a.name}">
-        <span class="profile-list-name">${a.name}</span>
-        ${a.insta_name ? `<span class="profile-list-meta">@${a.insta_name}</span>` : ''}
+        <div class="profile-act-main">
+          <span class="profile-list-name">${a.name}</span>
+        </div>
+        ${renderProfileActFollowButton(a.id)}
       </div>
     `).join('');
   };
@@ -527,6 +556,7 @@ function renderRatedActsPage(animDir = 0) {
         <div class="profile-list-item profile-list-item--top-act profile-act-link" data-act-id="${a.id}" data-act-name="${a.name}">
           <span class="profile-top-act-rank">${offset + i + 1}</span>
           <span class="profile-list-name">${a.name}</span>
+          ${renderProfileActFollowButton(a.id)}
           <span class="profile-top-act-rating">
             <span class="profile-top-act-stars">${stars}</span>
             <span class="profile-top-act-avg">${a.avg.toFixed(1)}</span>
@@ -761,7 +791,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   const numericActId = Number(actId);
   const isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}"><span class="modal-act-favorite-label">${isFavorite ? 'Saved' : 'Save'}</span></button>`
+    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
@@ -856,25 +886,22 @@ function initArtistPopup() {
     const fav = e.target.closest('[data-favorite-act-id]');
     if (fav) {
       const numericId = Number(fav.dataset.favoriteActId);
-      if (!Number.isFinite(numericId) || !supabaseClient || !sessionUser) return;
-      const already = favoriteActIds.has(numericId);
-      fav.disabled = true;
-      try {
-        if (already) {
-          await supabaseClient.from('favorites').delete()
-            .eq('user_id', sessionUser.id).eq('entity_type', 'act').eq('entity_id', numericId);
-          favoriteActIds.delete(numericId);
+      await toggleProfileFavorite('act', numericId, () => {
+        if (favoriteActIds.has(numericId)) {
+          upsertFollowedAct({
+            id: numericId,
+            name: fav.dataset.actName || '',
+            insta_name: fav.dataset.actInstaName || null,
+          });
         } else {
-          await supabaseClient.from('favorites').insert({ user_id: sessionUser.id, entity_type: 'act', entity_id: numericId });
-          favoriteActIds.add(numericId);
+          allFollowedActs = allFollowedActs.filter(act => Number(act.id) !== numericId);
         }
-        fav.classList.toggle('active', !already);
-        fav.setAttribute('aria-pressed', String(!already));
-        fav.querySelector('.modal-act-favorite-label').textContent = !already ? 'Saved' : 'Save';
-      } catch (err) {
-        console.warn('Favorite toggle error:', err.message || err);
-      }
-      fav.disabled = false;
+        syncProfileActButtons(numericId);
+        syncProfileActStats();
+        renderFollowedActsPage(0);
+        renderRatedActsPage(0);
+      });
+      return;
     }
 
     const rateBtn = e.target.closest('[data-action="open-rating"]');
@@ -901,6 +928,24 @@ function initArtistPopup() {
 
   // Delegated click on acts lists
   document.addEventListener('click', e => {
+    const followBtn = e.target.closest('[data-profile-act-follow]');
+    if (followBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const actId = Number(followBtn.dataset.profileActFollow);
+      const item = followBtn.closest('.profile-act-link');
+      const actName = item?.dataset.actName || '';
+      toggleProfileFavorite('act', actId, () => {
+        if (favoriteActIds.has(actId)) upsertFollowedAct({ id: actId, name: actName });
+        else allFollowedActs = allFollowedActs.filter(act => Number(act.id) !== actId);
+        syncProfileActButtons(actId);
+        syncProfileActStats();
+        renderFollowedActsPage(0);
+        renderRatedActsPage(0);
+      });
+      return;
+    }
+
     const item = e.target.closest('.profile-act-link');
     if (!item) return;
     if (e.target.closest('a')) return;
@@ -964,8 +1009,22 @@ function syncProfileActButtons(actId) {
   document.querySelectorAll(`#hypesList [data-action="toggle-favorite-act"][data-act-id="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
-    btn.textContent = isActive ? '♥' : '♡';
+    btn.textContent = isActive ? '\u2665' : '\u2661';
     btn.closest('.artist-row')?.classList.toggle('artist-row--followed', isActive);
+  });
+  document.querySelectorAll(`[data-profile-act-follow="${actId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    btn.setAttribute('aria-label', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.setAttribute('title', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.textContent = isActive ? '\u2665' : '\u2661';
+  });
+  document.querySelectorAll(`[data-favorite-act-id="${actId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    btn.setAttribute('aria-label', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.setAttribute('title', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.textContent = isActive ? '\u2665' : '\u2661';
   });
 }
 
