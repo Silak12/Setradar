@@ -1,5 +1,6 @@
 {
   "scraped_at": "2026-04-05T00:00:00Z",
+  "scraped_at": "2026-04-05T00:00:00Z",
   "cities": [
     {
       "name": "Berlin",
@@ -25,6 +26,7 @@
                 },
                 {
                   "name": "Amo (IT)",
+                  "name": "Amo (IT)",
                   "insta_name": "",
                   "insta_url": "",
                   "soundcloud_name": "jtruHDxieCHG71B76",
@@ -33,6 +35,7 @@
                   "end_time": null
                 },
                 {
+                  "name": "Athina",
                   "name": "Athina",
                   "insta_name": "",
                   "insta_url": "",
@@ -419,7 +422,17 @@
                   "soundcloud_url": "https://www.soundcloud.com/praspct-recordings",
                   "start_time": null,
                   "end_time": null
-                },
+                }
+              ],
+              "ra_id": "2402620",
+              "ra_url": "https://ra.co/events/2402620"
+            },
+            {
+              "date": "2026-04-10",
+              "name": "F90",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
                 {
                   "name": "THE RUKKUS",
                   "insta_name": "therukkus.disorder",
@@ -1071,7 +1084,7 @@
                   "end_time": null
                 },
                 {
-                  "name": "EMMANUELLE5",
+                  "name": "JORDAN SNAPPER",
                   "insta_name": "",
                   "insta_url": "",
                   "soundcloud_name": "",
@@ -1441,7 +1454,17 @@
                   "soundcloud_url": "https://www.soundcloud.com/ozzwaldd",
                   "start_time": null,
                   "end_time": null
-                },
+                }
+              ],
+              "ra_id": "2394823",
+              "ra_url": "https://ra.co/events/2394823"
+            },
+            {
+              "date": "2026-04-18",
+              "name": "LOKSCHUPPEN x COSMIC BEATZ pres. OPEN AIR DAY TIME RAVE",
+              "time_start": "09:30",
+              "time_end": "21:30",
+              "acts": [
                 {
                   "name": "Riana Holley",
                   "insta_name": "",
@@ -2329,7 +2352,17 @@
                   "soundcloud_url": "https://www.soundcloud.com/djtallboy2002",
                   "start_time": null,
                   "end_time": null
-                },
+                }
+              ],
+              "ra_id": "2351935",
+              "ra_url": "https://ra.co/events/2351935"
+            },
+            {
+              "date": "2026-04-30",
+              "name": "Chantal's House of Shame",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
                 {
                   "name": "ELOISA",
                   "insta_name": "eloisa__dj",
@@ -4594,7 +4627,17 @@
                   "soundcloud_url": "https://www.soundcloud.com//fieldnotesintl",
                   "start_time": null,
                   "end_time": null
-                },
+                }
+              ],
+              "ra_id": "2389204",
+              "ra_url": "https://ra.co/events/2389204"
+            },
+            {
+              "date": "2026-04-19",
+              "name": "XTRUDE w/ cora b2b HAO, softchaos and Sugar",
+              "time_start": "16:00",
+              "time_end": "08:00",
+              "acts": [
                 {
                   "name": "Frinda di Lanco",
                   "insta_name": "frinda_di_lanco",
@@ -5632,6 +5675,359 @@
                   "insta_url": "",
                   "soundcloud_name": "just-emma",
                   "soundcloud_url": "https://www.soundcloud.com/just-emma",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "AVANT",
+                  "insta_name": "avant_ofc",
+                  "insta_url": "https://www.instagram.com/avant_ofc",
+                  "soundcloud_name": "avant_ofc",
+                  "soundcloud_url": "https://www.soundcloud.com/avant_ofc",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402472",
+              "ra_url": "https://ra.co/events/2402472"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "Weltauswahl by Extrawelt",
+              "time_start": "22:00",
+              "time_end": "09:00",
+              "interested_count": 329,
+              "acts": [
+                {
+                  "name": "Ada",
+                  "insta_name": "",
+                  "insta_url": "",
+                  "soundcloud_name": "adaofficial",
+                  "soundcloud_url": "https://www.soundcloud.com/adaofficial",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bjarki",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Europarking",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jeans (NL)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "VEL (MA)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Woody92",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "AADJA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bailey Ibbs",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Carmen Electro",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Deniro",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ellen Allien",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SALOME",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Helena Hauff",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mari Sakurai",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Miro Von",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "VINVAR",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shaleen",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Spekki Webu",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tom Peters",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ÜBERKIKZ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2392708",
+              "ra_url": "https://ra.co/events/2392708"
+            },
+            {
+              "date": "2026-05-06",
+              "name": "Modeselektor",
+              "time_start": "19:00",
+              "time_end": "23:30",
+              "acts": [
+                {
+                  "name": "Modeselektor",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2324180",
+              "ra_url": "https://ra.co/events/2324180"
+            },
+            {
+              "date": "2026-05-07",
+              "name": "Modeselektor",
+              "time_start": "19:00",
+              "time_end": "23:30",
+              "acts": [
+                {
+                  "name": "Modeselektor",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2324183",
+              "ra_url": "https://ra.co/events/2324183"
+            },
+            {
+              "date": "2026-05-14",
+              "name": "Home Again Berlin - Day & Night - Open Air & Indoor",
+              "time_start": "14:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Alarico",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Andra (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Blame Anthony",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Butterhands",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sandilé",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Duncan Thomas",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "HAMY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "hawi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KIM SWIM",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Leon Vynehall",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LSDXOXO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Narciss",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Thabo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Thalo Santana",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2405926",
+              "ra_url": "https://ra.co/events/2405926"
+            },
+            {
+              "date": "2026-05-16",
+              "name": "Hyper Dreams X Future Trance Weekender",
+              "time_start": "23:00",
+              "time_end": "10:00",
+              "acts": [
+                {
+                  "name": "Miss Unleashed",
+                  "insta_name": "miss.unleashed",
+                  "insta_url": "https://www.instagram.com/miss.unleashed",
+                  "soundcloud_name": "missunleashed",
+                  "soundcloud_url": "https://www.soundcloud.com/missunleashed",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NDNA",
+                  "insta_name": "ndna.music",
+                  "insta_url": "https://www.instagram.com/ndna.music",
+                  "soundcloud_name": "ndna",
+                  "soundcloud_url": "https://www.soundcloud.com/ndna",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Stefan Muchte",
+                  "insta_name": "stefanmuchte",
+                  "insta_url": "https://www.instagram.com/stefanmuchte",
+                  "soundcloud_name": "stefanmuchte",
+                  "soundcloud_url": "https://www.soundcloud.com/stefanmuchte",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "The Reason Y",
+                  "insta_name": "tryberlin",
+                  "insta_url": "https://www.instagram.com/tryberlin",
+                  "soundcloud_name": "thereasonyberlin",
+                  "soundcloud_url": "https://www.soundcloud.com/thereasonyberlin",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2378605",
+              "ra_url": "https://ra.co/events/2378605"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "Just Emma",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "interested_count": 0,
+              "acts": [
+                {
+                  "name": "Just Emma",
+                  "insta_name": "",
+                  "insta_url": "",
+                  "soundcloud_name": "just-emma",
+                  "soundcloud_url": "https://www.soundcloud.com/just-emma",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bae Blade",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CAIVA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ GUESTLIST",
+                  "insta_name": "",
                   "start_time": null,
                   "end_time": null
                 },
