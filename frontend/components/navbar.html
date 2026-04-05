@@ -1,7 +1,14 @@
 <header class="navbar">
   <a href="./index.html" class="logo">SET<span>R</span>ADAR</a>
   <div class="navbar-right">
-    <span class="city-badge">Berlin</span>
+    <div class="city-selector" id="citySelector">
+      <button class="city-badge city-badge-button" id="cityBadgeButton" type="button" aria-expanded="false" aria-controls="citySelectorPanel">Berlin</button>
+      <div class="city-selector-panel" id="citySelectorPanel" hidden>
+        <div class="city-selector-label">Stadt wählen</div>
+        <input class="city-selector-input" id="citySelectorInput" type="text" placeholder="Search city" autocomplete="off" spellcheck="false" />
+        <div class="city-selector-list" id="citySelectorList"></div>
+      </div>
+    </div>
     <a class="user-pill" id="navUserState" href="#">Gast</a>
     <button class="nav-auth-button" id="navAuthButton" type="button">Login</button>
     <div class="pulse-dot"></div>
