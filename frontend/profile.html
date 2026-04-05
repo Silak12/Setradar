@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#080808" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
 <body>
   <div id="navbar"></div>
@@ -274,6 +278,77 @@
 
         <div class="settings-sep"></div>
 
+        <!-- Push-Benachrichtigungen -->
+        <div class="settings-section">
+          <div class="settings-section-label">Push-Benachrichtigungen</div>
+          <div class="settings-push-status" id="settingsPushStatus"></div>
+          <button class="settings-push-enable-btn" id="settingsPushEnableBtn" style="display:none">
+            Benachrichtigungen aktivieren →
+          </button>
+
+          <div class="settings-notif-list" id="settingsNotifList" style="display:none">
+
+            <label class="settings-notif-row">
+              <div class="settings-notif-text">
+                <span class="settings-notif-label">Timetable — DJ + Event</span>
+                <span class="settings-notif-desc">Wenn Zeiten für einen DJ rauskommen bei einem Event dem du folgst und dem DJ dem du folgst</span>
+              </div>
+              <div class="settings-toggle-wrap">
+                <input type="checkbox" class="settings-toggle-input" id="notifActEvent" data-pref="notify_timetable_act_event" />
+                <span class="settings-toggle-slider"></span>
+              </div>
+            </label>
+
+            <label class="settings-notif-row">
+              <div class="settings-notif-text">
+                <span class="settings-notif-label">Timetable öffentlich</span>
+                <span class="settings-notif-desc">Wenn der Timetable für ein Event veröffentlicht wird dem du folgst</span>
+              </div>
+              <div class="settings-toggle-wrap">
+                <input type="checkbox" class="settings-toggle-input" id="notifTimetablePublic" data-pref="notify_timetable_event_public" />
+                <span class="settings-toggle-slider"></span>
+              </div>
+            </label>
+
+            <label class="settings-notif-row">
+              <div class="settings-notif-text">
+                <span class="settings-notif-label">Gästeliste / Friendlist / Skiplist</span>
+                <span class="settings-notif-desc">Wenn ein DJ dem du folgst in seiner Story eine Gästeliste für ein Event anbietet dem du folgst</span>
+              </div>
+              <div class="settings-toggle-wrap">
+                <input type="checkbox" class="settings-toggle-input" id="notifGuestlist" data-pref="notify_guestlist_story" />
+                <span class="settings-toggle-slider"></span>
+              </div>
+            </label>
+
+            <label class="settings-notif-row">
+              <div class="settings-notif-text">
+                <span class="settings-notif-label">Neues Event — Club</span>
+                <span class="settings-notif-desc">Wenn ein Club dem du folgst ein neues Event ankündigt</span>
+              </div>
+              <div class="settings-toggle-wrap">
+                <input type="checkbox" class="settings-toggle-input" id="notifNewEventClub" data-pref="notify_new_event_club" />
+                <span class="settings-toggle-slider"></span>
+              </div>
+            </label>
+
+            <label class="settings-notif-row">
+              <div class="settings-notif-text">
+                <span class="settings-notif-label">Event-Erinnerung</span>
+                <span class="settings-notif-desc">Erinnerung morgens am Tag eines Events dem du folgst</span>
+              </div>
+              <div class="settings-toggle-wrap">
+                <input type="checkbox" class="settings-toggle-input" id="notifEventReminder" data-pref="notify_event_day_reminder" />
+                <span class="settings-toggle-slider"></span>
+              </div>
+            </label>
+
+          </div>
+          <div class="settings-feedback" id="settingsNotifFeedback"></div>
+        </div>
+
+        <div class="settings-sep"></div>
+
         <!-- Ausloggen -->
         <button class="settings-action-row settings-action-row--logout" id="settingsLogout">
           <span>Ausloggen</span>
@@ -298,6 +373,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script>
+    // VAPID Public Key — set this after generating keys with:
+    // npx web-push generate-vapid-keys
+    window.SETRADAR_VAPID_PUBLIC_KEY = CONFIG.VAPID_PUBLIC_KEY || '';
+  </script>
   <script src="js/components.js"></script>
   <script src="js/profile.js"></script>
 </body>

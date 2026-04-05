@@ -1,5 +1,20 @@
 # Lineup-Berlin
 
+
+
+Um aktuellen DB Stand zu bekommen führe folgenden SQL Befehl aus und kopiere den Output in CLaude
+
+SELECT
+  table_name,
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+ORDER BY table_name, ordinal_position;
+
+
+
 Minimales Python-Projekt mit **Python 3.12** und lokaler Virtual Environment (`.venv`).
 Diese Anleitung gilt nur fuer **Windows**.
 

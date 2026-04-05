@@ -1033,6 +1033,183 @@ async function loadProfile() {
   renderRecommendations(recommendations);
 }
 
+// ── Push Notifications ────────────────────────────────────────────────────────
+
+// Replace with your real VAPID public key after running: npm install -g web-push && web-push generate-vapid-keys
+const VAPID_PUBLIC_KEY = window.SETRADAR_VAPID_PUBLIC_KEY || '';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    return reg;
+  } catch (err) {
+    console.warn('SW registration failed:', err);
+    return null;
+  }
+}
+
+async function subscribeToPush(reg) {
+  if (!VAPID_PUBLIC_KEY) {
+    console.warn('No VAPID key configured');
+    return null;
+  }
+  try {
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+    return sub;
+  } catch (err) {
+    console.warn('Push subscribe failed:', err);
+    return null;
+  }
+}
+
+async function savePushSubscription(sub) {
+  if (!supabaseClient || !sessionUser || !sub) return;
+  const json = sub.toJSON();
+  await supabaseClient.from('push_subscriptions').upsert({
+    user_id:    sessionUser.id,
+    endpoint:   json.endpoint,
+    p256dh:     json.keys.p256dh,
+    auth:       json.keys.auth,
+    user_agent: navigator.userAgent.slice(0, 200),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,endpoint' });
+}
+
+async function deletePushSubscription(sub) {
+  if (!supabaseClient || !sessionUser || !sub) return;
+  await sub.unsubscribe();
+  await supabaseClient.from('push_subscriptions')
+    .delete()
+    .eq('user_id', sessionUser.id)
+    .eq('endpoint', sub.endpoint);
+}
+
+async function loadNotificationPrefs() {
+  if (!supabaseClient || !sessionUser) return null;
+  const { data } = await supabaseClient
+    .from('notification_preferences')
+    .select('*')
+    .eq('user_id', sessionUser.id)
+    .maybeSingle();
+  return data;
+}
+
+async function saveNotificationPref(key, value) {
+  if (!supabaseClient || !sessionUser) return;
+  await supabaseClient.from('notification_preferences').upsert({
+    user_id:    sessionUser.id,
+    [key]:      value,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id' });
+}
+
+async function initPushSettings() {
+  const statusEl    = document.getElementById('settingsPushStatus');
+  const enableBtn   = document.getElementById('settingsPushEnableBtn');
+  const notifList   = document.getElementById('settingsNotifList');
+  const feedbackEl  = document.getElementById('settingsNotifFeedback');
+  if (!statusEl) return;
+
+  const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+
+  if (!supported) {
+    statusEl.textContent = 'Push-Benachrichtigungen werden von diesem Browser nicht unterstützt.';
+    statusEl.classList.add('settings-push-status--warn');
+    return;
+  }
+
+  const permission = Notification.permission;
+
+  if (permission === 'denied') {
+    statusEl.innerHTML = 'Benachrichtigungen blockiert. <br><span style="font-size:10px;color:var(--grey-lt)">Bitte in den Browser-Einstellungen freigeben.</span>';
+    statusEl.classList.add('settings-push-status--warn');
+    return;
+  }
+
+  if (permission === 'default') {
+    statusEl.textContent = 'Nicht aktiviert';
+    enableBtn.style.display = '';
+    enableBtn.addEventListener('click', async () => {
+      enableBtn.disabled = true;
+      enableBtn.textContent = 'Wird aktiviert…';
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        const reg = await registerServiceWorker();
+        if (reg) {
+          const sub = await subscribeToPush(reg);
+          if (sub) {
+            await savePushSubscription(sub);
+            enableBtn.style.display = 'none';
+            statusEl.textContent = 'Aktiviert';
+            statusEl.classList.add('settings-push-status--ok');
+            await showNotifToggles(notifList, feedbackEl);
+          }
+        }
+      } else {
+        enableBtn.disabled = false;
+        enableBtn.textContent = 'Benachrichtigungen aktivieren →';
+        statusEl.textContent = 'Berechtigung verweigert.';
+        statusEl.classList.add('settings-push-status--warn');
+      }
+    });
+    return;
+  }
+
+  // Already granted
+  const reg = await registerServiceWorker();
+  if (reg) {
+    const existingSub = await reg.pushManager.getSubscription();
+    if (!existingSub && VAPID_PUBLIC_KEY) {
+      const sub = await subscribeToPush(reg);
+      if (sub) await savePushSubscription(sub);
+    }
+  }
+  statusEl.textContent = 'Aktiviert';
+  statusEl.classList.add('settings-push-status--ok');
+  await showNotifToggles(notifList, feedbackEl);
+}
+
+async function showNotifToggles(notifList, feedbackEl) {
+  if (!notifList) return;
+  notifList.style.display = '';
+
+  const prefs = await loadNotificationPrefs();
+
+  // Set toggle states from DB
+  notifList.querySelectorAll('.settings-toggle-input').forEach(input => {
+    const key = input.dataset.pref;
+    if (prefs && key in prefs) {
+      input.checked = prefs[key];
+    } else {
+      // Default: most on, reminder off
+      input.checked = key !== 'notify_event_day_reminder';
+    }
+  });
+
+  // Save on change
+  notifList.querySelectorAll('.settings-toggle-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      await saveNotificationPref(input.dataset.pref, input.checked);
+      if (feedbackEl) {
+        feedbackEl.textContent = 'Gespeichert.';
+        setTimeout(() => { if (feedbackEl) feedbackEl.textContent = ''; }, 1500);
+      }
+    });
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 // ── Settings Modal ────────────────────────────────────────────────────────────
 function setFeedback(id, msg, isErr = false) {
@@ -1245,6 +1422,7 @@ async function init() {
   }
 
   initSettings();
+  initPushSettings();
 }
 
 init();
