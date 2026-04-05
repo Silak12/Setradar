@@ -844,7 +844,15 @@ main {
   margin-bottom: 16px;
 }
 
-.modal-ig-link {
+.modal-social-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.modal-ig-link,
+.modal-sc-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -852,10 +860,9 @@ main {
   letter-spacing: 0.08em;
   color: var(--grey-lt);
   text-decoration: none;
-  border: 1px solid var(--grey);
+  border: 1px solid #2a2a2a;
   padding: 6px 12px;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
-  margin-bottom: 24px;
 }
 
 .modal-ig-link:hover {
@@ -864,7 +871,20 @@ main {
   background: rgba(225, 48, 108, 0.06);
 }
 
-.modal-ig-link svg { flex-shrink: 0; }
+.modal-sc-link:hover {
+  color: var(--white);
+  border-color: #f50;
+  background: rgba(255, 85, 0, 0.06);
+}
+
+.modal-ig-link svg,
+.modal-sc-link svg { flex-shrink: 0; }
+
+.modal-social-placeholder {
+  opacity: 0.22;
+  cursor: default;
+  pointer-events: none;
+}
 
 /* Upcoming events in modal */
 .modal-events-label {
@@ -2201,6 +2221,8 @@ a.user-pill[href]:hover {
   transition: border-color 0.15s;
 }
 .profile-list-item:hover { border-color: #333; }
+.profile-act-link { cursor: pointer; }
+.profile-act-link:hover { border-color: #555; }
 
 .profile-list-item--event {
   flex-direction: column;
@@ -2338,6 +2360,110 @@ a.profile-list-meta:hover { color: var(--white); }
   color: rgba(140, 60, 255, 0.6);
   letter-spacing: 0.04em;
   flex-shrink: 0;
+}
+
+/* ── Rated Acts Section ──────────────────────────────────────────────────── */
+.rated-acts-section-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.rated-acts-total {
+  font-size: 9px;
+  color: var(--grey);
+  letter-spacing: 0.06em;
+}
+
+.rated-acts-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rated-acts-filters {
+  display: flex;
+  gap: 4px;
+}
+
+.rated-filter-btn {
+  background: none;
+  border: 1px solid #272727;
+  color: var(--grey-lt);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.rated-filter-btn:hover { border-color: #444; color: var(--white); }
+.rated-filter-btn.active { border-color: var(--white); color: var(--white); }
+
+.rated-sort-select {
+  background: #0d0d0d;
+  border: 1px solid #272727;
+  color: var(--grey-lt);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 3px 22px 3px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' fill='none'%3E%3Cpath d='M4 5 0 0h8z' fill='%23555'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+}
+.rated-sort-select:hover { border-color: #444; color: var(--white); }
+.rated-sort-select option { background: #111; color: var(--white); }
+
+.rated-acts-slider-wrap {
+  overflow: hidden;
+}
+
+.rated-acts-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  will-change: transform;
+}
+
+.rated-acts-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.rated-acts-arrow {
+  background: none;
+  border: 1px solid #272727;
+  color: var(--grey-lt);
+  font-family: var(--mono);
+  font-size: 13px;
+  width: 30px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.rated-acts-arrow:hover:not(:disabled) { border-color: var(--white); color: var(--white); }
+.rated-acts-arrow:disabled { opacity: 0.22; cursor: default; }
+
+.rated-acts-counter {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--grey);
+  min-width: 36px;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 /* ── Rating Modal ──────────────────────────────────────────────────────────── */
