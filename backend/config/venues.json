@@ -1,0 +1,34 @@
+[
+  {
+    "city": "Berlin",
+    "area_id": 34,
+    "clubs": [
+      {
+        "club": "Lokschuppen",
+        "venue_id": 17071
+      },
+      {
+        "club": "RSO",
+        "venue_id": 185172
+      },
+      {
+        "club": "OST",
+        "venue_id": 141987
+      },
+      {
+        "club": "Ritter Butzke",
+        "venue_id": 6950
+      }
+    ]
+  },
+  {
+    "city": "Karlsruhe",
+    "area_id": 220,
+    "clubs": [
+      {
+        "club": "Gotec",
+        "venue_id": 19602
+      }
+    ]
+  }
+]
