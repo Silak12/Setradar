@@ -1666,16 +1666,17 @@ button.venue-tag.active {
 .modal-act-favorite {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   border: 1px solid var(--grey);
   background: transparent;
   color: var(--grey-lt);
   cursor: pointer;
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 6px 10px;
+  font-family: var(--display);
+  font-size: 18px;
+  line-height: 1;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 

@@ -949,8 +949,9 @@ function syncActFavoriteButton(actId) {
   const active = favoriteActIds.has(Number(actId));
   button.classList.toggle('active', active);
   button.setAttribute('aria-pressed', String(active));
-  const label = button.querySelector('.modal-act-favorite-label');
-  if (label) label.textContent = active ? 'Saved' : 'Save';
+  button.textContent = active ? '♥' : '♡';
+  button.setAttribute('aria-label', active ? 'Artist entfolgen' : 'Artist folgen');
+  button.setAttribute('title', active ? 'Artist entfolgen' : 'Artist folgen');
 }
 function syncHypeButton(eventId) {
   const isHyped = userHypedEventIds.has(Number(eventId));
@@ -1097,7 +1098,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   if (!content) return;
   const numericActId = Number(actId), isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}"><span class="modal-act-favorite-label">${isFavorite ? 'Saved' : 'Save'}</span></button>`
+    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
@@ -1187,7 +1188,7 @@ function initArtistPopup() {
     if (fav) {
       e.preventDefault();
       const actId = Number(fav.dataset.favoriteActId);
-      await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFavoriteButton(actId) });
+      await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFollowButtons(actId) });
       return;
     }
     const rateBtn = e.target.closest('[data-action="open-rating"]');
