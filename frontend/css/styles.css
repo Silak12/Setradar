@@ -763,6 +763,17 @@ main {
   z-index: 50;
 }
 
+.profile-search-wrapper {
+  max-width: none;
+  margin: 0 0 10px;
+  padding: 10px 0 0;
+}
+
+.profile-search-wrapper .search-results {
+  left: 0;
+  right: 0;
+}
+
 .search-container {
   display: flex;
   align-items: center;

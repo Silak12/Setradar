@@ -101,6 +101,17 @@
       <!-- Acts Tab -->
       <div class="profile-tab-panel active" id="tabActs" role="tabpanel">
         <div class="profile-section-label">Gefolgte Acts <span class="rated-acts-total" id="followedActsTotal"></span></div>
+        <div class="search-wrapper profile-search-wrapper">
+          <div class="search-container">
+            <div class="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <input id="followedActsSearchInput" class="search-input" type="text" placeholder="ACTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="followedActsSearchClear" aria-label="Clear">✕</button>
+          </div>
+        </div>
         <div class="rated-acts-slider-wrap" id="followedActsSlider">
           <div class="rated-acts-page" id="followedActsPage">
             <div class="profile-list-loading">Lädt...</div>
@@ -131,6 +142,17 @@
             <option value="name-asc">Name A–Z</option>
           </select>
         </div>
+        <div class="search-wrapper profile-search-wrapper">
+          <div class="search-container">
+            <div class="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <input id="ratedActsSearchInput" class="search-input" type="text" placeholder="BEWERTETE ACTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="ratedActsSearchClear" aria-label="Clear">✕</button>
+          </div>
+        </div>
         <div class="rated-acts-slider-wrap" id="ratedActsSlider">
           <div class="rated-acts-page" id="ratedActsPage">
             <div class="profile-list-loading">Lädt...</div>
@@ -151,6 +173,17 @@
       <!-- Clubs Tab -->
       <div class="profile-tab-panel" id="tabClubs" role="tabpanel" hidden>
         <div class="profile-section-label">Gefolgte Clubs</div>
+        <div class="search-wrapper profile-search-wrapper">
+          <div class="search-container">
+            <div class="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <input id="clubsSearchInput" class="search-input" type="text" placeholder="CLUBS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="clubsSearchClear" aria-label="Clear">✕</button>
+          </div>
+        </div>
         <div class="profile-list" id="clubsList">
           <div class="profile-list-loading">Lädt...</div>
         </div>
@@ -159,6 +192,17 @@
       <!-- Events Tab -->
       <div class="profile-tab-panel" id="tabHypes" role="tabpanel" hidden>
         <div class="profile-section-label">Events</div>
+        <div class="search-wrapper profile-search-wrapper">
+          <div class="search-container">
+            <div class="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <input id="hypesSearchInput" class="search-input" type="text" placeholder="EVENTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="hypesSearchClear" aria-label="Clear">✕</button>
+          </div>
+        </div>
         <div class="profile-list" id="hypesList">
           <div class="profile-list-loading">Lädt...</div>
         </div>
