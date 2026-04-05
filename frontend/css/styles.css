@@ -270,8 +270,8 @@ body::before {
 
 /* ── Footer ──────────────────────────────────────────────────────────────── */
 .footer {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
+  max-width: 600px;
+  margin: 28px auto 0;
   background: rgba(8,8,8,0.95);
   border-top: 1px solid var(--grey);
   padding: 0 16px;
@@ -280,7 +280,6 @@ body::before {
   justify-content: space-between;
   align-items: center;
   backdrop-filter: blur(8px);
-  z-index: 100;
 }
 
 .footer-text {
@@ -741,9 +740,7 @@ body::before {
 main {
   max-width: 600px;
   margin: 0 auto;
-  padding: 0 0 calc(var(--footer-height) + 20px);
-  /* Swipe-Animation */
-  will-change: transform, opacity;
+  padding: 0;
   transform-origin: center 25%;
   backface-visibility: hidden;
 }
@@ -1920,13 +1917,13 @@ button.venue-tag.active {
 
 /* When live panel is open, push main content up so it's not hidden under panel */
 body.live-mode-active main {
-  padding-bottom: calc(var(--footer-height) + var(--live-panel-topbar) + 24px);
+  padding-bottom: calc(var(--live-panel-topbar) + 24px);
 }
 
 /* ── Live Panel (bottom sheet) ───────────────────────────────────────────── */
 .live-panel {
   position: fixed;
-  bottom: var(--footer-height);
+  bottom: 0;
   left: 0; right: 0;
   top: auto;
   max-width: 600px;
@@ -2362,7 +2359,7 @@ a.user-pill[href]:hover {
 .profile-page {
   max-width: 600px;
   margin: 0 auto;
-  padding-bottom: calc(var(--footer-height) + 24px);
+  padding-bottom: 0;
 }
 
 /* Header */
