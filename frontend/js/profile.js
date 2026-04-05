@@ -176,6 +176,7 @@ let userHypedEventIds = new Set();
 let hypeTotalsByEventId = new Map();
 let eventHighlights = new Map();
 let expandedEventIds = new Set();
+let allProfileHypedRows = [];
 let profileHypedRows = [];
 
 // Rated acts section state
@@ -187,8 +188,13 @@ const RATED_PAGE_SIZE = 10;
 
 // Followed acts section state
 let allFollowedActs = [];
+let allFollowedClubs = [];
 let followedPageIdx = 0;
 const FOLLOWED_PAGE_SIZE = 10;
+let followedActsSearchQuery = '';
+let ratedActsSearchQuery = '';
+let clubsSearchQuery = '';
+let hypesSearchQuery = '';
 
 // Artist popup state
 let favoriteActIds = new Set();
@@ -242,6 +248,87 @@ function updateNavbar(displayName) {
 // ── Render helpers ────────────────────────────────────────────────────────────
 function renderEmpty(container, message) {
   container.innerHTML = `<div class="profile-empty">${message}</div>`;
+}
+
+function normalizeSearchQuery(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function matchesSearch(query, values) {
+  if (!query) return true;
+  return values.some(value => String(value || '').toLowerCase().includes(query));
+}
+
+function formatFilteredCount(visibleCount, totalCount) {
+  if (!visibleCount && !totalCount) return '';
+  return visibleCount === totalCount ? `(${totalCount})` : `(${visibleCount}/${totalCount})`;
+}
+
+function getFilteredFollowedActs() {
+  return allFollowedActs.filter(act => matchesSearch(followedActsSearchQuery, [act.name, act.insta_name]));
+}
+
+function getFilteredClubs(clubs = allFollowedClubs) {
+  return (clubs || []).filter(club => matchesSearch(clubsSearchQuery, [club.name]));
+}
+
+function getFilteredHypedRows(rows = allProfileHypedRows) {
+  return (rows || []).filter(row => {
+    const ev = row.events || {};
+    const actNames = (ev.event_acts || []).map(entry => entry.acts?.name).filter(Boolean);
+    return matchesSearch(hypesSearchQuery, [
+      ev.event_name,
+      ev.clubs?.name,
+      ev.clubs?.cities?.name,
+      ...actNames,
+    ]);
+  });
+}
+
+function initInlineSearch(inputId, clearId, onChange) {
+  const input = document.getElementById(inputId);
+  const clear = document.getElementById(clearId);
+  if (!input || !clear) return;
+  const syncClear = () => clear.classList.toggle('visible', Boolean(input.value.trim()));
+  input.addEventListener('input', () => {
+    syncClear();
+    onChange(input.value);
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    input.value = '';
+    syncClear();
+    onChange('');
+    input.blur();
+  });
+  clear.addEventListener('click', () => {
+    input.value = '';
+    syncClear();
+    onChange('');
+    input.focus();
+  });
+  syncClear();
+}
+
+function initProfileSearches() {
+  initInlineSearch('followedActsSearchInput', 'followedActsSearchClear', value => {
+    followedActsSearchQuery = normalizeSearchQuery(value);
+    followedPageIdx = 0;
+    renderFollowedActsPage(0);
+  });
+  initInlineSearch('ratedActsSearchInput', 'ratedActsSearchClear', value => {
+    ratedActsSearchQuery = normalizeSearchQuery(value);
+    ratedPageIdx = 0;
+    renderRatedActsPage(0);
+  });
+  initInlineSearch('clubsSearchInput', 'clubsSearchClear', value => {
+    clubsSearchQuery = normalizeSearchQuery(value);
+    renderClubsList();
+  });
+  initInlineSearch('hypesSearchInput', 'hypesSearchClear', value => {
+    hypesSearchQuery = normalizeSearchQuery(value);
+    renderHypesList();
+  });
 }
 
 async function loadNavbarCities() {
@@ -385,11 +472,11 @@ function renderFollowedActsPage(animDir = 0) {
   const totalEl = document.getElementById('followedActsTotal');
   if (!page) return;
 
-  const acts = allFollowedActs;
+  const acts = getFilteredFollowedActs();
   const totalPages = Math.ceil(acts.length / FOLLOWED_PAGE_SIZE) || 1;
   followedPageIdx = Math.max(0, Math.min(followedPageIdx, totalPages - 1));
 
-  if (totalEl) totalEl.textContent = acts.length ? `(${acts.length})` : '';
+  if (totalEl) totalEl.textContent = formatFilteredCount(acts.length, allFollowedActs.length);
 
   const showNav = acts.length > FOLLOWED_PAGE_SIZE;
   nav.style.display = showNav ? 'flex' : 'none';
@@ -405,7 +492,7 @@ function renderFollowedActsPage(animDir = 0) {
 
   const doRender = () => {
     if (!acts.length) {
-      page.innerHTML = `<div class="profile-empty">Noch keine Acts gefolgt.</div>`;
+      page.innerHTML = `<div class="profile-empty">${followedActsSearchQuery ? 'Keine Acts fuer diese Suche gefunden.' : 'Noch keine Acts gefolgt.'}</div>`;
       return;
     }
     page.innerHTML = slice.map(a => `
@@ -517,7 +604,10 @@ function initFollowedActsSection(acts) {
 }
 
 function getFilteredSortedActs() {
-  let acts = allRatedActs.filter(a => ratedFilter === 0 || Math.round(a.avg) === ratedFilter);
+  let acts = allRatedActs.filter(a => (
+    (ratedFilter === 0 || Math.round(a.avg) === ratedFilter)
+    && matchesSearch(ratedActsSearchQuery, [a.name, a.insta_name])
+  ));
   if (ratedSort === 'avg-desc')   acts.sort((a, b) => b.avg - a.avg || b.count - a.count);
   else if (ratedSort === 'avg-asc')   acts.sort((a, b) => a.avg - b.avg || b.count - a.count);
   else if (ratedSort === 'count-desc') acts.sort((a, b) => b.count - a.count || b.avg - a.avg);
@@ -538,7 +628,7 @@ function renderRatedActsPage(animDir = 0) {
   const totalPages = Math.ceil(acts.length / RATED_PAGE_SIZE) || 1;
   ratedPageIdx = Math.max(0, Math.min(ratedPageIdx, totalPages - 1));
 
-  if (totalEl) totalEl.textContent = acts.length ? `(${acts.length})` : '';
+  if (totalEl) totalEl.textContent = formatFilteredCount(acts.length, allRatedActs.length);
 
   const showNav = acts.length > RATED_PAGE_SIZE;
   nav.style.display = showNav ? 'flex' : 'none';
@@ -554,7 +644,7 @@ function renderRatedActsPage(animDir = 0) {
 
   const doRender = () => {
     if (!acts.length) {
-      page.innerHTML = `<div class="profile-empty">Keine Acts mit dieser Bewertung.</div>`;
+      page.innerHTML = `<div class="profile-empty">${ratedActsSearchQuery ? 'Keine bewerteten Acts fuer diese Suche gefunden.' : 'Keine Acts mit dieser Bewertung.'}</div>`;
       return;
     }
     page.innerHTML = slice.map((a, i) => {
@@ -989,7 +1079,7 @@ function initArtistPopup() {
 
 function syncProfileStatHypes() {
   const el = document.getElementById('statHypes');
-  if (el) el.textContent = String(profileHypedRows.length);
+  if (el) el.textContent = String(allProfileHypedRows.length);
 }
 
 function syncProfileHypeButtons(eventId) {
@@ -1076,12 +1166,12 @@ async function toggleProfileHype(id) {
   const eventId = Number(id);
   if (!Number.isFinite(eventId) || !supabaseClient || !sessionUser) return false;
   const active = userHypedEventIds.has(eventId);
-  const previousRows = [...profileHypedRows];
+  const previousRows = [...allProfileHypedRows];
 
   if (active) {
     userHypedEventIds.delete(eventId);
     bumpHype(eventId, -1);
-    profileHypedRows = profileHypedRows.filter(row => Number(row.event_id) !== eventId);
+    allProfileHypedRows = allProfileHypedRows.filter(row => Number(row.event_id) !== eventId);
     expandedEventIds.delete(eventId);
   } else {
     userHypedEventIds.add(eventId);
@@ -1090,7 +1180,7 @@ async function toggleProfileHype(id) {
 
   syncProfileHypeButtons(eventId);
   syncProfileStatHypes();
-  if (active) renderHypesList(profileHypedRows);
+  if (active) renderHypesList();
 
   try {
     if (active) {
@@ -1115,9 +1205,9 @@ async function toggleProfileHype(id) {
       userHypedEventIds.delete(eventId);
       bumpHype(eventId, -1);
     }
-    profileHypedRows = previousRows;
+    allProfileHypedRows = previousRows;
     console.warn('Hype toggle error:', err.message || err);
-    renderHypesList(profileHypedRows);
+    renderHypesList();
     syncProfileStatHypes();
     return false;
   }
@@ -1244,7 +1334,7 @@ async function submitActRating() {
       if (error) throw error;
     }
     userActRatings.set(`${actId}:${eventId}`, { act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: false, was_surprise: wasSurprise });
-    renderHypesList(profileHypedRows);
+    renderHypesList();
     if (msgEl) msgEl.textContent = 'Gespeichert!';
     setTimeout(() => { closeRatingModal(); openArtistPopup(actId, actName); }, 700);
   } catch (err) {
@@ -1280,11 +1370,16 @@ function renderRecommendations(recs) {
   `).join('');
 }
 
-function renderClubsList(clubs) {
+function renderClubsList(clubs = allFollowedClubs, { updateSource = false } = {}) {
   const el = document.getElementById('clubsList');
   if (!el) return;
-  if (!clubs.length) { renderEmpty(el, 'Noch keine Clubs gefolgt.'); return; }
-  el.innerHTML = clubs.map(c => `
+  if (updateSource) allFollowedClubs = [...clubs];
+  const visibleClubs = getFilteredClubs(clubs);
+  if (!visibleClubs.length) {
+    renderEmpty(el, clubsSearchQuery ? 'Keine Clubs fuer diese Suche gefunden.' : 'Noch keine Clubs gefolgt.');
+    return;
+  }
+  el.innerHTML = visibleClubs.map(c => `
     <div class="profile-list-item profile-club-link" data-club-name="${c.name.replace(/"/g, '&quot;')}">
       <span class="profile-list-name">${c.name}</span>
       <span class="profile-event-goto">→</span>
@@ -1292,15 +1387,19 @@ function renderClubsList(clubs) {
   `).join('');
 }
 
-function renderHypesList(hyped) {
+function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } = {}) {
   const el = document.getElementById('hypesList');
   if (!el) return;
-  profileHypedRows = [...hyped];
-  if (!hyped.length) { renderEmpty(el, 'Noch keine Events als Interessiert markiert.'); return; }
+  if (updateSource) allProfileHypedRows = [...hyped];
+  profileHypedRows = getFilteredHypedRows(hyped);
+  if (!profileHypedRows.length) {
+    renderEmpty(el, hypesSearchQuery ? 'Keine Events fuer diese Suche gefunden.' : 'Noch keine Events als Interessiert markiert.');
+    return;
+  }
 
   const today = getTodayLocalDateStr();
-  const upcoming = hyped.filter(h => h.events?.event_date >= today);
-  const past     = hyped.filter(h => h.events?.event_date < today);
+  const upcoming = profileHypedRows.filter(h => h.events?.event_date >= today);
+  const past     = profileHypedRows.filter(h => h.events?.event_date < today);
   const renderCards = rows => {
     const events = rows.map(row => row.events).filter(Boolean);
     const context = getProfileEventCardContext(events);
@@ -1433,6 +1532,7 @@ async function loadProfile() {
   const hypedRows = hyeRows
     .map(h => ({ ...h, events: hyeEventDetails.find(e => Number(e.id) === Number(h.event_id)) || null }))
     .filter(h => h.events);
+  allProfileHypedRows = hypedRows;
   profileHypedRows = hypedRows;
   userHypedEventIds = new Set(hyeEventIds);
 
@@ -1530,8 +1630,8 @@ async function loadProfile() {
 
   // Render all tabs
   initFollowedActsSection(acts);
-  renderClubsList(clubs);
-  renderHypesList(hypedRows || []);
+  renderClubsList(clubs, { updateSource: true });
+  renderHypesList(hypedRows || [], { updateSource: true });
   renderBadges(badges);
   initRatedActsSection(topActs);
   renderRecommendations(recommendations);
@@ -1875,6 +1975,7 @@ async function init() {
   initArtistPopup();
   initRatingModal();
   initProfileEventCards();
+  initProfileSearches();
 
   // Init Supabase
   const hasUrl = CONFIG.SUPABASE_URL && !/^DEIN/i.test(CONFIG.SUPABASE_URL);
