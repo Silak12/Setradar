@@ -356,6 +356,52 @@ body::before {
   margin-bottom: 8px;
 }
 
+.lineup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.lineup-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.lineup-header-mid {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.lineup-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lh-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey);
+  white-space: nowrap;
+  font-family: var(--mono);
+}
+
+.lh-avg {
+  text-align: left;
+}
+
+.lh-follow {
+  text-align: center;
+}
+
 .artist-row {
   display: flex;
   align-items: center;
@@ -386,6 +432,30 @@ body::before {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.artist-row-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.artist-act-avg {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-align: left;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.artist-act-avg.rated {
+  color: var(--white);
+}
+
+.artist-act-avg.empty {
+  color: var(--grey);
 }
 
 .artist-row-right {
@@ -1244,8 +1314,7 @@ button.venue-tag.active {
   background: transparent;
   color: var(--grey-lt);
   cursor: pointer;
-  font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
   padding: 0;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -1266,20 +1335,30 @@ button.venue-tag.active {
 .act-rate-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
   background: transparent;
-  color: #444;
+  border: none;
+  color: var(--grey);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
   line-height: 1;
   padding: 0;
   transition: color 0.15s;
   flex-shrink: 0;
+  white-space: nowrap;
 }
-.act-rate-btn:hover { color: var(--red); }
+
+.act-rate-btn:hover {
+  color: var(--white);
+}
+
+.act-rate-btn--rated {
+  color: var(--white);
+}
+
+.act-rate-btn--rated:hover {
+  color: var(--red);
+}
 
 .event-actions {
   display: flex;

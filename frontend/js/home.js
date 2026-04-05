@@ -82,6 +82,24 @@ function sortActs(acts) {
   const withoutTime = acts.filter(a => !a.start_time).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   return [...withTime, ...withoutTime];
 }
+
+function getUserActAvg(actId) {
+  if (!actId || !userActRatings.size) return null;
+  const ratings = [];
+  for (const [key, r] of userActRatings.entries()) {
+    if (key.startsWith(`${actId}:`) && r.rating) ratings.push(r.rating);
+  }
+  return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+}
+
+function buildActLeftHtml(actId) {
+  if (!actId) return `<span class="artist-act-avg empty"></span>`;
+  if (!sessionUser) return `<span class="artist-act-avg empty"></span>`;
+  const avg = getUserActAvg(actId);
+  return avg !== null
+    ? `<span class="artist-act-avg rated">${avg.toFixed(1)}</span>`
+    : `<span class="artist-act-avg empty">—</span>`;
+}
 function formatDateLabel(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
   return {
@@ -462,10 +480,13 @@ function renderEventCard(ev, nextActKeys) {
     const isBestAct = numActId && hl?.bestActId === numActId;
     const isSurprise = numActId && hl?.surpriseActId === numActId;
     const actFollowBtn = actId
-      ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '−' : '+'}</button>`
+      ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '♥' : '♡'}</button>`
       : '';
+    const existingEvRating = actId && sessionUser ? userActRatings.get(`${actId}:${ev.id}`) : null;
     const actRateBtn = actId && sessionUser
-      ? `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewerten">★</button>`
+      ? existingEvRating
+        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
+        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
       : '';
     const flairs = [
       isBestAct ? '<span class="act-flair act-flair--best">Bester Act</span>' : '',
@@ -473,12 +494,15 @@ function renderEventCard(ev, nextActKeys) {
     ].filter(Boolean).join('');
     return `
       <div class="artist-row ${start ? 'has-time' : ''}${isActFavorite ? ' artist-row--followed' : ''}">
+        <span class="artist-row-left">
+          ${buildActLeftHtml(actId)}
+          ${actFollowBtn}
+        </span>
         <span class="artist-name">
           <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
           ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
         </span>
         <span class="artist-row-right">
-          ${actFollowBtn}
           ${actRateBtn}
           ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
           ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
@@ -505,7 +529,7 @@ function renderEventCard(ev, nextActKeys) {
         </div>
         <div class="event-actions-right">${buildPresenceBtn(ev.id)}</div>
       </div>
-      <div class="artist-list"><div class="artist-list-label">Artists</div>${artistRows || '<span class="time-tba">Noch keine Infos</span>'}</div>
+      <div class="artist-list">${artistRows ? '<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">Artist</span><span class="lineup-header-right"><span class="lh-label">Rate</span><span class="lh-label">Zeit</span></span></div>' : ''}${artistRows || '<span class="time-tba">Noch keine Infos</span>'}</div>
     </div>
   `;
 }
@@ -787,7 +811,7 @@ function syncActFollowButtons(actId) {
   document.querySelectorAll(`[data-action="toggle-favorite-act"][data-act-id="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
-    btn.textContent = isActive ? '−' : '+';
+    btn.textContent = isActive ? '♥' : '♡';
     btn.closest('.artist-row')?.classList.toggle('artist-row--followed', isActive);
   });
   syncActFavoriteButton(actId);
@@ -1121,6 +1145,18 @@ async function loadUserCollections(events = allEvents) {
   } catch (err) {
     console.warn('User hype fetch error:', err.message || err);
   }
+  // Bulk-load all user act ratings (for historical avg display in lineup)
+  try {
+    const { data: ratingsData } = await supabaseClient
+      .from('act_ratings')
+      .select('act_id, event_id, rating, was_best_act, was_surprise')
+      .eq('user_id', sessionUser.id);
+    (ratingsData || []).forEach(r => {
+      userActRatings.set(`${r.act_id}:${r.event_id ?? 'null'}`, r);
+    });
+  } catch (err) {
+    console.warn('Act ratings fetch error:', err.message || err);
+  }
   await loadPresence();
 }
 async function loadFromSupabase() {
@@ -1448,19 +1484,25 @@ function renderLivePanel() {
           isSurprise ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
         ].filter(Boolean).join('');
         const followBtn = actId
-          ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '−' : '+'}</button>`
+          ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '♥' : '♡'}</button>`
           : '';
+        const existingLiveRating = actId && sessionUser ? userActRatings.get(`${actId}:${ev.id}`) : null;
         const rateBtn = actId && sessionUser
-          ? `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewerten">★</button>`
+          ? existingLiveRating
+            ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingLiveRating.rating)}${'☆'.repeat(5 - existingLiveRating.rating)}</button>`
+            : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
           : '';
         return `
           <div class="live-act-row${isActFavorite ? ' artist-row--followed' : ''}${a.canceled ? ' act-canceled' : ''}">
+            <span class="artist-row-left">
+              ${buildActLeftHtml(actId)}
+              ${followBtn}
+            </span>
             <span class="artist-name">
               <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
               ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
             </span>
             <span class="artist-row-right">
-              ${followBtn}
               ${rateBtn}
               ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : `<span class="live-act-time">${t}</span>`}
             </span>
