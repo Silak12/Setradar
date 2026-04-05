@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-03-01T00:00:00Z",
+  "scraped_at": "2026-04-04T00:00:00Z",
   "cities": [
     {
       "name": "Berlin",
@@ -8,1077 +8,9 @@
           "name": "Lokschuppen",
           "events": [
             {
-              "date": "2026-03-01",
-              "name": "Seriöse Partnerrückführung mit Sylvia",
-              "time_start": "21:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "@partnerrückführung seriös",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "@partnerrückführung erfahrungen",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "@partnerrückführung erfahrung",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "@erfolgreiche partnerrückführung",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "@erfahrungen partnerrückführung",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "@erfahrungen mit partnerrückführung",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379237",
-              "ra_url": "https://ra.co/events/2379237"
-            },
-            {
-              "date": "2026-03-01",
-              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
-              "time_start": "21:00",
-              "time_end": "04:00",
-              "acts": [
-                {
-                  "name": "Nettta",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "SSXXCH",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "E.T.",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2345989",
-              "ra_url": "https://ra.co/events/2345989"
-            },
-            {
-              "date": "2026-03-04",
-              "name": "SIGNALS - 5€ Tickets - with The Jakob Sister, Ivana Parti, Limoncello, Ozzwald, Cobb Douglas",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "The Jakob Sister",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Ivana Parti",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Limoncello",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Ozzwald",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Cobb Douglas",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2351906",
-              "ra_url": "https://ra.co/events/2351906"
-            },
-            {
-              "date": "2026-03-05",
-              "name": "Chantal's House of Shame: CHANTAL'S BDAY",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "SHOW: KATY BÄHM\n\nDJs: DIVINITY",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "FRANCIS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MARC LIME",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379311",
-              "ra_url": "https://ra.co/events/2379311"
-            },
-            {
-              "date": "2026-03-06",
-              "name": "CUTE with DJ Traytex LIVE, 1luu, CARGO, DJ Henk",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "DJ Traytex",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "CARGO (DE)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "1luu",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Henk",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "happysadgirl",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "nordcorreia.mp3",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "brvder jakob",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "alemiko",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "bbymeister",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Blossmbae",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Hypermobil",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MARRE",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2357117",
-              "ra_url": "https://ra.co/events/2357117"
-            },
-            {
-              "date": "2026-03-07",
-              "name": "GOAT BALL",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "FEUCHT & FURIOUS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "AISHA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "ANDATA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Cobb Douglas",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ SUSI",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Kichta",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Limoncello",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MISSTAKEN",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Niotech",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Primitivo",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "SOHOE",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Ssica",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Stinny Stone",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "TERRA TWIINS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2313792",
-              "ra_url": "https://ra.co/events/2313792"
-            },
-            {
-              "date": "2026-03-08",
-              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
-              "time_start": "21:00",
-              "time_end": "04:00",
-              "acts": [
-                {
-                  "name": "zicke kuh",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Razzle Dazzler",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DiscoDaisy",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MIMI404",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379338",
-              "ra_url": "https://ra.co/events/2379338"
-            },
-            {
-              "date": "2026-03-11",
-              "name": "SIGNALS - 5€ Tickets - with Aexhy, DJ Henk, Stacy",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "Aexhy",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Henk",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Stacy",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2351912",
-              "ra_url": "https://ra.co/events/2351912"
-            },
-            {
-              "date": "2026-03-12",
-              "name": "Chantal's House of Shame",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "SHOW: OSHREE\n\nDJs: MENACE",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "THE SHREDDER",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "EMMANUELLE5",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379314",
-              "ra_url": "https://ra.co/events/2379314"
-            },
-            {
-              "date": "2026-03-13",
-              "name": "OBSIDIA",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "3LEEZA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ DRECKISCH",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "IOSIO",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ WASSERFALL",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Trancestrudel",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Alex Friday",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "VAENT",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "KARISH",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "FORTUNATA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2281987",
-              "ra_url": "https://ra.co/events/2281987"
-            },
-            {
-              "date": "2026-03-14",
-              "name": "WHALIEN x INFERNO with Antonym, Eskha, THISO, REKKT, MXGN, DJ HOTMAIL",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "Antonym",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Eskha",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "THISO",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MXGN",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ HOTMAIL",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "BENITO (DE)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "YØNDER",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "BRTLGR",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Louchi",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "LIIAS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2299754",
-              "ra_url": "https://ra.co/events/2299754"
-            },
-            {
-              "date": "2026-03-15",
-              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
-              "time_start": "21:00",
-              "time_end": "04:00",
-              "acts": [
-                {
-                  "name": "Lisek",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "JRG",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Møstroh",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Tasuik",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379343",
-              "ra_url": "https://ra.co/events/2379343"
-            },
-            {
-              "date": "2026-03-18",
-              "name": "SIGNALS - 5€ Tickets - with BBetriebswirt, Mathilda & Vitamin T",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "BBetriebswirt",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MATHILDA (2)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Vitamin T",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2351914",
-              "ra_url": "https://ra.co/events/2351914"
-            },
-            {
-              "date": "2026-03-19",
-              "name": "Chantal's House of Shame",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "SHOW: ANESHA\n\nDJs: KÖNIGSMANN",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "TIASZ",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "PADERKID",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379318",
-              "ra_url": "https://ra.co/events/2379318"
-            },
-            {
-              "date": "2026-03-20",
-              "name": "MILLIAMPERE x 538 w/ WILDERÍCH, Human Error, two girls one mom, 4000 Hz, Kamäleon b2b SUITSIDE",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "HUMAN ERROR",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "WILDERÍCH",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "two girls one mom",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "SUITSIDE",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Kamäleon",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "4000 Hz",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "YËDM",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "MILANCHOLIE",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "FEROTONINO",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Athina",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Delm",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "EUROPLUS",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2215888",
-              "ra_url": "https://ra.co/events/2215888"
-            },
-            {
-              "date": "2026-03-21",
-              "name": "REINKARNATION with Elon Bass b2b SUPRISING ACT, DJ Sonnenbrand, Pavelo Promillo, Jacky Ickx",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "Elon Bass",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Sonnenbrand",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Pavelo Promillo",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ Zugzwang",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Jacky Ickx",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Feta Felice",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Elias Nuit (2)",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2331937",
-              "ra_url": "https://ra.co/events/2331937"
-            },
-            {
-              "date": "2026-03-22",
-              "name": "geheimgeheimBAR pres: g_derflaschengeist b-day party feat: Stinny Stone,Cobb Douglas,YËDM,",
-              "time_start": "21:00",
-              "time_end": "05:00",
-              "acts": [
-                {
-                  "name": "søsa",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Sober At The Disco",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Lisek",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Ozzwald",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Stinny Stone",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "YËDM",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "FEROTONINO",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Cobb Douglas",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2352006",
-              "ra_url": "https://ra.co/events/2352006"
-            },
-            {
-              "date": "2026-03-25",
-              "name": "SIGNALS - 5€ Tickets - with Katta Lana & Brauer LIVE, Lenny Fuck",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "Katta Lana",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Brauer",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2351916",
-              "ra_url": "https://ra.co/events/2351916"
-            },
-            {
-              "date": "2026-03-26",
-              "name": "Chantal's House of Shame",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "SHOW: ROBYTT MOON\n\nDJs: DER EGGERT",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "YANNICK WEINECK",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "GITTI REINHARDT",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379320",
-              "ra_url": "https://ra.co/events/2379320"
-            },
-            {
-              "date": "2026-03-27",
-              "name": "OBSCUUR x Trancecore with L.zwo, LAMMER, Arman John, ELOISA, Dr. G and many more",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "L.zwo",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "LAMMER",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Arman John",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Dr. G",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "ELOISA",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Boltcore",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DETOXX",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "nordcorreia.mp3",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Amøn",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2297178",
-              "ra_url": "https://ra.co/events/2297178"
-            },
-            {
-              "date": "2026-03-28",
-              "name": "KAPITEL Berlin",
-              "time_start": "23:00",
-              "time_end": "09:00",
-              "acts": [
-                {
-                  "name": "dasstudach",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Stef de Haan",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "alemiko",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "EGE363",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "m4tsch1",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Neoma",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Nettta",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2227835",
-              "ra_url": "https://ra.co/events/2227835"
-            },
-            {
-              "date": "2026-03-29",
-              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
-              "time_start": "21:00",
-              "time_end": "04:00",
-              "acts": [
-                {
-                  "name": "Bobaz Lobster",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "EGE363",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Neoma",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Balkhausen",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2379348",
-              "ra_url": "https://ra.co/events/2379348"
-            },
-            {
-              "date": "2026-04-01",
-              "name": "SIGNALS - 5€ Tickets - with BabaBass3000, Charleen Herzig, e.leptic",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "BabaBass3000",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "Charleen Herzig",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "e.leptic",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2351922",
-              "ra_url": "https://ra.co/events/2351922"
-            },
-            {
-              "date": "2026-04-03",
-              "name": "Act Like Adults",
-              "time_start": "23:00",
-              "time_end": "06:00",
-              "acts": [
-                {
-                  "name": "Lisek",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                }
-              ],
-              "ra_id": "2332840",
-              "ra_url": "https://ra.co/events/2332840"
-            },
-            {
               "date": "2026-04-04",
               "name": "Happy Easter x Happy Hardcore Vol. 2",
-              "time_start": "18:00",
+              "time_start": "20:00",
               "time_end": "10:00",
               "acts": [
                 {
@@ -1089,6 +21,12 @@
                 },
                 {
                   "name": "Joey Riot",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "1luu",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1125,12 +63,6 @@
                 },
                 {
                   "name": "Alliezz",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "HiHat",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1249,7 +181,7 @@
             },
             {
               "date": "2026-04-05",
-              "name": "ACCELERATE w. Kø:lab feat. Anuuk & DonChoppa, Neon Graveyard, Durdenhauer, NSLZ",
+              "name": "ACCELERATE w. DAYTIME OPEN AIR: Kø:lab feat. Anuuk & DonChoppa, Neon Graveyard, Durdenhauer",
               "time_start": "16:00",
               "time_end": "08:00",
               "acts": [
@@ -1267,12 +199,6 @@
                 },
                 {
                   "name": "Athina",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "DJ HOTMAIL",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1314,6 +240,12 @@
                   "end_time": null
                 },
                 {
+                  "name": "Laren",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
                   "name": "LIIAS",
                   "insta_name": "",
                   "start_time": null,
@@ -1345,12 +277,6 @@
                 },
                 {
                   "name": "SEKTOR69",
-                  "insta_name": "",
-                  "start_time": null,
-                  "end_time": null
-                },
-                {
-                  "name": "SOHOE",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1386,6 +312,34 @@
               ],
               "ra_id": "2351924",
               "ra_url": "https://ra.co/events/2351924"
+            },
+            {
+              "date": "2026-04-09",
+              "name": "Chantal's House of Shame",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "SHOW: RICA SHAY\n\nDJS: BURGER PE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MENACE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "FEEL.MA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402620",
+              "ra_url": "https://ra.co/events/2402620"
             },
             {
               "date": "2026-04-10",
@@ -1452,6 +406,12 @@
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
+                },
+                {
+                  "name": "FORTUNATA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
                 }
               ],
               "ra_id": "2173763",
@@ -1464,7 +424,115 @@
               "time_end": "09:00",
               "acts": [
                 {
-                  "name": "TBA",
+                  "name": "Hellfish",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Krista Bourgeois",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tripped",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Thrasher",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "THE RUKKUS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ema Leo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bollmann",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Acriter",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dagobird",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Der Schaffner",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dj Cvntface",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Viscerale",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Steuerhinterziehung",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LØUS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Barebone",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Olmatri",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "FLUCC",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Osiris (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sonair",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1474,13 +542,53 @@
               "ra_url": "https://ra.co/events/2331893"
             },
             {
+              "date": "2026-04-12",
+              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
+              "time_start": "21:00",
+              "time_end": "04:00",
+              "acts": [
+                {
+                  "name": "SALCHIKILLER",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Louchi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "La Rod's",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402590",
+              "ra_url": "https://ra.co/events/2402590"
+            },
+            {
               "date": "2026-04-15",
-              "name": "SIGNALS - tba -",
+              "name": "SIGNALS - 5€ Tickets - with FJUSHA, Laurix & Tom Forelli",
               "time_start": "23:00",
               "time_end": "06:00",
               "acts": [
                 {
-                  "name": "TBA",
+                  "name": "FJUSHA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LAURIX (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tom Forelli",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1488,6 +596,34 @@
               ],
               "ra_id": "2351929",
               "ra_url": "https://ra.co/events/2351929"
+            },
+            {
+              "date": "2026-04-16",
+              "name": "Chantal's House of Shame",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "SHOW: ARMANI D'VYNE\n\nDJS: MISHA SVIRID",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "THE SHREDDER",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "JORDAN SNAPPER",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402623",
+              "ra_url": "https://ra.co/events/2402623"
             },
             {
               "date": "2026-04-17",
@@ -1578,13 +714,139 @@
               "ra_url": "https://ra.co/events/2211357"
             },
             {
+              "date": "2026-04-18",
+              "name": "LOKSCHUPPEN KLUBNACHT pres. FACEMELTER with KLOUD, DXPE, WAN, Cobb Douglas, pavvvvvvlo + more",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "KLOUD",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DXPE (ES)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "pavvvvvvlo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ozzwald",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Cobb Douglas",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "RALLYY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pixie Dust",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "WAN.1",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "EGE363",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2394823",
+              "ra_url": "https://ra.co/events/2394823"
+            },
+            {
+              "date": "2026-04-18",
+              "name": "LOKSCHUPPEN x COSMIC BEATZ pres. OPEN AIR DAY TIME RAVE",
+              "time_start": "09:30",
+              "time_end": "21:30",
+              "acts": [
+                {
+                  "name": "TBA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2385587",
+              "ra_url": "https://ra.co/events/2385587"
+            },
+            {
               "date": "2026-04-19",
-              "name": "Pool Series Live pres. F90 x Trancecore w/",
+              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
+              "time_start": "22:00",
+              "time_end": "04:00",
+              "acts": [
+                {
+                  "name": "TBA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402604",
+              "ra_url": "https://ra.co/events/2402604"
+            },
+            {
+              "date": "2026-04-19",
+              "name": "Pool Series Live pres. Trancecore w Amøn ft Fronsi , Bobaz Lobster , Jacky Ickx, Boltcore",
               "time_start": "16:00",
               "time_end": "22:00",
               "acts": [
                 {
-                  "name": "TBA",
+                  "name": "GI.O",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sonora",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jacky Ickx",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Boltcore",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DETOXX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "XIMA",
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
@@ -1626,6 +888,34 @@
               ],
               "ra_id": "2351932",
               "ra_url": "https://ra.co/events/2351932"
+            },
+            {
+              "date": "2026-04-23",
+              "name": "Chantal's House of Shame",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "SHOW: VANITY VAN GLOW\n\nDJS: DER EGGERT",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "YANNICK WEINECK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "EMMANUELLE5",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402630",
+              "ra_url": "https://ra.co/events/2402630"
             },
             {
               "date": "2026-04-24",
@@ -1714,10 +1004,4035 @@
                   "insta_name": "",
                   "start_time": null,
                   "end_time": null
+                },
+                {
+                  "name": "HANÀ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "THISO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Westfall",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jannik van der Vegt",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "EZA (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SSXXCH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
                 }
               ],
               "ra_id": "2299756",
               "ra_url": "https://ra.co/events/2299756"
+            },
+            {
+              "date": "2026-04-26",
+              "name": "wieder: BOILER ROOM SETUP + MARKETPLACE",
+              "time_start": "21:00",
+              "time_end": "04:00",
+              "acts": [
+                {
+                  "name": "tba",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402606",
+              "ra_url": "https://ra.co/events/2402606"
+            },
+            {
+              "date": "2026-04-29",
+              "name": "SIGNALS - 5€ Tickets - Synthetic Love Showcase - snoritz, DJ Pinky Promise, MC1R & KLARYOKO",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "snoritz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Pinky Promise",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MC1R",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KLARYOKO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2351935",
+              "ra_url": "https://ra.co/events/2351935"
+            },
+            {
+              "date": "2026-04-30",
+              "name": "Chantal's House of Shame",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "SHOW: RYANN\n\nDJS: FEDERICO MANISCALCO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "PADDERKID",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GITTI REINHARDT",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "COBB D.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402632",
+              "ra_url": "https://ra.co/events/2402632"
+            },
+            {
+              "date": "2026-05-01",
+              "name": "GOAT BALL MAY 1ST DAY & NIGHT OPEN AIR RAVE",
+              "time_start": "14:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Cobb Douglas",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dadrev",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dj Schnake",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "droomwolkje",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Eskha",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ozzwald",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Riana Holley",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Salzbauer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SOHOE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sonora",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Stinny Stone",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "YOVA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2332608",
+              "ra_url": "https://ra.co/events/2332608"
+            },
+            {
+              "date": "2026-05-02",
+              "name": "CUTE x TRANSGENIK w/ Laze, BabaBass3000, DJ Henk, bbymeister",
+              "time_start": "23:00",
+              "time_end": "09:30",
+              "acts": [
+                {
+                  "name": "Laze",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "BabaBass3000",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Henk",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "bbymeister",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "brvder jakob",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "alemiko",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "J Wolk",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Stacy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "4NOUK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "M4RY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2394287",
+              "ra_url": "https://ra.co/events/2394287"
+            },
+            {
+              "date": "2026-05-03",
+              "name": "FREE OPEN AIR + MARKET & EXHIBITION",
+              "time_start": "12:00",
+              "time_end": "22:00",
+              "acts": [
+                {
+                  "name": "LINE UP “OPEN AIR” \n[ ]\ttba\n[ ]\ttba\n[ ]\ttba \n[ ]\ttba\n\nLINE UP \"MARKET\" \n[ ]\ttba\n[ ]\ttba\n[ ]\ttba \n[ ]\ttba \n\nLINE UP \"EXHIBTION\" \n[ ]\ttba",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2371118",
+              "ra_url": "https://ra.co/events/2371118"
+            },
+            {
+              "date": "2026-05-06",
+              "name": "SIGNALS - 5 Tickets - with DJ Henk, SACID, bbymeister",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "DJ Henk",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SACID",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "bbymeister",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2351937",
+              "ra_url": "https://ra.co/events/2351937"
+            },
+            {
+              "date": "2026-05-08",
+              "name": "MILLIAMPERE X MÖKINA with Pawlowski, Anuuk & DON CHOPPA, NYRA, Noimage, ELOISA, Kamäleon & more",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Pawlowski",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "YËDM",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NYRA (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ELOISA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kamäleon",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shemm",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Anuuk",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DonChoppa",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Knallplatten",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Noimage",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CHVZ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "EDJM",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2215892",
+              "ra_url": "https://ra.co/events/2215892"
+            },
+            {
+              "date": "2026-05-09",
+              "name": "KAPITEL Berlin",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "EGE363",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2331908",
+              "ra_url": "https://ra.co/events/2331908"
+            },
+            {
+              "date": "2026-05-15",
+              "name": "F90",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "TBA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2265355",
+              "ra_url": "https://ra.co/events/2265355"
+            },
+            {
+              "date": "2026-05-16",
+              "name": "NEER Open-Air",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "TBA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2332853",
+              "ra_url": "https://ra.co/events/2332853"
+            },
+            {
+              "date": "2026-05-20",
+              "name": "SIGNALS - 5€ Tickets - with Meg McHugh, jojogigirl & Antonella mags schneller",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Meg McHugh",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "jojogigirl",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Antonella mags schneller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2351941",
+              "ra_url": "https://ra.co/events/2351941"
+            },
+            {
+              "date": "2026-05-22",
+              "name": "Trancecore X Act Like Adults X NeonDreams Cologne Karneval der Kulturen WEEKENDER",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "djvonnebenan",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Maschérie",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ SWISHERMAN",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kichta",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Panteros666",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DURDENHAUER",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NIA (4)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "H1pnos1s",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "QUINCE (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Benleh",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Johannes Wohlgeschaffen",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Boltcore",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Erde",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ HOTMAIL",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Sweedee",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sober At The Disco",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "BNZN",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "YËDM",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Cobb Douglas",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DXPE (ES)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Amøn",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lisek",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Plattenlieferant",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NSLZ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DETOXX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Noimage",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Morelia",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pixie Dust",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Gysi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2288789",
+              "ra_url": "https://ra.co/events/2288789"
+            },
+            {
+              "date": "2026-05-27",
+              "name": "SIGNALS - 5€ Tickets - with DJ WIFI, Krash Cora & VLUNA",
+              "time_start": "23:00",
+              "time_end": "05:00",
+              "acts": [
+                {
+                  "name": "DJ WIFI",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Krash Cora",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "VLUNA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2351942",
+              "ra_url": "https://ra.co/events/2351942"
+            },
+            {
+              "date": "2026-05-29",
+              "name": "CYCLE pres. Franky-B, Nachtigaller, Cargo, SPEEDBOYS & Trancestrudel",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Franky-B",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nachtigaller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DTEXX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SIKXTO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Filialleiter",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CARGO (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Trancestrudel",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SPEEDBOYS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MIMI404",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "TechTonic",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NØA (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nils Primas",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2331874",
+              "ra_url": "https://ra.co/events/2331874"
+            },
+            {
+              "date": "2026-05-30",
+              "name": "GOAT BALL",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "CRITICAL ERROR 404",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Tallboy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ELOISA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kamäleon",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Limoncello",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SZG",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SOHOE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2335752",
+              "ra_url": "https://ra.co/events/2335752"
+            }
+          ]
+        },
+        {
+          "name": "RSO",
+          "events": [
+            {
+              "date": "2026-04-04",
+              "name": "XTRUDE x Fucktopia w/ Sol Ortega, Olivia Mendez, Henning Baer, DJ Fuckoff",
+              "time_start": "23:59",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Chontane",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Cirkle",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Henning Baer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mathys Lenne",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Olivia Mendez",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pushmann",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "RUIZ OSC1",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sol Ortega",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ AYA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Fuckoff",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "X-Coast",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dj Warning",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390205",
+              "ra_url": "https://ra.co/events/2390205"
+            },
+            {
+              "date": "2026-04-10",
+              "name": "Open2Close: Chlär all night long",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Chlär",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390208",
+              "ra_url": "https://ra.co/events/2390208"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "XTRUDE with Regal, Hadone, Bours?, Felicie and Sansibar",
+              "time_start": "23:59",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Any Mello",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bours?",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Félicie",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GLIA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hadone",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pernox",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Regal",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Vilchezz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LUXE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sansibar",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sinéad",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390211",
+              "ra_url": "https://ra.co/events/2390211"
+            },
+            {
+              "date": "2026-04-17",
+              "name": "Self. Control. with Curses, Ivan Iacobucci b2b Stella Fiore, Galleria Europa",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Curses",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Galleria Europa",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ivan Iacobucci",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Stella Fiore",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2389423",
+              "ra_url": "https://ra.co/events/2389423"
+            },
+            {
+              "date": "2026-04-18",
+              "name": "Mala Junta",
+              "time_start": "23:59",
+              "time_end": "16:00",
+              "acts": [
+                {
+                  "name": "ADAM MUNNINGS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Blue Hour",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "D.Dan",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ TOOL",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hanaby",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hyperaktivist",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Khloe",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Peachlyfe",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Why Be",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nico Adomako",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2389204",
+              "ra_url": "https://ra.co/events/2389204"
+            },
+            {
+              "date": "2026-04-19",
+              "name": "XTRUDE w/ cora b2b HAO, softchaos and Sugar",
+              "time_start": "16:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Cora (CN)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "HAO (CN)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "softchaos",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sugar",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390231",
+              "ra_url": "https://ra.co/events/2390231"
+            },
+            {
+              "date": "2026-04-24",
+              "name": "Selected with Part Time Killer, Luxi Villar, Zorza, CAIVA B2B Frederic",
+              "time_start": "23:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "CAIVA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Frederic.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Luxi Villar",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Part Time Killer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Zorza",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2335994",
+              "ra_url": "https://ra.co/events/2335994"
+            },
+            {
+              "date": "2026-04-25",
+              "name": "XTRUDE with Grace Dahl, Identified Patient, LDS, Alpha Tracks and Angel D'lite",
+              "time_start": "23:59",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Alpha Tracks",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Andy Garvey",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Glaskin",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Grace Dahl",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Identified Patient",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "I-RO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LDS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MATRIX3K",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Angel D'lite",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Eoin DJ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Fais Le Beau",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2390212",
+              "ra_url": "https://ra.co/events/2390212"
+            },
+            {
+              "date": "2026-05-01",
+              "name": "WE ARE NOT ALONE MAY DAY WEEKENDER",
+              "time_start": "14:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Adriana Lopez",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ALI3N",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Henning Baer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lilith.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Matrixxman",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nene H",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Rebecca Delle Piane",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tigerhead",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Volvox",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Xiorro",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bjarki",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Europarking",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jeans (NL)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "VEL (MA)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Woody92",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "AADJA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bailey Ibbs",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Carmen Electro",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Deniro",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ellen Allien",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SALOME",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Helena Hauff",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mari Sakurai",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Miro Von",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "VINVAR",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shaleen",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Spekki Webu",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tom Peters",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ÜBERKIKZ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2392708",
+              "ra_url": "https://ra.co/events/2392708"
+            },
+            {
+              "date": "2026-05-06",
+              "name": "Modeselektor",
+              "time_start": "19:00",
+              "time_end": "23:30",
+              "acts": [
+                {
+                  "name": "Modeselektor",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2324180",
+              "ra_url": "https://ra.co/events/2324180"
+            },
+            {
+              "date": "2026-05-07",
+              "name": "Modeselektor",
+              "time_start": "19:00",
+              "time_end": "23:30",
+              "acts": [
+                {
+                  "name": "Modeselektor",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2324183",
+              "ra_url": "https://ra.co/events/2324183"
+            },
+            {
+              "date": "2026-05-14",
+              "name": "Home Again Berlin - Day & Night - Open Air & Indoor",
+              "time_start": "14:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Alarico",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Andra (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Blame Anthony",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Butterhands",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sandilé",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Duncan Thomas",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "HAMY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "hawi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KIM SWIM",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Leon Vynehall",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LSDXOXO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Narciss",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Thabo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Thalo Santana",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2405926",
+              "ra_url": "https://ra.co/events/2405926"
+            },
+            {
+              "date": "2026-05-16",
+              "name": "Hyper Dreams X Future Trance Weekender",
+              "time_start": "23:00",
+              "time_end": "10:00",
+              "acts": [
+                {
+                  "name": "Anuuk",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bae Blade",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CAIVA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ GUESTLIST",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DonChoppa",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lenny Fuck",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LUV ATTACK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Madman",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MAGDALENA MAY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Melis",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mija",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Noirnor",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Promis3",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Raphael Dincsoy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SHOKI287",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tamara Wirth",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2408118",
+              "ra_url": "https://ra.co/events/2408118"
+            },
+            {
+              "date": "2026-05-29",
+              "name": "Tears of Joy - 1 Year Anniversary",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Beau Didier",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Echoes Of October",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "K. Luisa",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Marcus L",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shanda",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2392715",
+              "ra_url": "https://ra.co/events/2392715"
+            }
+          ]
+        },
+        {
+          "name": "OST",
+          "events": [
+            {
+              "date": "2026-04-04",
+              "name": "EUPHORIK x WIR SIND DIE NACHT with O.B.I., Noise Not War, Death of Mars & Morelia",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "O.B.I. (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Noise Not War",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Death of Mars",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DTEXX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SIKXTO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Filialleiter",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Morelia",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Boltcore",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "FLEXTASY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2374039",
+              "ra_url": "https://ra.co/events/2374039"
+            },
+            {
+              "date": "2026-04-05",
+              "name": "OST Easter Special w. Canelle Doublekick, DETOXX, DJ Sweedee, YOVA",
+              "time_start": "23:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Canelle Doublekick",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DETOXX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Sweedee",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "YOVA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2405090",
+              "ra_url": "https://ra.co/events/2405090"
+            },
+            {
+              "date": "2026-04-09",
+              "name": "Savory - Wan All Night Long",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "WAN.1",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2398252",
+              "ra_url": "https://ra.co/events/2398252"
+            },
+            {
+              "date": "2026-04-10",
+              "name": "ODD w. Chrissyjeey, DJ Dreckisch, DJ Achim Feuervogel",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "ANDATA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Achim Feuervogel",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ DRECKISCH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lisek",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "two girls one mom",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2371930",
+              "ra_url": "https://ra.co/events/2371930"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "Slave To The Rave 41 - Badger, Carmen Electro, Julian Muller, Krl Mx, Teki Latex",
+              "time_start": "23:00",
+              "time_end": "11:00",
+              "acts": [
+                {
+                  "name": "ALIS.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Carmen Electro",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Julian Muller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Krl Mx",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Teki Latex",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "3Hertz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Badger (UK)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Garage Girls",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Scheibenwischer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2301231",
+              "ra_url": "https://ra.co/events/2301231"
+            },
+            {
+              "date": "2026-04-16",
+              "name": "Savory - Techno Every Thursday",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Amo (IT)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bruno Brero",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pixie Dust",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "WAN.1",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2398255",
+              "ra_url": "https://ra.co/events/2398255"
+            },
+            {
+              "date": "2026-04-17",
+              "name": "M.A.R.A w. Caniche b2b Ketarina, DJ Sun, SAIKA",
+              "time_start": "23:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Caniche",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ketarina",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ SUN (CH/DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LEVS66",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SAIKA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "STAANA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sustention",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2371927",
+              "ra_url": "https://ra.co/events/2371927"
+            },
+            {
+              "date": "2026-04-18",
+              "name": "Devoted pres. SHIFTED w. Kø:lab feat. Anuuk. DonChoppa, zwilling., IOSIO, EDNA, Limoncello",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Athina",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "EDNA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "IOSIO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kø:lab",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Anuuk",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DonChoppa",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Limoncello",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SEKTOR69",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ZÖ (1)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "zwilling.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2274840",
+              "ra_url": "https://ra.co/events/2274840"
+            },
+            {
+              "date": "2026-04-23",
+              "name": "Savory pres. MAUSIO",
+              "time_start": "23:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "Levt",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MAUSIO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "miku",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "WAN.1",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2398261",
+              "ra_url": "https://ra.co/events/2398261"
+            },
+            {
+              "date": "2026-04-24",
+              "name": "ONYX with Ueberrest",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Ueberrest",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "JOKESONYOU",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DICE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GEORGE aka DR.RADSPORT",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Sonnenbrand",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ WASSERFALL",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KARISH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kamäleon",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "multivitaminmarie",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NIA (4)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2227687",
+              "ra_url": "https://ra.co/events/2227687"
+            },
+            {
+              "date": "2026-04-25",
+              "name": "Sound of Hell with Niki Istrefi, Indecorum, cassandrah, Akira & many more",
+              "time_start": "23:00",
+              "time_end": "10:00",
+              "acts": [
+                {
+                  "name": "Bildgewalt",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "BOCHKA5000",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "cassandrah",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Electra (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Indecorum",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Khyodo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Niki Istrefi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "oriole (PL)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SAS (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2375943",
+              "ra_url": "https://ra.co/events/2375943"
+            },
+            {
+              "date": "2026-04-30",
+              "name": "Savory - Special Edition",
+              "time_start": "23:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "TBA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2394295",
+              "ra_url": "https://ra.co/events/2394295"
+            },
+            {
+              "date": "2026-05-01",
+              "name": "Sound Metaphors ♡ FREE PARTY ♡ Open Air + Indoor",
+              "time_start": "13:00",
+              "time_end": "11:00",
+              "acts": [
+                {
+                  "name": "ābnamā",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Aidan",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Akua",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Alex Kassian",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Alexander Arpeggio",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Alicia Carrera",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Anacalypto",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Audrey Danza",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Camilo Miranda",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jaime Fiorito",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Barry Sunset",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bell Towers",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Benedikt Frey",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Blu:sh",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Blue Hour",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "ilbroccolovolante",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "C3D-E",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Courtesy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Courtney Bailey",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Cromby",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Curses",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dar Molloy (2)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "David Diamond",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "David Fogarty",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Denzel",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Desirée Falessi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Diamin",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DINA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Aficionado",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ Fart in the Club",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DJ TEETH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dominik André",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "E-Talking",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Egregore",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Eleonora K",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Eline (BE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Fantastic Man",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "FFAN",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Field Notes DJs",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Frinda di Lanco",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Geneva_",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Giulia Gutterer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hendrik Stein",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hitomi (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Holten",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Hunee",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "João Comazzi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Juan Ramos",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jugin",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Karine",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Katia Curie",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kidcat",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kinzua",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Klara",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "FRANKA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Llupe",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LOLSNAKE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Luca Averna",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Luca Elsi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lucky Lube",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Martin Gilleshøj",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Matrixxman",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MFX (1)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Moretz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mr Sian",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MVHY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Natalie Robinson",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nive",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nizar Sarakbi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Okouru",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pato",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "PLO Man",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Richii",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Roberta Deflorio",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Rotciv",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Running Hot",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Samara",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shakolin",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Snow (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sound Metaphors Djs",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Soundstream",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tania Just",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Telephones",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Temple Rat",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tiago Oudman",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tomoki Tamura",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tornado Wallace",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Vaahzer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Vera",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Victor (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Vlada",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Yuzo Iwata",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Zeynep",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Zozo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2365804",
+              "ra_url": "https://ra.co/events/2365804"
+            },
+            {
+              "date": "2026-05-02",
+              "name": "EUPHORIK pres. Luciid, In Verruf, Cargo, Amøn & Fronsi",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Luciid",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "In Verruf",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DTEXX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SIKXTO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Thorn (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "TEZMA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Filialleiter",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Amøn",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Fronsi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CARGO (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LSG",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2382677",
+              "ra_url": "https://ra.co/events/2382677"
+            },
+            {
+              "date": "2026-05-08",
+              "name": "FACE 2 FACE: BERLIN",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Macon",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "KLING&KLANG",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Katy Rough",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "A.N.I.",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SaltySis",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Trancestrudel",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "WILDERÍCH",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Backyard DJ",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2391486",
+              "ra_url": "https://ra.co/events/2391486"
+            },
+            {
+              "date": "2026-05-09",
+              "name": "MAYHEM x OST w. WNDRLST, Raxeller, Jan Vercauteren, In Furcht",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "In Furcht",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jan Vercauteren",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Katy Rough",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MARRE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Raxeller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "WNDRLST",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Alex Friday",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shake Daddy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Athina",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "GEN97",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2294294",
+              "ra_url": "https://ra.co/events/2294294"
+            },
+            {
+              "date": "2026-05-15",
+              "name": "Sektor B - Schranz Night",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Golpe",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Rudosa",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tham",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2373320",
+              "ra_url": "https://ra.co/events/2373320"
+            },
+            {
+              "date": "2026-05-16",
+              "name": "Conejo Loco Berlin",
+              "time_start": "14:00",
+              "time_end": "06:00",
+              "acts": [
+                {
+                  "name": "TBA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2407478",
+              "ra_url": "https://ra.co/events/2407478"
+            },
+            {
+              "date": "2026-05-29",
+              "name": "ELEKTRA x OST w. Charlie Sparks, CLTX, Niotech",
+              "time_start": "23:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Charlie Sparks",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CLTX",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Katy Rough",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Niotech",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "TheMuffinMan",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2395978",
+              "ra_url": "https://ra.co/events/2395978"
+            },
+            {
+              "date": "2026-05-30",
+              "name": "Devoted w. BYØRN, Kø:lab, Cara Elizabeth, Part Time Killer",
+              "time_start": "23:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "BYØRN",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Cara Elizabeth",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kø:lab",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Part Time Killer",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2356109",
+              "ra_url": "https://ra.co/events/2356109"
+            }
+          ]
+        },
+        {
+          "name": "Ritter Butzke",
+          "events": [
+            {
+              "date": "2026-04-04",
+              "name": "Markus Kavka & Babette Conrady",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Markus Kavka",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "CENKK",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jil Tanner",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2395163",
+              "ra_url": "https://ra.co/events/2395163"
+            },
+            {
+              "date": "2026-04-10",
+              "name": "Jannowitz Records Showcase",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "BOHO",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "I Promised Mom",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Miss Unleashed",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NDNA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Stefan Muchte",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "The Reason Y",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2378605",
+              "ra_url": "https://ra.co/events/2378605"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "Just Emma",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Just Emma",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "AVANT",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2402472",
+              "ra_url": "https://ra.co/events/2402472"
+            },
+            {
+              "date": "2026-04-11",
+              "name": "Weltauswahl by Extrawelt",
+              "time_start": "22:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Ada",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Extrawelt",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Robag Wruhme",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2222408",
+              "ra_url": "https://ra.co/events/2222408"
+            },
+            {
+              "date": "2026-04-17",
+              "name": "15 Years of Perspectives with Colyn, Darin Epsilon, Min the Universe",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Colyn",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Darin Epsilon",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Min the Universe",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SKIY",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Beyond Form",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2391467",
+              "ra_url": "https://ra.co/events/2391467"
+            },
+            {
+              "date": "2026-04-18",
+              "name": "Elderbrook, Moonbootica, Mark Reeve, Katzengold",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Elderbrook",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Moonbootica",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Katzengold",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mark Reeve",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Gunnar Stiller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bianka Banks",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Wankelmut",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Calima",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2368373",
+              "ra_url": "https://ra.co/events/2368373"
+            },
+            {
+              "date": "2026-04-24",
+              "name": "Indiskret Berlin",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "JAMIIE",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nik Andersson",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Concentio",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Confred",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DOS",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Marius Holm",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pajüh",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Rabauke",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2404316",
+              "ra_url": "https://ra.co/events/2404316"
+            },
+            {
+              "date": "2026-04-25",
+              "name": "Dominik Eulberg, Andrea Botez, Bebetta, biskuwi, Sandar Sánchez and many more",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Dominik Eulberg",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bebetta",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "biskuwi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sandar Sánchez",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dario Milkovic",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Claudius (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2362058",
+              "ra_url": "https://ra.co/events/2362058"
+            },
+            {
+              "date": "2026-04-30",
+              "name": "44 (K)nights",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Daniel Neuland",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dydaa Forne",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Martin Ka",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Naicet",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pauli Pocket",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "White Zoo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2406979",
+              "ra_url": "https://ra.co/events/2406979"
+            },
+            {
+              "date": "2026-05-01",
+              "name": "FREE entry without ticket ALL DAY - ALL NIGHT Open Air with Format:B",
+              "time_start": "13:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Format B",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Teenage Mutants",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "LOVRA",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Prismode",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Solvane",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Tocadisco",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Phonique",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Fairplay",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "NÚRIA (DE)",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Maurice Mino",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sitze",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mehr is Mehr",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Gunnar Stiller",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sam Madi",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Mattia Saviolo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "DiVa Collective",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Pazkal",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Melli Meiner",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2344723",
+              "ra_url": "https://ra.co/events/2344723"
+            },
+            {
+              "date": "2026-05-02",
+              "name": "Airod",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Airod",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SEKTOR69",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2406896",
+              "ra_url": "https://ra.co/events/2406896"
+            },
+            {
+              "date": "2026-05-02",
+              "name": "Bonnie Strange, Airod, SEKTOR69",
+              "time_start": "22:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Airod",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "SEKTOR69",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2375226",
+              "ra_url": "https://ra.co/events/2375226"
+            },
+            {
+              "date": "2026-05-08",
+              "name": "TURBO pres. Weska",
+              "time_start": "22:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Weska",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Konfusia",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sabura",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Rad.Lez",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Gizmo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "O/H/M",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Shabiki",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lazykid",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Sin:port",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2379923",
+              "ra_url": "https://ra.co/events/2379923"
+            },
+            {
+              "date": "2026-05-09",
+              "name": "Oliver Huntemann",
+              "time_start": "22:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Oliver Huntemann",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2377257",
+              "ra_url": "https://ra.co/events/2377257"
+            },
+            {
+              "date": "2026-05-09",
+              "name": "Solee (Open Air) - free entry until 7pm",
+              "time_start": "18:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Solee",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2339683",
+              "ra_url": "https://ra.co/events/2339683"
+            },
+            {
+              "date": "2026-05-15",
+              "name": "Steyoyoke 15th Anniversary",
+              "time_start": "22:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Soul Button",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nick Devon",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MPathy",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Seismal D",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "2Qimic",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Barbur",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2368231",
+              "ra_url": "https://ra.co/events/2368231"
+            },
+            {
+              "date": "2026-05-16",
+              "name": "Joyhauser",
+              "time_start": "22:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Joyhauser",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Lampé",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Ele Luz",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "MILLA LOU",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Christopher Kono",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2401503",
+              "ra_url": "https://ra.co/events/2401503"
+            },
+            {
+              "date": "2026-05-23",
+              "name": "Anjunadeep Berlin (Daytime Open Air & Club Festival)",
+              "time_start": "15:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Because of Art",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Calcou",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Dosem",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Jody Wisternoff",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Kloyd",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nicky Elisabeth",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Nordfold",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Romain Garcia",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2314764",
+              "ra_url": "https://ra.co/events/2314764"
+            },
+            {
+              "date": "2026-05-24",
+              "name": "Karneval Open Air & Party with Super Flu - FREE without ticket ALL DAY - ALL NIGHT",
+              "time_start": "14:00",
+              "time_end": "08:00",
+              "acts": [
+                {
+                  "name": "Super Flu",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2370239",
+              "ra_url": "https://ra.co/events/2370239"
+            },
+            {
+              "date": "2026-05-30",
+              "name": "Open Air & indoor with Pretty Pink, Bebetta, Vlad Yaki and many more - free entry until 7pm",
+              "time_start": "18:00",
+              "time_end": "07:00",
+              "acts": [
+                {
+                  "name": "Pretty Pink",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bebetta",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Vlad Yaki",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Bonnie Spacey",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2400364",
+              "ra_url": "https://ra.co/events/2400364"
+            },
+            {
+              "date": "2026-05-30",
+              "name": "Mha Iri",
+              "time_start": "22:00",
+              "time_end": "09:00",
+              "acts": [
+                {
+                  "name": "Mha iri",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "HNGT",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                },
+                {
+                  "name": "Gizmo",
+                  "insta_name": "",
+                  "start_time": null,
+                  "end_time": null
+                }
+              ],
+              "ra_id": "2370867",
+              "ra_url": "https://ra.co/events/2370867"
             }
           ]
         }

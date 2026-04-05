@@ -12,6 +12,7 @@ Usage:
 
 import argparse
 import json
+import sys
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -30,6 +31,24 @@ VENUES = [
         "venue_id": 17071,
         "area_id":  34,
     },
+    {
+        "city":     "Berlin",
+        "club":     "RSO",
+        "venue_id": 185172,
+        "area_id":  34,
+    },
+    {
+        "city":     "Berlin",
+        "club":     "OST",
+        "venue_id": 141987,
+        "area_id":  34,
+    },
+    {
+        "city":     "Berlin",
+        "club":     "Ritter Butzke",
+        "venue_id": 6950,
+        "area_id":  34,
+    }
     # { "city": "Hamburg", "club": "Übel & Gefährlich", "venue_id": 12345, "area_id": 14 },
 ]
 
@@ -104,6 +123,24 @@ HEADERS = {
     ),
     "ra-content-language": "de",
 }
+
+
+def configure_console_output() -> None:
+    """
+    Force UTF-8 output on Python 3.7+ so Windows cp1252 consoles do not crash on
+    symbols used in status messages. Fall back silently if reconfigure is unavailable.
+    """
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if stream is None:
+            continue
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except ValueError:
+                # Some wrapped streams reject reconfigure after initialization.
+                pass
 
 
 def gql(query: str, variables: dict, retries: int = 3) -> dict:
@@ -256,6 +293,7 @@ def build_lineup_json(venues_cfg: list[dict], scraped: dict[int, list[dict]]) ->
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
+    configure_console_output()
     parser = argparse.ArgumentParser(description="RA → lineup_seed JSON")
     parser.add_argument("--weeks",   type=int,  default=DEFAULT_WEEKS,
                         help=f"Wie viele Wochen voraus (default: {DEFAULT_WEEKS})")
