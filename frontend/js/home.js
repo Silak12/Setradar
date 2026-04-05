@@ -308,7 +308,7 @@ async function onAuthSubmit(event) {
   setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Account wird erstellt...' : 'Login laeuft...');
   try {
     if (authMode === AUTH_MODES.SIGNUP) {
-      const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { name: displayName || email } } });
+      const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { name: displayName || email }, emailRedirectTo: 'https://silak12.github.io/Setradar/frontend/' } });
       if (error) throw error;
       if (data.session?.user) {
         sessionUser = data.session.user;
