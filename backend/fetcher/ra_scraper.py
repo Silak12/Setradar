@@ -55,11 +55,14 @@ query GET_VENUE_EVENTS($id: ID!, $limit: Int) {
       date
       startTime
       endTime
+      interestedCount
       lineup
       artists {
         id
         name
         urlSafeName
+        instagram
+        soundcloud
       }
     }
   }
@@ -74,11 +77,14 @@ query GET_EVENT_DETAIL($id: ID!) {
     date
     startTime
     endTime
+    interestedCount
     lineup
     artists {
       id
       name
       urlSafeName
+      instagram
+      soundcloud
     }
     venue {
       id

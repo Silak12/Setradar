@@ -45,6 +45,14 @@ def _api_error(prefix: str, exc: APIError) -> RuntimeError:
     return RuntimeError(f"{prefix} (code: {code}): {message}")
 
 
+def _has_column(supabase: Client, table: str, column: str) -> bool:
+    try:
+        supabase.table(table).select(column).limit(1).execute()
+        return True
+    except APIError:
+        return False
+
+
 def _ensure_required_tables(supabase: Client) -> None:
     required_tables = ["cities", "clubs", "events", "acts", "event_acts"]
     missing_tables: list[str] = []
@@ -138,6 +146,8 @@ def _get_or_create_event_id(
     event_name: str,
     time_start: str | None,
     time_end: str | None,
+    interested_count: int | None,
+    supports_interested_count: bool,
 ) -> int:
     try:
         found = (
@@ -156,6 +166,8 @@ def _get_or_create_event_id(
                 update_payload["time_start"] = time_start
             if time_end is not None:
                 update_payload["time_end"] = time_end
+            if supports_interested_count and interested_count is not None:
+                update_payload["interested_count"] = interested_count
             if update_payload:
                 (
                     supabase.table("events")
@@ -165,17 +177,18 @@ def _get_or_create_event_id(
                 )
             return event_id
 
+        create_payload: dict[str, Any] = {
+            "club_id": club_id,
+            "event_date": event_date,
+            "event_name": event_name,
+            "time_start": time_start,
+            "time_end": time_end,
+        }
+        if supports_interested_count:
+            create_payload["interested_count"] = interested_count
         created = (
             supabase.table("events")
-            .insert(
-                {
-                    "club_id": club_id,
-                    "event_date": event_date,
-                    "event_name": event_name,
-                    "time_start": time_start,
-                    "time_end": time_end,
-                }
-            )
+            .insert(create_payload)
             .execute()
         )
         return int(created.data[0]["id"])
@@ -188,6 +201,8 @@ def _get_or_create_act_id(
     supabase: Client,
     act_name: str,
     insta_name: str | None = None,
+    soundcloud_url: str | None = None,
+    supports_soundcloud_url: bool = False,
 ) -> int:
     try:
         found = (
@@ -200,32 +215,51 @@ def _get_or_create_act_id(
         if found.data:
             act_id = int(found.data[0]["id"])
             existing_insta = found.data[0].get("insta_name")
+            update_payload: dict[str, Any] = {}
             if insta_name is not None and insta_name != existing_insta:
+                update_payload["insta_name"] = insta_name
+            if supports_soundcloud_url and soundcloud_url is not None:
+                update_payload["soundcloud_url"] = soundcloud_url
+
+            if update_payload:
                 (
                     supabase.table("acts")
-                    .update({"insta_name": insta_name})
+                    .update(update_payload)
                     .eq("id", act_id)
                     .execute()
                 )
                 refreshed = (
                     supabase.table("acts")
-                    .select("insta_name")
+                    .select("insta_name,soundcloud_url")
                     .eq("id", act_id)
                     .limit(1)
                     .execute()
                 )
                 current_insta = refreshed.data[0].get("insta_name") if refreshed.data else None
-                if current_insta != insta_name:
+                if insta_name is not None and current_insta != insta_name:
                     raise RuntimeError(
                         "Act update blocked (likely RLS policy): "
                         f"name='{act_name}', expected insta_name='{insta_name}', "
                         f"current insta_name='{current_insta}'."
                     )
+                if supports_soundcloud_url and soundcloud_url is not None:
+                    current_soundcloud = (
+                        refreshed.data[0].get("soundcloud_url") if refreshed.data else None
+                    )
+                    if current_soundcloud != soundcloud_url:
+                        raise RuntimeError(
+                            "Act update blocked (likely RLS policy): "
+                            f"name='{act_name}', expected soundcloud_url='{soundcloud_url}', "
+                            f"current soundcloud_url='{current_soundcloud}'."
+                        )
             return act_id
 
+        create_payload: dict[str, Any] = {"name": act_name, "insta_name": insta_name}
+        if supports_soundcloud_url:
+            create_payload["soundcloud_url"] = soundcloud_url
         created = (
             supabase.table("acts")
-            .insert({"name": act_name, "insta_name": insta_name})
+            .insert(create_payload)
             .execute()
         )
         return int(created.data[0]["id"])
@@ -233,22 +267,31 @@ def _get_or_create_act_id(
         raise _api_error(f"Act upsert failed for '{act_name}'", exc) from exc
 
 
-def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None, str | None]:
+def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None, str | None, str | None]:
     if isinstance(raw_act, str):
-        return raw_act.strip(), None, None, None
+        return raw_act.strip(), None, None, None, None
     if isinstance(raw_act, dict):
         name = str(raw_act.get("name", "")).strip()
         start_time = raw_act.get("start_time")
         end_time = raw_act.get("end_time")
         insta_name = raw_act.get("insta_name")
+        soundcloud_url = raw_act.get("soundcloud_url")
         if start_time is not None:
             start_time = str(start_time).strip()
         if end_time is not None:
             end_time = str(end_time).strip()
         if insta_name is not None:
             insta_name = str(insta_name).strip()
-        return name, start_time or None, end_time or None, insta_name or None
-    return "", None, None, None
+        if soundcloud_url is not None:
+            soundcloud_url = str(soundcloud_url).strip()
+        return (
+            name,
+            start_time or None,
+            end_time or None,
+            insta_name or None,
+            soundcloud_url or None,
+        )
+    return "", None, None, None, None
 
 
 def _upsert_event_act(
@@ -296,6 +339,8 @@ def _upsert_event_act(
 
 
 def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = True) -> None:
+    supports_interested_count = _has_column(supabase, "events", "interested_count")
+    supports_soundcloud_url = _has_column(supabase, "acts", "soundcloud_url")
     counters = {
         "cities": 0,
         "clubs": 0,
@@ -331,6 +376,12 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                 )
                 event_time_start = event_time_start or None
                 event_time_end = event_time_end or None
+                interested_count = event.get("interested_count")
+                if interested_count is not None:
+                    try:
+                        interested_count = int(interested_count)
+                    except (TypeError, ValueError):
+                        interested_count = None
                 if not event_date:
                     continue
 
@@ -341,19 +392,27 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                     event_name,
                     event_time_start,
                     event_time_end,
+                    interested_count,
+                    supports_interested_count,
                 )
                 counters["events"] += 1
 
                 for idx, raw_act in enumerate(event.get("acts", []), start=1):
-                    act_name, act_start_time, act_end_time, act_insta_name = _parse_act(
-                        raw_act
-                    )
+                    (
+                        act_name,
+                        act_start_time,
+                        act_end_time,
+                        act_insta_name,
+                        act_soundcloud_url,
+                    ) = _parse_act(raw_act)
                     if not act_name:
                         continue
                     act_id = _get_or_create_act_id(
                         supabase,
                         act_name,
                         insta_name=act_insta_name,
+                        soundcloud_url=act_soundcloud_url,
+                        supports_soundcloud_url=supports_soundcloud_url,
                     )
                     counters["acts"] += 1
 
