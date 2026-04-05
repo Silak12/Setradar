@@ -11,7 +11,29 @@ const DEMO_HYPE_TOTALS = {
 };
 function isPlaceholderValue(v) { return !v || /^DEIN(?:E)?_SUPABASE_/i.test(v); }
 function isLegacyJwtKey(v) { return typeof v === 'string' && v.startsWith('eyJ') && v.split('.').length === 3; }
-function getDateStr(daysOffset = 0) { const d = new Date(); d.setDate(d.getDate() + daysOffset); return d.toISOString().split('T')[0]; }
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+function parseDateStr(dateStr) {
+  if (!dateStr) return null;
+  const [year, month, day] = String(dateStr).split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+function getDateStr(daysOffset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  return formatLocalDateKey(d);
+}
+function shiftDateStr(dateStr, daysOffset = 0) {
+  const d = parseDateStr(dateStr);
+  if (!d) return null;
+  d.setDate(d.getDate() + daysOffset);
+  return formatLocalDateKey(d);
+}
 const DEMO_EVENTS = [
   {
     id: 1,
@@ -115,17 +137,75 @@ function formatDateLabel(dateStr) {
   };
 }
 function formatTabLabel(dateStr) {
-  const today = getDateStr(0), tomorrow = getDateStr(1), d = new Date(`${dateStr}T00:00:00`), w = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const today = getDateStr(0), yesterday = getDateStr(-1), twoDaysAgo = getDateStr(-2), tomorrow = getDateStr(1), d = new Date(`${dateStr}T00:00:00`), w = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
   if (dateStr === today) return 'Heute';
+  if (dateStr === yesterday) return 'Gestern';
+  if (dateStr === twoDaysAgo) return 'Vorgestern';
   if (dateStr === tomorrow) return 'Morgen';
   return `${w[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.`;
 }
 function getEventCity(ev) {
   return normalizeCityName(ev?.clubs?.cities?.name);
 }
+function getEventTimeDate(dateStr, timeStr) {
+  const base = parseDateStr(dateStr);
+  if (!base || !timeStr) return null;
+  const [hours, minutes] = timeStr.slice(0, 5).split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  base.setHours(hours, minutes, 0, 0);
+  if (hours < 14) base.setDate(base.getDate() + 1);
+  return base;
+}
+function getEventStartDateTime(ev) {
+  if (!ev?.event_date) return null;
+  if (ev.time_start) return getEventTimeDate(ev.event_date, fmtTime(ev.time_start));
+  return parseDateStr(ev.event_date);
+}
+function getEventEndDateTime(ev) {
+  if (!ev?.event_date) return null;
+  if (ev.time_end) return getEventTimeDate(ev.event_date, fmtTime(ev.time_end));
+  return getEventStartDateTime(ev);
+}
+function isEventRunningNow(ev, now = new Date()) {
+  const start = getEventStartDateTime(ev);
+  const end = getEventEndDateTime(ev);
+  if (!start || !end) return false;
+  return now >= start && now <= end;
+}
+function isUpcomingOrRunningEvent(ev, now = new Date()) {
+  const end = getEventEndDateTime(ev);
+  if (end) return end >= now;
+  return !!ev?.event_date && ev.event_date >= getDateStr(0);
+}
+function getBucketDatesForEvent(ev, now = new Date()) {
+  const dates = [];
+  if (ev?.event_date) dates.push(ev.event_date);
+  const today = formatLocalDateKey(now);
+  if (isEventRunningNow(ev, now) && today !== ev?.event_date && !dates.includes(today)) {
+    dates.push(today);
+  }
+  return dates;
+}
+function getEventsForDateBucket(dateStr, events = allEvents, now = new Date()) {
+  return (events || []).filter(ev => getBucketDatesForEvent(ev, now).includes(dateStr));
+}
+function getDefaultDateIndex(grouped) {
+  if (!grouped.length) return 0;
+  const today = getDateStr(0);
+  const todayIndex = grouped.findIndex(([dateStr]) => dateStr === today);
+  if (todayIndex !== -1) return todayIndex;
+  const nextIndex = grouped.findIndex(([dateStr]) => dateStr >= today);
+  return nextIndex !== -1 ? nextIndex : Math.max(0, grouped.length - 1);
+}
 function groupByDate(events) {
   const map = {};
-  events.forEach(ev => { if (!map[ev.event_date]) map[ev.event_date] = []; map[ev.event_date].push(ev); });
+  const now = new Date();
+  events.forEach(ev => {
+    getBucketDatesForEvent(ev, now).forEach(dateStr => {
+      if (!map[dateStr]) map[dateStr] = [];
+      if (!map[dateStr].some(item => Number(item.id) === Number(ev.id))) map[dateStr].push(ev);
+    });
+  });
   return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
 }
 function zeroHype() { return { seed_hype: 0, real_hype: 0, total_hype: 0 }; }
@@ -204,7 +284,7 @@ function updateStatusBar() {
   const bar = document.getElementById('statusBar');
   if (!bar) return;
   const visibleEvents = getVisibleEvents();
-  const count = visibleEvents.filter(ev => ev.event_date === getDateStr(0)).length;
+  const count = getEventsForDateBucket(getDateStr(0), visibleEvents).length;
   const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   bar.innerHTML = `
     <div class="status-bar-left"><span class="status-live-dot"></span><span>${selectedCity} - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
@@ -222,20 +302,17 @@ function syncBodyLock() {
   document.body.style.overflow = artistOpen || authOpen || ratingOpen ? 'hidden' : '';
 }
 function getMinutesUntil(startTimeStr, eventDateStr) {
-  if (!startTimeStr || !eventDateStr || eventDateStr !== getDateStr(0)) return null;
+  if (!startTimeStr || !eventDateStr) return null;
   const now = new Date();
-  const [h, m] = startTimeStr.slice(0, 5).split(':').map(Number);
-  const setTime = new Date();
-  setTime.setHours(h, m, 0, 0);
-  if (h < 14) setTime.setDate(setTime.getDate() + 1);
+  const setTime = getEventTimeDate(eventDateStr, startTimeStr);
+  if (!setTime) return null;
   const diffMin = Math.round((setTime - now) / 60000);
   return diffMin < 0 ? null : diffMin;
 }
 function fmtCountdown(mins) { if (mins < 60) return `in ${mins}min`; const h = Math.floor(mins / 60), m = mins % 60; return `in ${h}:${String(m).padStart(2, '0')}h`; }
 function getNextActIds(events) {
   const upcoming = [];
-  events.forEach(ev => {
-    if (ev.event_date !== getDateStr(0)) return;
+  getEventsForDateBucket(getDateStr(0), events).forEach(ev => {
     (ev.event_acts || []).forEach(a => {
       const mins = getMinutesUntil(a.start_time, ev.event_date);
       if (mins !== null) upcoming.push({ sortKey: timeToMinutes(fmtTime(a.start_time)), key: `${ev.id}_${a.sort_order}` });
@@ -254,8 +331,7 @@ function getEventScore(_ev) {
 }
 function priorityBucket(ev) {
   if (userHypedEventIds.has(Number(ev.id))) return 0;
-  if (ev.clubs?.id && favoriteClubIds.has(Number(ev.clubs.id))) return 1;
-  return 2;
+  return 1;
 }
 function sortForDay(events) {
   return [...events].sort((a, b) => {
@@ -476,7 +552,11 @@ function syncDateNav({ smooth = true } = {}) {
   const active = nav?.querySelector('.date-tab.active');
   if (!nav || !active) return;
   const pad = parseFloat(getComputedStyle(nav).paddingLeft) || 0;
-  nav.scrollTo({ left: Math.max(0, active.offsetLeft - pad), behavior: smooth ? 'smooth' : 'auto' });
+  const prev = active.previousElementSibling;
+  const targetLeft = prev
+    ? Math.max(0, prev.offsetLeft - pad)
+    : Math.max(0, active.offsetLeft - pad);
+  nav.scrollTo({ left: targetLeft, behavior: smooth ? 'smooth' : 'auto' });
 }
 function renderDateTabs(grouped, { syncToActive = true, smoothSync = true } = {}) {
   const nav = document.getElementById('dateNav');
@@ -491,7 +571,7 @@ function renderDateTabs(grouped, { syncToActive = true, smoothSync = true } = {}
       searchMode = false;
       activeSearch = null;
       clearSearch({ rerender: false });
-      renderAll();
+      renderAll({ preserveDateNavScroll: true });
     };
     nav.appendChild(btn);
   });
@@ -612,13 +692,14 @@ function renderEventCard(ev, nextActKeys) {
     </div>
   `;
 }
-function renderAll({ preserveDateNavScroll = false } = {}) {
+function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !preserveDateNavScroll } = {}) {
   if (searchMode && activeSearch) { rerenderSearch(); return; }
   const visibleEvents = getVisibleEvents();
   const grouped = groupByDate(visibleEvents), nextActKeys = getNextActIds(visibleEvents), main = document.getElementById('mainContent');
   if (!main) return;
+  if (!preserveDateNavScroll) activeDateIdx = getDefaultDateIndex(grouped);
   activeDateIdx = grouped.length ? Math.max(0, Math.min(activeDateIdx, grouped.length - 1)) : 0;
-  renderDateTabs(grouped, { syncToActive: !preserveDateNavScroll, smoothSync: !preserveDateNavScroll });
+  renderDateTabs(grouped, { syncToActive: syncDateNavToActive, smoothSync: syncDateNavToActive && !preserveDateNavScroll });
   renderPopularEvents();
   updateStatusBar();
   const scrollY = window.scrollY;
@@ -671,7 +752,7 @@ function jumpToEvent(dateStr, eventId) {
   activeDateIdx = idx;
   if (eventId) expandedEventIds.add(Number(eventId));
   clearSearch({ rerender: false });
-  renderAll();
+  renderAll({ preserveDateNavScroll: true });
   if (eventId) setTimeout(() => document.querySelector(`[data-event-id="${eventId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
 }
 function initSearch() {
@@ -756,22 +837,19 @@ function highlight(text, q) {
   return text.slice(0, idx) + `<mark style="background:rgba(255,32,32,0.3);color:var(--white)">${text.slice(idx, idx + q.length)}</mark>` + text.slice(idx + q.length);
 }
 function countUpcomingEvents(idOrName, type) {
-  const today = getDateStr(0);
   const visibleEvents = getVisibleEvents();
-  if (type === 'artist') return allEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
-  return visibleEvents.filter(ev => ev.event_date >= today && ev.clubs?.name === idOrName).length;
+  if (type === 'artist') return allEvents.filter(ev => isUpcomingOrRunningEvent(ev) && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
+  return visibleEvents.filter(ev => isUpcomingOrRunningEvent(ev) && ev.clubs?.name === idOrName).length;
 }
 function showClubSearch(clubName) {
-  const today = getDateStr(0);
   activeSearch = { type: 'club', name: clubName, label: `Club: ${clubName}` };
   searchMode = true;
-  renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.clubs?.name === clubName && ev.event_date >= today)));
+  renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.clubs?.name === clubName && isUpcomingOrRunningEvent(ev))));
 }
 function showArtistSearch(actId, actName) {
-  const today = getDateStr(0);
   activeSearch = { type: 'artist', id: actId, name: actName, label: `Artist: ${actName}` };
   searchMode = true;
-  renderSearchResults(activeSearch.label, groupByDate(allEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == actId || a.acts.name === actName)))));
+  renderSearchResults(activeSearch.label, groupByDate(allEvents.filter(ev => isUpcomingOrRunningEvent(ev) && (ev.event_acts || []).some(a => a.acts && (a.acts.id == actId || a.acts.name === actName)))));
 }
 function rerenderSearch() {
   if (!activeSearch) { searchMode = false; renderAll({ preserveDateNavScroll: true }); return; }
@@ -968,18 +1046,26 @@ async function openArtistPopup(actId, actName) {
       if (eventActRows?.length) {
         const eventIds = eventActRows.map(r => r.event_id);
         const [upRes, pastRes] = await Promise.all([
-          pubClient.from('events').select('id, event_name, event_date, time_start, clubs(id, name, cities(name))').in('id', eventIds).gte('event_date', getDateStr(0)).order('event_date'),
-          pubClient.from('events').select('id, event_name, event_date, clubs(id, name, cities(name))').in('id', eventIds).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
+          pubClient.from('events').select('id, event_name, event_date, time_start, time_end, clubs(id, name, cities(name))').in('id', eventIds).gte('event_date', getDateStr(-2)).order('event_date'),
+          pubClient.from('events').select('id, event_name, event_date, time_start, time_end, clubs(id, name, cities(name))').in('id', eventIds).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
         ]);
         if (upRes.data) {
           const eventMap = {};
           upRes.data.forEach(ev => { eventMap[ev.id] = ev; });
-          upcomingEvents = eventActRows.map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: eventMap[ea.event_id] || null })).filter(ea => ea.events).sort((a, b) => a.events.event_date.localeCompare(b.events.event_date)).slice(0, 8);
+          upcomingEvents = eventActRows
+            .map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: eventMap[ea.event_id] || null }))
+            .filter(ea => ea.events && isUpcomingOrRunningEvent(ea.events))
+            .sort((a, b) => a.events.event_date.localeCompare(b.events.event_date))
+            .slice(0, 8);
         }
         if (pastRes.data) {
           const pastEventMap = {};
           pastRes.data.forEach(ev => { pastEventMap[ev.id] = ev; });
-          pastEvents = eventActRows.map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: pastEventMap[ea.event_id] || null })).filter(ea => ea.events).sort((a, b) => b.events.event_date.localeCompare(a.events.event_date)).slice(0, 8);
+          pastEvents = eventActRows
+            .map(ea => ({ start_time: ea.start_time, end_time: ea.end_time, events: pastEventMap[ea.event_id] || null }))
+            .filter(ea => ea.events && !isUpcomingOrRunningEvent(ea.events))
+            .sort((a, b) => b.events.event_date.localeCompare(a.events.event_date))
+            .slice(0, 8);
         }
       }
       // Fetch public rating stats
@@ -999,7 +1085,7 @@ async function openArtistPopup(actId, actName) {
       console.warn('Artist popup fetch error:', err.message || err);
     }
   } else {
-    allEvents.filter(ev => ev.event_date >= getDateStr(0)).forEach(ev => {
+    allEvents.filter(ev => isUpcomingOrRunningEvent(ev)).forEach(ev => {
       const act = (ev.event_acts || []).find(a => a.acts && (a.acts.id == actId || a.acts.name === actName));
       if (act) { upcomingEvents.push({ start_time: act.start_time, end_time: act.end_time, events: ev }); instaName = act.acts.insta_name; }
     });
@@ -1154,8 +1240,8 @@ function initSwipe() {
     if (startX === null || !swiping) { startX = null; return; }
     const dx = curX - startX, grouped = groupByDate(getVisibleEvents()), canNext = activeDateIdx < grouped.length - 1, canPrev = activeDateIdx > 0;
     if (searchMode) { reset(); startX = null; swiping = false; return; }
-    if (dx < -THRESHOLD && canNext) out(-1, () => { activeDateIdx += 1; renderAll(); inp(1); });
-    else if (dx > THRESHOLD && canPrev) out(1, () => { activeDateIdx -= 1; renderAll(); inp(-1); });
+    if (dx < -THRESHOLD && canNext) out(-1, () => { activeDateIdx += 1; renderAll({ preserveDateNavScroll: true, syncDateNavToActive: true }); inp(1); });
+    else if (dx > THRESHOLD && canPrev) out(1, () => { activeDateIdx -= 1; renderAll({ preserveDateNavScroll: true, syncDateNavToActive: true }); inp(-1); });
     else reset();
     startX = null; swiping = false;
   });
@@ -1253,7 +1339,7 @@ async function loadFromSupabase() {
       clubs ( id, name, cities ( name ) ),
       event_acts ( start_time, end_time, sort_order, canceled, acts ( id, name, insta_name ) )
     `)
-    .gte('event_date', getDateStr(0))
+    .gte('event_date', getDateStr(-2))
     .lte('event_date', getDateStr(60))
     .order('event_date');
   if (error) throw error;
