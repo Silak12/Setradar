@@ -81,6 +81,14 @@ function fmtTime(value) {
   return value ? String(value).slice(0, 5) : null;
 }
 
+function updateProfileClocks() {
+  const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const footer = document.getElementById('lastUpdated');
+  if (footer) footer.textContent = `Stand: ${time}`;
+  const status = document.getElementById('statusBarRight');
+  if (status) status.textContent = time;
+}
+
 function zeroHype() {
   return { seed_hype: 0, real_hype: 0, total_hype: 0 };
 }
@@ -1920,6 +1928,8 @@ async function init() {
     console.error('Profil laden Fehler:', err);
   }
 
+  updateProfileClocks();
+  setInterval(updateProfileClocks, 30 * 1000);
   initSettings();
   initPushSettings();
 }

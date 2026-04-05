@@ -274,11 +274,12 @@ body::before {
   margin: 28px auto 0;
   background: rgba(8,8,8,0.95);
   border-top: 1px solid var(--grey);
-  padding: 0 16px;
-  height: var(--footer-height);
+  padding: 10px 16px;
+  min-height: var(--footer-height);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   backdrop-filter: blur(8px);
 }
 
@@ -287,12 +288,16 @@ body::before {
   color: var(--grey);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  min-width: 0;
 }
 
 .last-updated {
   font-size: 9px;
   color: var(--grey);
   letter-spacing: 0.06em;
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-align: right;
 }
 
 /* ── Date Tabs ───────────────────────────────────────────────────────────── */
