@@ -565,6 +565,7 @@ function jumpToEvent(dateStr, eventId) {
   searchMode = false;
   activeSearch = null;
   activeDateIdx = idx;
+  if (eventId) expandedEventIds.add(Number(eventId));
   clearSearch({ rerender: false });
   renderAll();
   if (eventId) setTimeout(() => document.querySelector(`[data-event-id="${eventId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
@@ -847,18 +848,18 @@ async function openArtistPopup(actId, actName) {
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   syncBodyLock();
-  let instaName = null, upcomingEvents = [], pastEvents = [], ratingStats = null;
+  let instaName = null, scUrl = null, upcomingEvents = [], pastEvents = [], ratingStats = null;
   if (supabaseClient && actId) {
     const pubClient = supabaseAnonClient || supabaseClient;
     try {
-      const { data: act } = await pubClient.from('acts').select('id, name, insta_name').eq('id', actId).maybeSingle();
-      if (act) instaName = act.insta_name;
+      const { data: act } = await pubClient.from('acts').select('id, name, insta_name, soundcloud_url').eq('id', actId).maybeSingle();
+      if (act) { instaName = act.insta_name; scUrl = act.soundcloud_url; }
       const { data: eventActRows } = await pubClient.from('event_acts').select('id, start_time, end_time, event_id').eq('act_id', actId);
       if (eventActRows?.length) {
         const eventIds = eventActRows.map(r => r.event_id);
         const [upRes, pastRes] = await Promise.all([
-          pubClient.from('events').select('id, event_name, event_date, time_start, clubs(id, name)').in('id', eventIds).gte('event_date', getDateStr(0)).order('event_date'),
-          pubClient.from('events').select('id, event_name, event_date, clubs(id, name)').in('id', eventIds).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
+          pubClient.from('events').select('id, event_name, event_date, time_start, clubs(id, name, cities(name))').in('id', eventIds).gte('event_date', getDateStr(0)).order('event_date'),
+          pubClient.from('events').select('id, event_name, event_date, clubs(id, name, cities(name))').in('id', eventIds).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
         ]);
         if (upRes.data) {
           const eventMap = {};
@@ -893,9 +894,9 @@ async function openArtistPopup(actId, actName) {
       if (act) { upcomingEvents.push({ start_time: act.start_time, end_time: act.end_time, events: ev }); instaName = act.acts.insta_name; }
     });
   }
-  renderArtistModal(actName, instaName, upcomingEvents, actId, pastEvents, ratingStats);
+  renderArtistModal(actName, instaName, upcomingEvents, actId, pastEvents, ratingStats, scUrl);
 }
-function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = [], ratingStats = null) {
+function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = [], ratingStats = null, scUrl = null) {
   const content = document.getElementById('modalContent');
   if (!content) return;
   const numericActId = Number(actId), isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
@@ -904,7 +905,10 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
-    : '';
+    : `<span class="modal-ig-link modal-social-placeholder">Instagram</span>`;
+  const scHtml = scUrl
+    ? `<a class="modal-sc-link" href="${scUrl}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1.175 12.225c-.041 0-.075.032-.079.074l-.55 4.754.55 4.757c.004.042.038.074.079.074.04 0 .074-.032.079-.074l.625-4.757-.625-4.754c-.005-.042-.039-.074-.079-.074zm1.558-.55c-.05 0-.09.037-.095.086l-.484 5.304.484 5.307c.005.05.045.086.095.086.05 0 .09-.036.095-.086l.549-5.307-.549-5.304c-.005-.05-.045-.086-.095-.086zm1.574-.31c-.058 0-.105.045-.11.103l-.418 5.614.418 5.617c.005.058.052.103.11.103.058 0 .106-.045.111-.103l.473-5.617-.473-5.614c-.005-.058-.053-.103-.111-.103zm1.59-.128c-.065 0-.118.052-.123.117l-.35 5.742.35 5.745c.005.065.058.117.123.117.065 0 .118-.052.123-.117l.397-5.745-.397-5.742c-.005-.065-.058-.117-.123-.117zm1.589-.077c-.073 0-.132.058-.137.13l-.283 5.819.283 5.822c.005.073.064.13.137.13.073 0 .132-.057.137-.13l.32-5.822-.32-5.819c-.005-.073-.064-.13-.137-.13zm1.591-.032c-.08 0-.145.063-.15.143l-.216 5.851.216 5.854c.005.08.07.143.15.143.08 0 .145-.063.15-.143l.244-5.854-.244-5.851c-.005-.08-.07-.143-.15-.143zm1.592-.014c-.087 0-.158.07-.163.156l-.149 5.865.149 5.868c.005.087.076.156.163.156.087 0 .158-.069.163-.156l.169-5.868-.169-5.865c-.005-.087-.076-.156-.163-.156zm1.59-.004c-.094 0-.171.076-.176.17l-.082 5.869.082 5.872c.005.094.082.17.176.17.094 0 .171-.076.176-.17l.093-5.872-.093-5.869c-.005-.094-.082-.17-.176-.17zm1.59.004c-.1 0-.181.08-.186.18l-.014 5.865.014 5.868c.005.1.086.18.186.18.1 0 .181-.08.186-.18l.016-5.868-.016-5.865c-.005-.1-.086-.18-.186-.18zm3.547-1.636C19.5 9.16 17.857 7.5 15.875 7.5c-.504 0-.983.101-1.418.283-.147-3.604-3.13-6.48-6.774-6.48-1.018 0-1.983.224-2.844.625-.31.14-.393.284-.396.41v13.31c.003.13.106.238.238.246h13.318C19.428 15.893 21 14.315 21 12.375c0-1.94-1.572-3.518-3.5-3.519z"/></svg>SoundCloud</a>`
+    : `<span class="modal-sc-link modal-social-placeholder">SoundCloud</span>`;
 
   // Rating stats block
   let statsHtml = '';
@@ -931,7 +935,9 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
           ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
           : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">★</button>`
         : '';
-      return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${ev.clubs?.name ?? '-'}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
+      const city = ev.clubs?.cities?.name;
+      const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
+      return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
     }).join('')
     : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
 
@@ -947,16 +953,19 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
           ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
           : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">Bewerten</button>`
         : '';
-      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${ev.clubs?.name ?? '-'}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
+      const city = ev.clubs?.cities?.name;
+      const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
+      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
     pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
   }
 
+  const socialRow = `<div class="modal-social-row">${igHtml}${scHtml}</div>`;
   content.innerHTML = `
     <div class="modal-artist-tag">// ARTIST</div>
     <div class="artist-modal-header"><div class="modal-artist-name">${name}</div><div class="modal-head-actions">${favHtml}</div></div>
     <div class="modal-divider"></div>
-    ${igHtml}
+    ${socialRow}
     ${statsHtml}
     <div class="modal-events-label">Kommende Events (${upcomingEvents.length})</div>
     ${rows}
@@ -1188,7 +1197,14 @@ async function loadPresence() {
       .eq('user_id', sessionUser.id)
       .maybeSingle();
     if (error) throw error;
-    userPresence = (data && data.event_id && data.status !== 'left') ? data : null;
+    const raw = (data && data.event_id && data.status !== 'left') ? data : null;
+    // Auto-clear stale presence for past events no longer in allEvents
+    if (raw && !allEvents.some(e => Number(e.id) === Number(raw.event_id))) {
+      await deletePresence();
+      userPresence = null;
+    } else {
+      userPresence = raw;
+    }
   } catch (err) {
     console.warn('Presence fetch error:', err.message || err);
     userPresence = null;
@@ -1779,6 +1795,14 @@ async function init() {
     console.warn('Supabase Legacy-Key erkannt. Bitte einen Publishable Key (sb_publishable_...) setzen.');
   }
   await refreshEventData();
+  // Jump to specific date/event from profile navigation
+  const _hash = window.location.hash.slice(1);
+  if (_hash) {
+    const _params = new URLSearchParams(_hash);
+    const _date = _params.get('date');
+    const _evId = _params.get('event');
+    if (_date) jumpToEvent(_date, _evId || null);
+  }
   if (supabaseClient && !demoMode) subscribeRealtime();
   setInterval(() => rerenderView({ preserveDateNavScroll: true }), 60 * 1000);
   setInterval(updateStatusBar, 30 * 1000);

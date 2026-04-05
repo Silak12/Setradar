@@ -91,14 +91,46 @@
 
       <!-- Acts Tab -->
       <div class="profile-tab-panel active" id="tabActs" role="tabpanel">
-        <div class="profile-section-label">Gefolgte Acts</div>
-        <div class="profile-list" id="actsList">
-          <div class="profile-list-loading">Lädt...</div>
+        <div class="profile-section-label">Gefolgte Acts <span class="rated-acts-total" id="followedActsTotal"></span></div>
+        <div class="rated-acts-slider-wrap" id="followedActsSlider">
+          <div class="rated-acts-page" id="followedActsPage">
+            <div class="profile-list-loading">Lädt...</div>
+          </div>
+        </div>
+        <div class="rated-acts-nav" id="followedActsNav" style="display:none">
+          <button class="rated-acts-arrow" id="followedActsPrev" aria-label="Vorherige">←</button>
+          <span class="rated-acts-counter" id="followedActsCounter">—</span>
+          <button class="rated-acts-arrow" id="followedActsNext" aria-label="Nächste">→</button>
         </div>
 
-        <div class="profile-section-label" style="margin-top:24px">Top Acts</div>
-        <div class="profile-list" id="topActsList">
-          <div class="profile-list-loading">Lädt...</div>
+        <div class="profile-section-label rated-acts-section-label" style="margin-top:24px">
+          Bewertete Acts <span class="rated-acts-total" id="ratedActsTotal"></span>
+        </div>
+        <div class="rated-acts-controls">
+          <div class="rated-acts-filters" id="ratedActsFilters">
+            <button class="rated-filter-btn active" data-stars="0">Alle</button>
+            <button class="rated-filter-btn" data-stars="1">1★</button>
+            <button class="rated-filter-btn" data-stars="2">2★</button>
+            <button class="rated-filter-btn" data-stars="3">3★</button>
+            <button class="rated-filter-btn" data-stars="4">4★</button>
+            <button class="rated-filter-btn" data-stars="5">5★</button>
+          </div>
+          <select class="rated-sort-select" id="ratedActsSort">
+            <option value="avg-desc">Beste zuerst</option>
+            <option value="avg-asc">Schlechteste zuerst</option>
+            <option value="count-desc">Meist bewertet</option>
+            <option value="name-asc">Name A–Z</option>
+          </select>
+        </div>
+        <div class="rated-acts-slider-wrap" id="ratedActsSlider">
+          <div class="rated-acts-page" id="ratedActsPage">
+            <div class="profile-list-loading">Lädt...</div>
+          </div>
+        </div>
+        <div class="rated-acts-nav" id="ratedActsNav" style="display:none">
+          <button class="rated-acts-arrow" id="ratedActsPrev" aria-label="Vorherige">←</button>
+          <span class="rated-acts-counter" id="ratedActsCounter">1 / 1</span>
+          <button class="rated-acts-arrow" id="ratedActsNext" aria-label="Nächste">→</button>
         </div>
 
         <div class="profile-section-label" style="margin-top:24px">Empfehlungen</div>
@@ -135,6 +167,55 @@
   </main>
 
   <div id="footer"></div>
+
+  <!-- Artist Popup Overlay -->
+  <div class="artist-overlay" id="artistOverlay" aria-hidden="true">
+    <div class="artist-overlay-bg" id="artistOverlayBg"></div>
+    <div class="artist-modal" id="artistModal" role="dialog" aria-modal="true">
+      <div class="modal-glitch-bar"></div>
+      <button class="modal-close" id="modalClose" aria-label="Schließen">
+        <span>ESC</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="modal-content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Rating Modal -->
+  <div class="rating-overlay" id="ratingOverlay" aria-hidden="true">
+    <div class="rating-overlay-bg" id="ratingOverlayBg"></div>
+    <div class="rating-modal" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
+      <div class="rating-modal-topline"></div>
+      <button class="rating-close" id="ratingModalClose" type="button" aria-label="Schließen">
+        <span>ESC</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="rating-content">
+        <div class="rating-eyebrow">// BEWERTUNG</div>
+        <div class="rating-act-name" id="ratingActName">—</div>
+        <div class="rating-event-name" id="ratingEventName">—</div>
+        <div class="rating-stars" id="ratingStars" role="group" aria-label="Bewertung">
+          <button class="rating-star" data-star="1" type="button" aria-label="1 Stern">&#9733;</button>
+          <button class="rating-star" data-star="2" type="button" aria-label="2 Sterne">&#9733;</button>
+          <button class="rating-star" data-star="3" type="button" aria-label="3 Sterne">&#9733;</button>
+          <button class="rating-star" data-star="4" type="button" aria-label="4 Sterne">&#9733;</button>
+          <button class="rating-star" data-star="5" type="button" aria-label="5 Sterne">&#9733;</button>
+        </div>
+        <div class="rating-flags">
+          <label class="rating-flag-label">
+            <input type="checkbox" id="ratingFlagSurprise" />
+            <span>Überraschung des Abends</span>
+          </label>
+        </div>
+        <div class="rating-message" id="ratingMessage" aria-live="polite"></div>
+        <button class="rating-submit" id="ratingSubmit" type="button" disabled>Bewerten</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
