@@ -1815,9 +1815,11 @@ async function init() {
 
   if (hasUrl && hasKey) {
     const { createClient } = supabase;
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { storageKey: 'setradar-auth' },
+    });
     supabaseAnonClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'setradar-anon-auth' },
     });
   }
 

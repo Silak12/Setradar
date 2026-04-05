@@ -97,6 +97,7 @@ let eventHighlights = new Map();  // event_id → { bestActId, surpriseActId }
 let expandedEventIds = new Set(); // event IDs with timetable open
 let myQueueStartTime = null;      // Date when current user joined queue
 let myClubEntryTime  = null;      // Date when current user entered club
+let artistPopupRequestId = 0;
 
 function fmtTime(t) { return t ? String(t).slice(0, 5) : null; }
 function formatTimeInput(d) { if (!d) return ''; return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
@@ -1033,6 +1034,7 @@ function bindArtistClicks() {
 async function openArtistPopup(actId, actName) {
   const overlay = document.getElementById('artistOverlay'), content = document.getElementById('modalContent');
   if (!overlay || !content) return;
+  const requestId = ++artistPopupRequestId;
   content.innerHTML = `<div class="modal-artist-tag">// ARTIST</div><div class="modal-artist-name">${actName}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
@@ -1091,6 +1093,7 @@ async function openArtistPopup(actId, actName) {
       if (act) { upcomingEvents.push({ start_time: act.start_time, end_time: act.end_time, events: ev }); instaName = act.acts.insta_name; }
     });
   }
+  if (requestId !== artistPopupRequestId || !document.getElementById('artistOverlay')?.classList.contains('open')) return;
   renderArtistModal(actName, instaName, upcomingEvents, actId, pastEvents, ratingStats, scUrl);
 }
 function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = [], ratingStats = null, scUrl = null) {
@@ -2062,9 +2065,11 @@ async function init() {
   const hasUrl = !isPlaceholderValue(SUPABASE_URL), hasKey = !isPlaceholderValue(SUPABASE_KEY), legacy = isLegacyJwtKey(SUPABASE_KEY), configured = hasUrl && hasKey && !legacy;
   if (configured) {
     const { createClient } = supabase;
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { storageKey: 'setradar-auth' },
+    });
     supabaseAnonClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'setradar-anon-auth' },
     });
     await hydrateSession();
     subscribeAuthState();
