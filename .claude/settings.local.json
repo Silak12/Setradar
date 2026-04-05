@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Leo/.claude/projects/c--Users-Leo-Desktop-jsx-Lineup-Berlin/20d99474-9eb3-4114-b436-29305e8a9617/tool-results/**)"
+    ]
+  }
+}

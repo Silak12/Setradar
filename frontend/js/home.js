@@ -3,6 +3,7 @@
  */
 const SUPABASE_URL = CONFIG.SUPABASE_URL;
 const SUPABASE_KEY = CONFIG.SUPABASE_PUBLISHABLE_KEY || CONFIG.SUPABASE_ANON;
+const EventCardUtils = window.SetradarEventCards || {};
 const AUTH_MODES = { LOGIN: 'login', SIGNUP: 'signup' };
 const DEMO_HYPE_TOTALS = {
   1: { seed_hype: 62, real_hype: 8, total_hype: 70 },
@@ -78,6 +79,7 @@ function parseTimeInputToDate(hhmm) { if (!hhmm) return null; const [h,m]=hhmm.s
 function fmtWaitTime(start, end) { const mins=Math.round(((end||new Date())-start)/60000); if(mins<0) return '?'; return mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`; }
 function timeToMinutes(t) { if (!t) return Infinity; const [h, m] = t.split(':').map(Number); const mins = h * 60 + m; return mins < 14 * 60 ? mins + 1440 : mins; }
 function sortActs(acts) {
+  if (EventCardUtils.sortActs) return EventCardUtils.sortActs(acts);
   const withTime = acts.filter(a => a.start_time).sort((a, b) => timeToMinutes(fmtTime(a.start_time)) - timeToMinutes(fmtTime(b.start_time)));
   const withoutTime = acts.filter(a => !a.start_time).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   return [...withTime, ...withoutTime];
@@ -435,7 +437,7 @@ function renderPopularEvents() {
     <div class="popular-rail-shell">
       <div class="popular-rail-header">
         <span class="popular-rail-title">Beliebte Events</span>
-        <span class="popular-rail-subtitle">${fallback ? 'Noch kein Trend' : 'Seed + echte Hypes'}</span>
+        <span class="popular-rail-subtitle">${fallback ? 'Noch kein Trend' : 'Trending'}</span>
       </div>
       <div class="popular-rail-list">
         ${popularEvents.map(item => {
@@ -446,7 +448,7 @@ function renderPopularEvents() {
               <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
               <div class="popular-item-meta">
                 <span>${ev.clubs?.name || '-'}</span>
-                <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `Hype ${item.hype.total_hype}`}</span>
+                <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `${item.hype.total_hype} Interessiert`}</span>
               </div>
             </button>
           `;
@@ -524,7 +526,7 @@ function renderEventCard(ev, nextActKeys) {
       <div class="event-actions">
         <div class="event-actions-left">
           <button class="event-action-button hype-button${isHyped ? ' active' : ''}" type="button" data-action="toggle-hype" data-event-id="${ev.id}" aria-pressed="${isHyped}">
-            <span class="spark-icon">&#10022;</span><span>Hype</span><span class="hype-count">${hype.total_hype}</span>
+            <span class="spark-icon">&#10022;</span><span>Interessiert</span><span class="hype-count">${hype.total_hype}</span>
           </button>
         </div>
         <div class="event-actions-right">${buildPresenceBtn(ev.id)}</div>
@@ -751,7 +753,7 @@ async function toggleFavorite(type, id, { rerender = true, onChange = null } = {
 }
 async function toggleHype(id) {
   const eventId = Number(id);
-  if (!Number.isFinite(eventId) || !ensureAuthenticated('Hype') || !supabaseClient) return false;
+  if (!Number.isFinite(eventId) || !ensureAuthenticated('Interessiert') || !supabaseClient) return false;
   const key = `hype:${eventId}`;
   if (pendingActionKeys.has(key)) return false;
   const active = userHypedEventIds.has(eventId);
@@ -1579,7 +1581,7 @@ function renderLivePanel() {
       </div>
       <div class="live-panel-actions">
         <button class="event-action-button hype-button${isHyped ? ' active' : ''}" data-live-action="hype" data-event-id="${ev.id}">
-          <span class="spark-icon">&#10022;</span><span>Hype</span><span class="hype-count">${hype.total_hype}</span>
+          <span class="spark-icon">&#10022;</span><span>Interessiert</span><span class="hype-count">${hype.total_hype}</span>
         </button>
         <button class="event-action-button live-leave-btn" data-live-action="leave" data-event-id="${eventId}">Event verlassen ×</button>
       </div>
@@ -1837,13 +1839,15 @@ async function init() {
     console.warn('Supabase Legacy-Key erkannt. Bitte einen Publishable Key (sb_publishable_...) setzen.');
   }
   await refreshEventData();
-  // Jump to specific date/event from profile navigation
+  // Jump to specific date/event or club from profile navigation
   const _hash = window.location.hash.slice(1);
   if (_hash) {
     const _params = new URLSearchParams(_hash);
     const _date = _params.get('date');
     const _evId = _params.get('event');
+    const _club = _params.get('club');
     if (_date) jumpToEvent(_date, _evId || null);
+    else if (_club) showClubSearch(_club);
   }
   if (supabaseClient && !demoMode) subscribeRealtime();
   setInterval(() => rerenderView({ preserveDateNavScroll: true }), 60 * 1000);
