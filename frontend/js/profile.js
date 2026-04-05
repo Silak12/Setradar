@@ -236,6 +236,27 @@ function renderEmpty(container, message) {
   container.innerHTML = `<div class="profile-empty">${message}</div>`;
 }
 
+async function loadNavbarCities() {
+  if (!window.SetradarCitySelector) return;
+  const publicClient = supabaseAnonClient || supabaseClient;
+  if (!publicClient) {
+    window.SetradarCitySelector.setOptions(['Berlin']);
+    return;
+  }
+  try {
+    const { data, error } = await publicClient
+      .from('cities')
+      .select('name')
+      .order('name');
+    if (error) throw error;
+    const cities = [...new Set((data || []).map(row => String(row.name || '').trim()).filter(Boolean))];
+    window.SetradarCitySelector.setOptions(cities.length ? cities : ['Berlin']);
+  } catch (err) {
+    console.warn('Cities fetch error:', err.message || err);
+    window.SetradarCitySelector.setOptions(['Berlin']);
+  }
+}
+
 async function loadPublicHypes(events = []) {
   const ids = visibleEventIds(events);
   const nextMap = new Map();
@@ -1798,6 +1819,8 @@ async function init() {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
   }
+
+  await loadNavbarCities();
 
   initNavbarAuth();
 

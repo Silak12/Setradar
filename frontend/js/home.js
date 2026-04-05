@@ -19,7 +19,7 @@ const DEMO_EVENTS = [
     event_date: getDateStr(0),
     time_start: '23:00:00',
     time_end: '09:00:00',
-    clubs: { id: 1, name: 'Lokschuppen' },
+    clubs: { id: 1, name: 'Lokschuppen', cities: { name: 'Berlin' } },
     event_acts: [
       { start_time: '02:00:00', end_time: '03:30:00', sort_order: 1, acts: { id: 1, name: 'DATSKO', insta_name: 'datsko_official' } },
       { start_time: null, end_time: null, sort_order: 2, acts: { id: 2, name: 'SZG', insta_name: null } },
@@ -33,7 +33,7 @@ const DEMO_EVENTS = [
     event_date: getDateStr(1),
     time_start: '22:00:00',
     time_end: '08:00:00',
-    clubs: { id: 2, name: 'Tresor' },
+    clubs: { id: 2, name: 'Tresor', cities: { name: 'Berlin' } },
     event_acts: [
       { start_time: '00:00:00', end_time: '02:00:00', sort_order: 1, acts: { id: 1, name: 'DATSKO', insta_name: 'datsko_official' } },
       { start_time: '02:00:00', end_time: '04:00:00', sort_order: 2, acts: { id: 5, name: 'Alignment', insta_name: 'alignment_music' } },
@@ -59,6 +59,8 @@ let activeSearch = null;
 let authMode = AUTH_MODES.LOGIN;
 let demoMode = false;
 let _dataLoaded = false;
+let availableCities = [];
+let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
 // ── Phase 2: Live Mode state ─────────────────────────────────────────────
 let userPresence = null;          // { user_id, event_id, status } | null
 let liveEventData = { queue: null, buckets: [], mood: null };
@@ -157,13 +159,50 @@ function userLabel() {
   if (!sessionUser) return 'Gast';
   return userProfile?.display_name || sessionUser.user_metadata?.name || sessionUser.email || 'Angemeldet';
 }
+function normalizeCityName(value) {
+  return String(value || '').trim();
+}
+function resolveSelectedCity(cities = availableCities) {
+  const normalized = cities.map(normalizeCityName).filter(Boolean);
+  if (!normalized.length) {
+    selectedCity = normalizeCityName(selectedCity) || 'Berlin';
+    return selectedCity;
+  }
+  const current = normalized.find(city => city.localeCompare(selectedCity, 'de', { sensitivity: 'base' }) === 0);
+  selectedCity = current || normalized[0];
+  localStorage.setItem('setradar_city', selectedCity);
+  return selectedCity;
+}
+function getVisibleEvents(events = allEvents) {
+  const city = normalizeCityName(selectedCity);
+  if (!city) return [...(events || [])];
+  return (events || []).filter(ev => normalizeCityName(ev.clubs?.cities?.name) === city);
+}
+function syncCitySelectorUi() {
+  if (!window.SetradarCitySelector) return;
+  window.SetradarCitySelector.setOptions(availableCities);
+  window.SetradarCitySelector.setCurrentCity(resolveSelectedCity(), { emit: false });
+}
+function applySelectedCity(nextCity) {
+  const normalized = normalizeCityName(nextCity);
+  if (!normalized) return;
+  if (normalized.localeCompare(selectedCity, 'de', { sensitivity: 'base' }) === 0) return;
+  selectedCity = normalized;
+  localStorage.setItem('setradar_city', selectedCity);
+  activeDateIdx = 0;
+  searchMode = false;
+  activeSearch = null;
+  clearSearch({ rerender: false });
+  rerenderView({ preserveDateNavScroll: false });
+}
 function updateStatusBar() {
   const bar = document.getElementById('statusBar');
   if (!bar) return;
-  const count = allEvents.filter(ev => ev.event_date === getDateStr(0)).length;
+  const visibleEvents = getVisibleEvents();
+  const count = visibleEvents.filter(ev => ev.event_date === getDateStr(0)).length;
   const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   bar.innerHTML = `
-    <div class="status-bar-left"><span class="status-live-dot"></span><span>Live - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
+    <div class="status-bar-left"><span class="status-live-dot"></span><span>${selectedCity} - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
     <div class="status-bar-right">${time}</div>
   `;
 }
@@ -221,7 +260,7 @@ function sortForDay(events) {
 }
 function buildPopularEvents() {
   const today = getDateStr(0), maxDate = getDateStr(14);
-  const candidates = allEvents.filter(ev => ev.event_date >= today && ev.event_date <= maxDate);
+  const candidates = getVisibleEvents().filter(ev => ev.event_date >= today && ev.event_date <= maxDate);
   const hasTrend = candidates.some(ev => getHype(ev.id).total_hype > 0);
   const sorted = [...candidates].sort((a, b) => {
     if (hasTrend) {
@@ -537,7 +576,8 @@ function renderEventCard(ev, nextActKeys) {
 }
 function renderAll({ preserveDateNavScroll = false } = {}) {
   if (searchMode && activeSearch) { rerenderSearch(); return; }
-  const grouped = groupByDate(allEvents), nextActKeys = getNextActIds(allEvents), main = document.getElementById('mainContent');
+  const visibleEvents = getVisibleEvents();
+  const grouped = groupByDate(visibleEvents), nextActKeys = getNextActIds(visibleEvents), main = document.getElementById('mainContent');
   if (!main) return;
   activeDateIdx = grouped.length ? Math.max(0, Math.min(activeDateIdx, grouped.length - 1)) : 0;
   renderDateTabs(grouped, { syncToActive: !preserveDateNavScroll, smoothSync: !preserveDateNavScroll });
@@ -586,7 +626,7 @@ function rerenderView({ preserveDateNavScroll = false } = {}) {
 }
 function jumpToEvent(dateStr, eventId) {
   if (!dateStr) return;
-  const grouped = groupByDate(allEvents), idx = grouped.findIndex(([d]) => d === dateStr);
+  const grouped = groupByDate(getVisibleEvents()), idx = grouped.findIndex(([d]) => d === dateStr);
   if (idx === -1) return;
   searchMode = false;
   activeSearch = null;
@@ -633,8 +673,9 @@ window.clearSearch = clearSearch;
 function doSearch(q) {
   const lower = q.toLowerCase(), results = document.getElementById('searchResults');
   if (!results) return;
+  const visibleEvents = getVisibleEvents();
   const actMap = {}, clubMap = {};
-  allEvents.forEach(ev => {
+  visibleEvents.forEach(ev => {
     (ev.event_acts || []).forEach(a => { if (a.acts) { const id = a.acts.id ?? a.acts.name; if (!actMap[id]) actMap[id] = { ...a.acts, type: 'artist' }; } });
     if (ev.clubs?.name && !clubMap[ev.clubs.name]) clubMap[ev.clubs.name] = { ...ev.clubs, type: 'club' };
   });
@@ -675,20 +716,21 @@ function highlight(text, q) {
 }
 function countUpcomingEvents(idOrName, type) {
   const today = getDateStr(0);
-  if (type === 'artist') return allEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
-  return allEvents.filter(ev => ev.event_date >= today && ev.clubs?.name === idOrName).length;
+  const visibleEvents = getVisibleEvents();
+  if (type === 'artist') return visibleEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
+  return visibleEvents.filter(ev => ev.event_date >= today && ev.clubs?.name === idOrName).length;
 }
 function showClubSearch(clubName) {
   const today = getDateStr(0);
   activeSearch = { type: 'club', name: clubName, label: `Club: ${clubName}` };
   searchMode = true;
-  renderSearchResults(activeSearch.label, groupByDate(allEvents.filter(ev => ev.clubs?.name === clubName && ev.event_date >= today)));
+  renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.clubs?.name === clubName && ev.event_date >= today)));
 }
 function showArtistSearch(actId, actName) {
   const today = getDateStr(0);
   activeSearch = { type: 'artist', id: actId, name: actName, label: `Artist: ${actName}` };
   searchMode = true;
-  renderSearchResults(activeSearch.label, groupByDate(allEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == actId || a.acts.name === actName)))));
+  renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == actId || a.acts.name === actName)))));
 }
 function rerenderSearch() {
   if (!activeSearch) { searchMode = false; renderAll({ preserveDateNavScroll: true }); return; }
@@ -696,7 +738,7 @@ function rerenderSearch() {
   else showArtistSearch(activeSearch.id, activeSearch.name);
 }
 function renderSearchResults(label, grouped) {
-  const nextActKeys = getNextActIds(allEvents), main = document.getElementById('mainContent');
+  const nextActKeys = getNextActIds(getVisibleEvents()), main = document.getElementById('mainContent');
   if (!main) return;
   renderPopularEvents();
   updateStatusBar();
@@ -1059,7 +1101,7 @@ function initSwipe() {
     }
     if (Math.abs(dx) > 10) e.preventDefault();
     curX = e.changedTouches[0].clientX;
-    const grouped = groupByDate(allEvents), atStart = activeDateIdx === 0, atEnd = activeDateIdx >= grouped.length - 1;
+    const grouped = groupByDate(getVisibleEvents()), atStart = activeDateIdx === 0, atEnd = activeDateIdx >= grouped.length - 1;
     let clamped = dx;
     if ((dx > 0 && atStart) || (dx < 0 && atEnd)) clamped = dx > 0 ? Math.min(dx * 0.18, MAX_RESIST) : Math.max(dx * 0.18, -MAX_RESIST);
     main.style.transition = 'none';
@@ -1068,7 +1110,7 @@ function initSwipe() {
   }, { passive: false });
   document.addEventListener('touchend', () => {
     if (startX === null || !swiping) { startX = null; return; }
-    const dx = curX - startX, grouped = groupByDate(allEvents), canNext = activeDateIdx < grouped.length - 1, canPrev = activeDateIdx > 0;
+    const dx = curX - startX, grouped = groupByDate(getVisibleEvents()), canNext = activeDateIdx < grouped.length - 1, canPrev = activeDateIdx > 0;
     if (searchMode) { reset(); startX = null; swiping = false; return; }
     if (dx < -THRESHOLD && canNext) out(-1, () => { activeDateIdx += 1; renderAll(); inp(1); });
     else if (dx > THRESHOLD && canPrev) out(1, () => { activeDateIdx -= 1; renderAll(); inp(-1); });
@@ -1166,7 +1208,7 @@ async function loadFromSupabase() {
     .from('events')
     .select(`
       id, event_name, event_date, time_start, time_end,
-      clubs ( id, name ),
+      clubs ( id, name, cities ( name ) ),
       event_acts ( start_time, end_time, sort_order, canceled, acts ( id, name, insta_name ) )
     `)
     .gte('event_date', getDateStr(0))
@@ -1174,6 +1216,28 @@ async function loadFromSupabase() {
     .order('event_date');
   if (error) throw error;
   return data || [];
+}
+async function loadAvailableCities() {
+  const publicClient = supabaseAnonClient || supabaseClient;
+  if (!publicClient) {
+    availableCities = [...new Set(DEMO_EVENTS.map(ev => normalizeCityName(ev.clubs?.cities?.name)).filter(Boolean))];
+    if (!availableCities.length) availableCities = ['Berlin'];
+    syncCitySelectorUi();
+    return;
+  }
+  try {
+    const { data, error } = await publicClient
+      .from('cities')
+      .select('name')
+      .order('name');
+    if (error) throw error;
+    availableCities = [...new Set((data || []).map(row => normalizeCityName(row.name)).filter(Boolean))];
+  } catch (err) {
+    console.warn('Cities fetch error:', err.message || err);
+    availableCities = [...new Set(allEvents.map(ev => normalizeCityName(ev.clubs?.cities?.name)).filter(Boolean))];
+  }
+  if (!availableCities.length) availableCities = ['Berlin'];
+  syncCitySelectorUi();
 }
 async function refreshEventData({ preserveDateNavScroll = false, flashEventId = null } = {}) {
   if (supabaseClient) {
@@ -1188,6 +1252,15 @@ async function refreshEventData({ preserveDateNavScroll = false, flashEventId = 
   } else {
     allEvents = DEMO_EVENTS;
     demoMode = true;
+  }
+  if (demoMode && !availableCities.length) {
+    availableCities = ['Berlin'];
+    syncCitySelectorUi();
+  }
+  const eventCities = [...new Set(allEvents.map(ev => normalizeCityName(ev.clubs?.cities?.name)).filter(Boolean))];
+  if (eventCities.length) {
+    availableCities = [...new Set([...availableCities, ...eventCities])].sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base' }));
+    syncCitySelectorUi();
   }
   if (demoMode) loadDemoHypes();
   else { await loadPublicHypes(allEvents); await loadEventHighlights(allEvents); }
@@ -1819,6 +1892,7 @@ function initRatingModal() {
 
 async function init() {
   if (window.componentsReady?.then) await window.componentsReady;
+  document.addEventListener('setradar:citychange', e => applySelectedCity(e.detail?.city));
   initAuthUi();
   initSearch();
   initArtistPopup();
@@ -1835,8 +1909,14 @@ async function init() {
     });
     await hydrateSession();
     subscribeAuthState();
+    await loadAvailableCities();
   } else if (legacy) {
     console.warn('Supabase Legacy-Key erkannt. Bitte einen Publishable Key (sb_publishable_...) setzen.');
+    availableCities = ['Berlin'];
+    syncCitySelectorUi();
+  } else {
+    availableCities = ['Berlin'];
+    syncCitySelectorUi();
   }
   await refreshEventData();
   // Jump to specific date/event or club from profile navigation
