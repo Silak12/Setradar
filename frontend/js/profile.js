@@ -4,6 +4,7 @@
 
 const SUPABASE_URL = CONFIG.SUPABASE_URL;
 const SUPABASE_KEY = CONFIG.SUPABASE_PUBLISHABLE_KEY || CONFIG.SUPABASE_ANON;
+const EventCardUtils = window.SetradarEventCards || {};
 
 // ── Level System ─────────────────────────────────────────────────────────────
 const LEVELS = [
@@ -34,14 +35,14 @@ function computeLevel(score) {
 // ── Badges (client-side computed from stats) ─────────────────────────────────
 function computeBadges({ hyeCount, actCount, clubCount }) {
   const earned = [];
-  if (hyeCount >= 1)  earned.push({ icon: '⚡', name: 'First Hype',    desc: 'Erstes Hype vergeben' });
-  if (actCount >= 1)  earned.push({ icon: '🎵', name: 'Act-Fan',       desc: 'Erstem Act gefolgt' });
-  if (actCount >= 5)  earned.push({ icon: '🎛️', name: 'Scout',         desc: '5 Acts gefolgt' });
-  if (actCount >= 10) earned.push({ icon: '📡', name: 'Radar',         desc: '10 Acts gefolgt' });
-  if (clubCount >= 1) earned.push({ icon: '🏴', name: 'Club-Stamm',    desc: 'Erstem Club gefolgt' });
-  if (clubCount >= 3) earned.push({ icon: '🏛️', name: 'Club-Crawler',  desc: '3 Clubs gefolgt' });
-  if (hyeCount >= 10) earned.push({ icon: '🔥', name: 'Hype-Machine',  desc: '10 Events gehyped' });
-  if (hyeCount >= 30) earned.push({ icon: '💀', name: 'Veteran',       desc: '30 Events gehyped' });
+  if (hyeCount >= 1)  earned.push({ icon: '⚡', name: 'Erstes Interesse',  desc: 'Erstes Event interessiert' });
+  if (actCount >= 1)  earned.push({ icon: '🎵', name: 'Act-Fan',          desc: 'Erstem Act gefolgt' });
+  if (actCount >= 5)  earned.push({ icon: '🎛️', name: 'Scout',            desc: '5 Acts gefolgt' });
+  if (actCount >= 10) earned.push({ icon: '📡', name: 'Radar',            desc: '10 Acts gefolgt' });
+  if (clubCount >= 1) earned.push({ icon: '🏴', name: 'Club-Stamm',       desc: 'Erstem Club gefolgt' });
+  if (clubCount >= 3) earned.push({ icon: '🏛️', name: 'Club-Crawler',     desc: '3 Clubs gefolgt' });
+  if (hyeCount >= 10) earned.push({ icon: '🔥', name: 'Interesse-Maschine', desc: '10 Events interessiert' });
+  if (hyeCount >= 30) earned.push({ icon: '💀', name: 'Veteran',          desc: '30 Events interessiert' });
   return earned;
 }
 
@@ -59,11 +60,115 @@ function formatEventDate(dateStr) {
   return `${weekdays[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getTodayLocalDateStr() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function fmtTime(value) {
+  return value ? String(value).slice(0, 5) : null;
+}
+
+function zeroHype() {
+  return { seed_hype: 0, real_hype: 0, total_hype: 0 };
+}
+
+function getHype(eventId) {
+  return hypeTotalsByEventId.get(Number(eventId)) || zeroHype();
+}
+
+function setHype(eventId, stats) {
+  hypeTotalsByEventId.set(Number(eventId), {
+    seed_hype: Number(stats.seed_hype) || 0,
+    real_hype: Number(stats.real_hype) || 0,
+    total_hype: Number(stats.total_hype) || 0,
+  });
+}
+
+function bumpHype(eventId, delta) {
+  const current = getHype(eventId);
+  setHype(eventId, {
+    seed_hype: current.seed_hype,
+    real_hype: Math.max(0, current.real_hype + delta),
+    total_hype: Math.max(0, current.total_hype + delta),
+  });
+}
+
+function visibleEventIds(events = []) {
+  return [...new Set((events || []).map(ev => Number(ev?.id)).filter(Number.isFinite))];
+}
+
+function getMinutesUntil(startTimeStr, eventDateStr) {
+  if (!startTimeStr || !eventDateStr || eventDateStr !== getTodayLocalDateStr()) return null;
+  const now = new Date();
+  const [hours, minutes] = startTimeStr.slice(0, 5).split(':').map(Number);
+  const setTime = new Date();
+  setTime.setHours(hours, minutes, 0, 0);
+  if (hours < 14) setTime.setDate(setTime.getDate() + 1);
+  const diffMin = Math.round((setTime - now) / 60000);
+  return diffMin < 0 ? null : diffMin;
+}
+
+function fmtCountdown(mins) {
+  if (mins < 60) return `in ${mins}min`;
+  const hours = Math.floor(mins / 60);
+  const rest = mins % 60;
+  return `in ${hours}:${String(rest).padStart(2, '0')}h`;
+}
+
+function getNextActIds(events) {
+  const upcoming = [];
+  events.forEach(ev => {
+    if (ev.event_date !== getTodayLocalDateStr()) return;
+    (ev.event_acts || []).forEach(act => {
+      const mins = getMinutesUntil(fmtTime(act.start_time), ev.event_date);
+      if (mins !== null) upcoming.push({ sortKey: mins, key: `${ev.id}_${act.sort_order}` });
+    });
+  });
+  upcoming.sort((a, b) => a.sortKey - b.sortKey);
+  return upcoming.slice(0, 3).map(item => item.key);
+}
+
+function getUserActAvg(actId) {
+  if (!actId || !userActRatings.size) return null;
+  const ratings = [];
+  for (const [key, row] of userActRatings.entries()) {
+    if (key.startsWith(`${actId}:`) && row.rating) ratings.push(row.rating);
+  }
+  return ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null;
+}
+
+function buildActLeftHtml(actId) {
+  if (!actId || !sessionUser) return '<span class="artist-act-avg empty"></span>';
+  const avg = getUserActAvg(actId);
+  return avg !== null
+    ? `<span class="artist-act-avg rated">${avg.toFixed(1)}</span>`
+    : '<span class="artist-act-avg empty">—</span>';
+}
+
 // ── State ────────────────────────────────────────────────────────────────────
 let supabaseClient = null;
 let supabaseAnonClient = null;  // stateless anon client for public queries
 let sessionUser = null;
 let activeTab = 'acts';
+let favoriteClubIds = new Set();
+let userHypedEventIds = new Set();
+let hypeTotalsByEventId = new Map();
+let eventHighlights = new Map();
+let expandedEventIds = new Set();
+let profileHypedRows = [];
 
 // Rated acts section state
 let allRatedActs = [];
@@ -129,6 +234,90 @@ function updateNavbar(displayName) {
 // ── Render helpers ────────────────────────────────────────────────────────────
 function renderEmpty(container, message) {
   container.innerHTML = `<div class="profile-empty">${message}</div>`;
+}
+
+async function loadPublicHypes(events = []) {
+  const ids = visibleEventIds(events);
+  const nextMap = new Map();
+  ids.forEach(id => nextMap.set(id, zeroHype()));
+  const publicClient = supabaseAnonClient || supabaseClient;
+  if (!publicClient || !ids.length) {
+    hypeTotalsByEventId = nextMap;
+    return;
+  }
+  try {
+    const { data, error } = await publicClient
+      .from('event_hype_totals')
+      .select('event_id,total_hype,real_hype,seed_hype')
+      .in('event_id', ids);
+    if (error) throw error;
+    (data || []).forEach(row => nextMap.set(Number(row.event_id), {
+      seed_hype: Number(row.seed_hype) || 0,
+      real_hype: Number(row.real_hype) || 0,
+      total_hype: Number(row.total_hype) || 0,
+    }));
+  } catch (err) {
+    console.warn('Public hype fetch error:', err.message || err);
+  }
+  hypeTotalsByEventId = nextMap;
+}
+
+async function loadEventHighlights(events = []) {
+  const ids = visibleEventIds(events);
+  const publicClient = supabaseAnonClient || supabaseClient;
+  if (!publicClient || !ids.length) {
+    eventHighlights = new Map();
+    return;
+  }
+  try {
+    const { data, error } = await publicClient
+      .from('event_act_highlights')
+      .select('event_id, best_act_id, surprise_act_id')
+      .in('event_id', ids);
+    if (error) throw error;
+    eventHighlights = new Map();
+    (data || []).forEach(row => {
+      eventHighlights.set(Number(row.event_id), {
+        bestActId: row.best_act_id ? Number(row.best_act_id) : null,
+        surpriseActId: row.surprise_act_id ? Number(row.surprise_act_id) : null,
+      });
+    });
+  } catch (err) {
+    console.warn('Highlights fetch error:', err.message || err);
+    eventHighlights = new Map();
+  }
+}
+
+function buildProfilePresenceBtn() {
+  return '';
+}
+
+function getProfileEventCardContext(events) {
+  return {
+    nextActKeys: getNextActIds(events),
+    expandedEventIds,
+    eventHighlights,
+    favoriteActIds,
+    favoriteClubIds,
+    sessionUser,
+    userActRatings,
+    userHypedEventIds,
+    buildActLeftHtml,
+    buildPresenceBtn: buildProfilePresenceBtn,
+    fmtCountdown,
+    fmtTime,
+    getHype,
+    getMinutesUntil,
+    renderHeaderMeta(ev) {
+      const parts = [];
+      const dateLabel = formatEventDate(ev.event_date);
+      const city = ev.clubs?.cities?.name;
+      if (dateLabel && dateLabel !== '—') parts.push(dateLabel);
+      if (city) parts.push(city);
+      if (!parts.length) return '';
+      return `<div class="event-header-meta event-header-meta--profile">${escapeHtml(parts.join(' • '))}</div>`;
+    },
+  };
 }
 
 function renderFollowedActsPage(animDir = 0) {
@@ -692,10 +881,208 @@ function initArtistPopup() {
   document.addEventListener('click', e => {
     const item = e.target.closest('.profile-act-link');
     if (!item) return;
-    if (e.target.closest('a')) return; // don't intercept actual links
+    if (e.target.closest('a')) return;
     const actId = item.dataset.actId;
     const actName = item.dataset.actName;
     if (actId && actName) openArtistPopup(actId, actName);
+  });
+
+  // Delegated click on club items → navigate to club events
+  document.addEventListener('click', e => {
+    const item = e.target.closest('.profile-club-link');
+    if (!item) return;
+    const clubName = item.dataset.clubName;
+    if (clubName) {
+      closeArtistPopup();
+      window.location.href = `index.html#club=${encodeURIComponent(clubName)}`;
+    }
+  });
+
+  // Delegated click on event items → navigate to event
+  document.addEventListener('click', e => {
+    const item = e.target.closest('.profile-event-link');
+    if (!item) return;
+    if (e.target.closest('a')) return;
+    const date = item.dataset.eventDate;
+    const evId = item.dataset.eventId;
+    if (date) {
+      closeArtistPopup();
+      window.location.href = `index.html#date=${date}${evId ? '&event=' + evId : ''}`;
+    }
+  });
+}
+
+function syncProfileStatHypes() {
+  const el = document.getElementById('statHypes');
+  if (el) el.textContent = String(profileHypedRows.length);
+}
+
+function syncProfileHypeButtons(eventId) {
+  const isHyped = userHypedEventIds.has(Number(eventId));
+  const hype = getHype(eventId);
+  document.querySelectorAll(`#hypesList [data-action="toggle-hype"][data-event-id="${eventId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isHyped);
+    btn.setAttribute('aria-pressed', String(isHyped));
+    const count = btn.querySelector('.hype-count');
+    if (count) count.textContent = hype.total_hype;
+  });
+}
+
+function syncProfileClubButtons(clubId) {
+  const isActive = favoriteClubIds.has(Number(clubId));
+  document.querySelectorAll(`#hypesList [data-action="toggle-favorite-club"][data-club-id="${clubId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    btn.textContent = isActive ? '−' : '+';
+  });
+}
+
+function syncProfileActButtons(actId) {
+  const isActive = favoriteActIds.has(Number(actId));
+  document.querySelectorAll(`#hypesList [data-action="toggle-favorite-act"][data-act-id="${actId}"]`).forEach(btn => {
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+    btn.textContent = isActive ? '♥' : '♡';
+    btn.closest('.artist-row')?.classList.toggle('artist-row--followed', isActive);
+  });
+}
+
+async function toggleProfileFavorite(type, id, onChange) {
+  const numericId = Number(id);
+  if (!Number.isFinite(numericId) || !supabaseClient || !sessionUser) return false;
+  const activeSet = type === 'club' ? favoriteClubIds : type === 'act' ? favoriteActIds : null;
+  if (!activeSet) return false;
+  const isActive = activeSet.has(numericId);
+
+  if (isActive) activeSet.delete(numericId);
+  else activeSet.add(numericId);
+  if (onChange) onChange();
+
+  try {
+    if (isActive) {
+      const { error } = await supabaseClient
+        .from('favorites')
+        .delete()
+        .eq('user_id', sessionUser.id)
+        .eq('entity_type', type)
+        .eq('entity_id', numericId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient
+        .from('favorites')
+        .insert({ user_id: sessionUser.id, entity_type: type, entity_id: numericId });
+      if (error) throw error;
+    }
+    return true;
+  } catch (err) {
+    if (isActive) activeSet.add(numericId);
+    else activeSet.delete(numericId);
+    if (onChange) onChange();
+    console.warn('Favorite toggle error:', err.message || err);
+    return false;
+  }
+}
+
+async function toggleProfileHype(id) {
+  const eventId = Number(id);
+  if (!Number.isFinite(eventId) || !supabaseClient || !sessionUser) return false;
+  const active = userHypedEventIds.has(eventId);
+  const previousRows = [...profileHypedRows];
+
+  if (active) {
+    userHypedEventIds.delete(eventId);
+    bumpHype(eventId, -1);
+    profileHypedRows = profileHypedRows.filter(row => Number(row.event_id) !== eventId);
+    expandedEventIds.delete(eventId);
+  } else {
+    userHypedEventIds.add(eventId);
+    bumpHype(eventId, 1);
+  }
+
+  syncProfileHypeButtons(eventId);
+  syncProfileStatHypes();
+  if (active) renderHypesList(profileHypedRows);
+
+  try {
+    if (active) {
+      const { error } = await supabaseClient
+        .from('event_hypes')
+        .delete()
+        .eq('user_id', sessionUser.id)
+        .eq('event_id', eventId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient
+        .from('event_hypes')
+        .insert({ user_id: sessionUser.id, event_id: eventId });
+      if (error) throw error;
+    }
+    return true;
+  } catch (err) {
+    if (active) {
+      userHypedEventIds.add(eventId);
+      bumpHype(eventId, 1);
+    } else {
+      userHypedEventIds.delete(eventId);
+      bumpHype(eventId, -1);
+    }
+    profileHypedRows = previousRows;
+    console.warn('Hype toggle error:', err.message || err);
+    renderHypesList(profileHypedRows);
+    syncProfileStatHypes();
+    return false;
+  }
+}
+
+function initProfileEventCards() {
+  const container = document.getElementById('hypesList');
+  if (!container) return;
+
+  container.addEventListener('click', async e => {
+    const artist = e.target.closest('.artist-name-link[data-act-id]');
+    if (artist) {
+      e.stopPropagation();
+      openArtistPopup(artist.dataset.actId, artist.dataset.actName);
+      return;
+    }
+
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
+    e.preventDefault();
+
+    if (target.dataset.action === 'toggle-timetable') {
+      const eventId = Number(target.dataset.eventId);
+      if (expandedEventIds.has(eventId)) expandedEventIds.delete(eventId);
+      else expandedEventIds.add(eventId);
+      const card = target.closest('.event-card');
+      card?.classList.toggle('open', expandedEventIds.has(eventId));
+      const chevron = card?.querySelector('.card-chevron');
+      if (chevron) chevron.textContent = expandedEventIds.has(eventId) ? '▾' : '▸';
+      return;
+    }
+
+    if (target.dataset.action === 'toggle-hype') {
+      await toggleProfileHype(target.dataset.eventId);
+      return;
+    }
+    if (target.dataset.action === 'toggle-favorite-club') {
+      const clubId = Number(target.dataset.clubId);
+      await toggleProfileFavorite('club', clubId, () => syncProfileClubButtons(clubId));
+      return;
+    }
+    if (target.dataset.action === 'toggle-favorite-act') {
+      const actId = Number(target.dataset.actId);
+      await toggleProfileFavorite('act', actId, () => syncProfileActButtons(actId));
+      return;
+    }
+    if (target.dataset.action === 'open-rating') {
+      await openRatingModal({
+        actId: Number(target.dataset.actId),
+        actName: target.dataset.actName,
+        eventId: Number(target.dataset.eventId),
+        eventName: target.dataset.eventName,
+      });
+    }
   });
 }
 
@@ -768,6 +1155,7 @@ async function submitActRating() {
       if (error) throw error;
     }
     userActRatings.set(`${actId}:${eventId}`, { act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: false, was_surprise: wasSurprise });
+    renderHypesList(profileHypedRows);
     if (msgEl) msgEl.textContent = 'Gespeichert!';
     setTimeout(() => { closeRatingModal(); openArtistPopup(actId, actName); }, 700);
   } catch (err) {
@@ -808,8 +1196,9 @@ function renderClubsList(clubs) {
   if (!el) return;
   if (!clubs.length) { renderEmpty(el, 'Noch keine Clubs gefolgt.'); return; }
   el.innerHTML = clubs.map(c => `
-    <div class="profile-list-item">
+    <div class="profile-list-item profile-club-link" data-club-name="${c.name.replace(/"/g, '&quot;')}">
       <span class="profile-list-name">${c.name}</span>
+      <span class="profile-event-goto">→</span>
     </div>
   `).join('');
 }
@@ -817,25 +1206,38 @@ function renderClubsList(clubs) {
 function renderHypesList(hyped) {
   const el = document.getElementById('hypesList');
   if (!el) return;
-  if (!hyped.length) { renderEmpty(el, 'Noch keine Events gehyped.'); return; }
-  el.innerHTML = hyped.map(h => {
-    const ev = h.events;
-    if (!ev) return '';
-    return `
-      <div class="profile-list-item profile-list-item--event">
-        <div class="profile-list-event-date">${formatEventDate(ev.event_date)}</div>
-        <div class="profile-list-name">${ev.event_name}</div>
-        <div class="profile-list-meta">${ev.clubs?.name || '—'}</div>
-      </div>
-    `;
-  }).join('');
+  profileHypedRows = [...hyped];
+  if (!hyped.length) { renderEmpty(el, 'Noch keine Events als Interessiert markiert.'); return; }
+
+  const today = getTodayLocalDateStr();
+  const upcoming = hyped.filter(h => h.events?.event_date >= today);
+  const past     = hyped.filter(h => h.events?.event_date < today);
+  const renderCards = rows => {
+    const events = rows.map(row => row.events).filter(Boolean);
+    const context = getProfileEventCardContext(events);
+    return events.map(ev => EventCardUtils.renderEventCard(ev, context)).join('');
+  };
+
+  let html = '';
+
+  if (upcoming.length) {
+    html += `<div class="profile-section-sublabel">Kommende Events</div>`;
+    html += `<div class="profile-event-cards">${renderCards(upcoming)}</div>`;
+  }
+
+  if (past.length) {
+    html += `<div class="profile-section-sublabel${upcoming.length ? ' profile-section-sublabel--mt' : ''}">Vergangene Events</div>`;
+    html += `<div class="profile-event-cards">${renderCards(past)}</div>`;
+  }
+
+  el.innerHTML = html;
 }
 
 function renderBadges(badges) {
   const el = document.getElementById('badgesGrid');
   if (!el) return;
   if (!badges.length) {
-    el.innerHTML = `<div class="profile-empty">Noch keine Badges verdient.<br><span style="color:var(--grey);font-size:10px">Hype Events und folge Acts um Badges zu verdienen.</span></div>`;
+    el.innerHTML = `<div class="profile-empty">Noch keine Badges verdient.<br><span style="color:var(--grey);font-size:10px">Markiere Events als interessiert und folge Acts, um Badges zu verdienen.</span></div>`;
     return;
   }
   el.innerHTML = badges.map(b => `
@@ -878,6 +1280,7 @@ async function loadProfile() {
   const clubIds  = favorites.filter(f => f.entity_type === 'club').map(f => Number(f.entity_id));
   const eventIds = favorites.filter(f => f.entity_type === 'event').map(f => Number(f.entity_id));
   favoriteActIds = new Set(actIds);
+  favoriteClubIds = new Set(clubIds);
 
   // 3. Hype count
   const { count: hyeCount = 0 } = await supabaseClient
@@ -923,34 +1326,46 @@ async function loadProfile() {
     .from('event_hypes')
     .select('event_id, created_at')
     .eq('user_id', sessionUser.id)
-    .order('created_at', { ascending: false })
-    .limit(20);
+    .order('created_at', { ascending: false });
 
   const hyeEventIds = hyeRows.map(h => Number(h.event_id)).filter(Boolean);
   let hyeEventDetails = [];
   if (hyeEventIds.length) {
     const { data } = await supabaseClient
       .from('events')
-      .select('id, event_name, event_date, clubs(name)')
+      .select(`
+        id, event_name, event_date, time_start, time_end,
+        clubs ( id, name, cities ( name ) ),
+        event_acts ( start_time, end_time, sort_order, canceled, acts ( id, name, insta_name ) )
+      `)
       .in('id', hyeEventIds);
     hyeEventDetails = data || [];
   }
   const hypedRows = hyeRows
     .map(h => ({ ...h, events: hyeEventDetails.find(e => Number(e.id) === Number(h.event_id)) || null }))
     .filter(h => h.events);
+  profileHypedRows = hypedRows;
+  userHypedEventIds = new Set(hyeEventIds);
+
+  await Promise.all([
+    loadPublicHypes(hypedRows.map(row => row.events)),
+    loadEventHighlights(hypedRows.map(row => row.events)),
+  ]);
 
   // 7. Badges (client-side computed)
   const badges = computeBadges({ hyeCount: hyeCount || 0, actCount: actIds.length, clubCount: clubIds.length });
 
   // 8. Top acts (by user's own average rating)
+  userActRatings = new Map();
   const { data: myRatings = [] } = await supabaseClient
     .from('act_ratings')
-    .select('act_id, rating, acts(name, insta_name)')
+    .select('act_id, event_id, rating, was_best_act, was_surprise, acts(name, insta_name)')
     .eq('user_id', sessionUser.id);
 
   const actRatingMap = new Map();
   (myRatings || []).forEach(r => {
     if (!r.act_id) return;
+    userActRatings.set(`${r.act_id}:${r.event_id ?? 'null'}`, r);
     if (!actRatingMap.has(r.act_id)) {
       actRatingMap.set(r.act_id, { ratings: [], name: r.acts?.name || '?', insta: r.acts?.insta_name || null });
     }
@@ -1370,6 +1785,7 @@ async function init() {
   initTabs();
   initArtistPopup();
   initRatingModal();
+  initProfileEventCards();
 
   // Init Supabase
   const hasUrl = CONFIG.SUPABASE_URL && !/^DEIN/i.test(CONFIG.SUPABASE_URL);

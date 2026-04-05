@@ -314,6 +314,26 @@ body::before {
   line-height: 1.1;
 }
 
+.event-heading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.event-header-meta {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+  line-height: 1.2;
+}
+
+.event-header-meta--profile {
+  color: var(--grey-lt);
+}
+
 .event-meta {
   display: flex;
   flex-direction: column;
@@ -2292,6 +2312,27 @@ a.user-pill[href]:hover {
   padding-left: 8px;
 }
 
+.profile-section-sublabel {
+  margin: 10px 0 6px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.profile-section-sublabel--mt {
+  margin-top: 18px;
+}
+
+.profile-event-cards {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-event-cards .event-card:last-child {
+  margin-bottom: 0;
+}
+
 /* List items */
 .profile-list {
   display: flex;
@@ -2306,11 +2347,23 @@ a.user-pill[href]:hover {
   padding: 10px 12px;
   background: var(--off-black);
   border: 1px solid #1e1e1e;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
 }
-.profile-list-item:hover { border-color: #333; }
+.profile-list-item:hover {
+  border-color: #333;
+  background: rgba(255, 255, 255, 0.01);
+}
 .profile-act-link { cursor: pointer; }
 .profile-act-link:hover { border-color: #555; }
+.profile-club-link,
+.profile-event-link {
+  cursor: pointer;
+}
+.profile-club-link:hover,
+.profile-event-link:hover {
+  border-color: #555;
+  transform: translateX(1px);
+}
 
 .profile-list-item--event {
   flex-direction: column;
@@ -2336,6 +2389,40 @@ a.user-pill[href]:hover {
   transition: color 0.15s;
 }
 a.profile-list-meta:hover { color: var(--white); }
+
+.profile-event-goto {
+  align-self: flex-end;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--red);
+}
+
+.profile-list-item--past {
+  gap: 6px;
+}
+
+.profile-rate-acts-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  border: 1px solid rgba(255, 32, 32, 0.3);
+  padding: 6px 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-decoration: none;
+  background: rgba(255, 32, 32, 0.06);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.profile-rate-acts-btn:hover {
+  border-color: var(--red);
+  background: rgba(255, 32, 32, 0.12);
+  color: var(--white);
+}
 
 /* Empty state */
 .profile-empty {
