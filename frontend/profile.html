@@ -67,7 +67,7 @@
       <div class="profile-stats">
         <div class="profile-stat">
           <div class="profile-stat-value" id="statHypes">0</div>
-          <div class="profile-stat-label">Hypes</div>
+          <div class="profile-stat-label">Interessiert</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
@@ -91,8 +91,8 @@
       <!-- Tabs -->
       <div class="profile-tabs" role="tablist">
         <button class="profile-tab active" data-tab="acts" role="tab" aria-selected="true">Acts</button>
+        <button class="profile-tab" data-tab="hypes" role="tab" aria-selected="false">Events</button>
         <button class="profile-tab" data-tab="clubs" role="tab" aria-selected="false">Clubs</button>
-        <button class="profile-tab" data-tab="hypes" role="tab" aria-selected="false">Hypes</button>
         <button class="profile-tab" data-tab="badges" role="tab" aria-selected="false">Badges</button>
       </div>
 
@@ -154,9 +154,9 @@
         </div>
       </div>
 
-      <!-- Hypes Tab -->
+      <!-- Events Tab -->
       <div class="profile-tab-panel" id="tabHypes" role="tabpanel" hidden>
-        <div class="profile-section-label">Gehypte Events</div>
+        <div class="profile-section-label">Events</div>
         <div class="profile-list" id="hypesList">
           <div class="profile-list-loading">Lädt...</div>
         </div>
@@ -379,6 +379,7 @@
     window.SETRADAR_VAPID_PUBLIC_KEY = CONFIG.VAPID_PUBLIC_KEY || '';
   </script>
   <script src="js/components.js"></script>
+  <script src="js/event-cards.js"></script>
   <script src="js/profile.js"></script>
 </body>
 </html>
