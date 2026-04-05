@@ -61,6 +61,7 @@ let demoMode = false;
 let _dataLoaded = false;
 let availableCities = [];
 let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
+let eventSortMode = localStorage.getItem('setradar_event_sort') || 'interested';
 // ── Phase 2: Live Mode state ─────────────────────────────────────────────
 let userPresence = null;          // { user_id, event_id, status } | null
 let liveEventData = { queue: null, buckets: [], mood: null };
@@ -109,6 +110,7 @@ function formatDateLabel(dateStr) {
   return {
     day: String(d.getDate()).padStart(2, '0'),
     month: String(d.getMonth() + 1).padStart(2, '0'),
+    monthShort: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()],
     weekday: ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'][d.getDay()],
   };
 }
@@ -117,6 +119,9 @@ function formatTabLabel(dateStr) {
   if (dateStr === today) return 'Heute';
   if (dateStr === tomorrow) return 'Morgen';
   return `${w[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.`;
+}
+function getEventCity(ev) {
+  return normalizeCityName(ev?.clubs?.cities?.name);
 }
 function groupByDate(events) {
   const map = {};
@@ -176,7 +181,7 @@ function resolveSelectedCity(cities = availableCities) {
 function getVisibleEvents(events = allEvents) {
   const city = normalizeCityName(selectedCity);
   if (!city) return [...(events || [])];
-  return (events || []).filter(ev => normalizeCityName(ev.clubs?.cities?.name) === city);
+  return (events || []).filter(ev => getEventCity(ev) === city);
 }
 function syncCitySelectorUi() {
   if (!window.SetradarCitySelector) return;
@@ -244,6 +249,9 @@ function compareSchedule(a, b) {
   if (t) return t;
   return String(a.event_name || '').localeCompare(String(b.event_name || ''), 'de');
 }
+function getEventScore(_ev) {
+  return 0;
+}
 function priorityBucket(ev) {
   if (userHypedEventIds.has(Number(ev.id))) return 0;
   if (ev.clubs?.id && favoriteClubIds.has(Number(ev.clubs.id))) return 1;
@@ -251,11 +259,37 @@ function priorityBucket(ev) {
 }
 function sortForDay(events) {
   return [...events].sort((a, b) => {
-    const bucket = priorityBucket(a) - priorityBucket(b);
-    if (bucket) return bucket;
+    if (eventSortMode === 'time') return compareSchedule(a, b);
+    if (eventSortMode === 'score') {
+      const scoreDiff = getEventScore(b) - getEventScore(a);
+      if (scoreDiff) return scoreDiff;
+      return compareSchedule(a, b);
+    }
+    const bucketDiff = priorityBucket(a) - priorityBucket(b);
+    if (bucketDiff) return bucketDiff;
     const hypeDiff = getHype(b.id).total_hype - getHype(a.id).total_hype;
     if (hypeDiff) return hypeDiff;
     return compareSchedule(a, b);
+  });
+}
+function syncSortUi() {
+  document.querySelectorAll('.event-sort-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sortMode === eventSortMode);
+  });
+}
+function initSortControls() {
+  const bar = document.getElementById('eventSortBar');
+  if (!bar) return;
+  syncSortUi();
+  bar.addEventListener('click', e => {
+    const btn = e.target.closest('.event-sort-btn');
+    if (!btn) return;
+    const nextMode = btn.dataset.sortMode || 'interested';
+    if (nextMode === eventSortMode) return;
+    eventSortMode = nextMode;
+    localStorage.setItem('setradar_event_sort', eventSortMode);
+    syncSortUi();
+    rerenderView({ preserveDateNavScroll: true });
   });
 }
 function buildPopularEvents() {
@@ -487,7 +521,7 @@ function renderPopularEvents() {
               <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
               <div class="popular-item-meta">
                 <span>${ev.clubs?.name || '-'}</span>
-                <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `${item.hype.total_hype} Interessiert`}</span>
+                <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
               </div>
             </button>
           `;
@@ -500,6 +534,7 @@ function renderEventCard(ev, nextActKeys) {
   const acts = sortActs(ev.event_acts || []);
   const hasTime = acts.some(a => a.start_time);
   const venue = ev.clubs?.name ?? '-';
+  const city = getEventCity(ev);
   const doors = fmtTime(ev.time_start);
   const close = fmtTime(ev.time_end);
   const hype = getHype(ev.id);
@@ -554,7 +589,10 @@ function renderEventCard(ev, nextActKeys) {
   return `
     <div class="event-card${isOpen ? ' open' : ''}" data-event-id="${ev.id}">
       <div class="card-header" data-action="toggle-timetable" data-event-id="${ev.id}">
-        <div class="event-name">${ev.event_name}</div>
+        <div class="event-heading">
+          <div class="event-name">${ev.event_name}</div>
+          ${city ? `<div class="event-city-emphasis">${city}</div>` : ''}
+        </div>
         <div class="event-meta">
           ${venueHtml}
           ${doors ? `<span class="doors-time">↳ ${doors}${close ? ' - ' + close : ''}</span>` : ''}
@@ -674,9 +712,12 @@ function doSearch(q) {
   const lower = q.toLowerCase(), results = document.getElementById('searchResults');
   if (!results) return;
   const visibleEvents = getVisibleEvents();
+  const artistEvents = allEvents;
   const actMap = {}, clubMap = {};
-  visibleEvents.forEach(ev => {
+  artistEvents.forEach(ev => {
     (ev.event_acts || []).forEach(a => { if (a.acts) { const id = a.acts.id ?? a.acts.name; if (!actMap[id]) actMap[id] = { ...a.acts, type: 'artist' }; } });
+  });
+  visibleEvents.forEach(ev => {
     if (ev.clubs?.name && !clubMap[ev.clubs.name]) clubMap[ev.clubs.name] = { ...ev.clubs, type: 'club' };
   });
   const artists = Object.values(actMap).filter(a => (searchFilter === 'all' || searchFilter === 'artist') && String(a.name || '').toLowerCase().includes(lower));
@@ -717,7 +758,7 @@ function highlight(text, q) {
 function countUpcomingEvents(idOrName, type) {
   const today = getDateStr(0);
   const visibleEvents = getVisibleEvents();
-  if (type === 'artist') return visibleEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
+  if (type === 'artist') return allEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
   return visibleEvents.filter(ev => ev.event_date >= today && ev.clubs?.name === idOrName).length;
 }
 function showClubSearch(clubName) {
@@ -730,7 +771,7 @@ function showArtistSearch(actId, actName) {
   const today = getDateStr(0);
   activeSearch = { type: 'artist', id: actId, name: actName, label: `Artist: ${actName}` };
   searchMode = true;
-  renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == actId || a.acts.name === actName)))));
+  renderSearchResults(activeSearch.label, groupByDate(allEvents.filter(ev => ev.event_date >= today && (ev.event_acts || []).some(a => a.acts && (a.acts.id == actId || a.acts.name === actName)))));
 }
 function rerenderSearch() {
   if (!activeSearch) { searchMode = false; renderAll({ preserveDateNavScroll: true }); return; }
@@ -738,7 +779,8 @@ function rerenderSearch() {
   else showArtistSearch(activeSearch.id, activeSearch.name);
 }
 function renderSearchResults(label, grouped) {
-  const nextActKeys = getNextActIds(getVisibleEvents()), main = document.getElementById('mainContent');
+  const searchEvents = grouped.flatMap(([, events]) => events || []);
+  const nextActKeys = getNextActIds(searchEvents), main = document.getElementById('mainContent');
   if (!main) return;
   renderPopularEvents();
   updateStatusBar();
@@ -1005,7 +1047,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
         : '';
       const city = ev.clubs?.cities?.name;
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
-      return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
+        return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
     }).join('')
     : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
 
@@ -1023,7 +1065,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
         : '';
       const city = ev.clubs?.cities?.name;
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
-      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
+      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
     pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
   }
@@ -1894,6 +1936,7 @@ async function init() {
   if (window.componentsReady?.then) await window.componentsReady;
   document.addEventListener('setradar:citychange', e => applySelectedCity(e.detail?.city));
   initAuthUi();
+  initSortControls();
   initSearch();
   initArtistPopup();
   initRatingModal();

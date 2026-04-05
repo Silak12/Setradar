@@ -33,7 +33,10 @@ function initCitySelector() {
 
   function filteredOptions(query) {
     const normalized = normalize(query).toLocaleLowerCase('de');
-    if (!normalized) return options;
+    if (!normalized) {
+      const rest = options.filter(city => city !== currentCity);
+      return currentCity ? [currentCity, ...rest] : options;
+    }
     return options.filter(city => city.toLocaleLowerCase('de').includes(normalized));
   }
 
@@ -61,8 +64,7 @@ function initCitySelector() {
     currentCity = nextCity;
     localStorage.setItem('setradar_city', nextCity);
     button.textContent = nextCity;
-    input.value = nextCity;
-    renderList(nextCity);
+    renderList('');
     if (emit) {
       document.dispatchEvent(new CustomEvent('setradar:citychange', { detail: { city: nextCity } }));
     }
@@ -72,11 +74,10 @@ function initCitySelector() {
     panel.hidden = false;
     selector.classList.add('open');
     button.setAttribute('aria-expanded', 'true');
-    input.value = currentCity;
-    renderList(currentCity);
+    input.value = '';
+    renderList('');
     setTimeout(() => {
       input.focus();
-      input.select();
     }, 0);
   }
 
