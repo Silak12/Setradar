@@ -3,9 +3,6 @@
  * Handles Web Push notifications for iOS (16.4+) and Android
  */
 
-const CACHE_NAME = 'setradar-v1';
-
-// ── Push received ──────────────────────────────────────────────────────────────
 self.addEventListener('push', event => {
   if (!event.data) return;
 
@@ -16,24 +13,21 @@ self.addEventListener('push', event => {
     payload = { title: 'SETRADAR', body: event.data.text() };
   }
 
-  const title   = payload.title || 'SETRADAR';
+  const title = payload.title || 'SETRADAR';
   const options = {
-    body:    payload.body   || '',
-    icon:    payload.icon   || './icon.svg',
-    badge:   payload.badge  || './icon.svg',
-    tag:     payload.tag    || 'setradar-default',
-    data:    payload.data   || {},
+    body: payload.body || '',
+    icon: payload.icon || './icon.svg',
+    badge: payload.badge || './icon.svg',
+    tag: payload.tag || 'setradar-default',
+    data: payload.data || {},
     vibrate: [200, 100, 200],
     renotify: true,
     actions: payload.actions || [],
   };
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// ── Notification click ─────────────────────────────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
@@ -41,7 +35,6 @@ self.addEventListener('notificationclick', event => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      // If already open, focus it
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           client.focus();
@@ -49,14 +42,12 @@ self.addEventListener('notificationclick', event => {
           return;
         }
       }
-      // Otherwise open new window
       if (clients.openWindow) return clients.openWindow(url);
     })
   );
 });
 
-// ── Install / Activate (minimal cache) ────────────────────────────────────────
-self.addEventListener('install', event => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 

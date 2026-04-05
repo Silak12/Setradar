@@ -296,6 +296,10 @@ function setLastUpdated() {
   const el = document.getElementById('lastUpdated');
   if (el) el.textContent = 'Stand: ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 }
+function refreshAmbientUi() {
+  updateStatusBar();
+  setLastUpdated();
+}
 function syncBodyLock() {
   const artistOpen = document.getElementById('artistOverlay')?.classList.contains('open');
   const authOpen = document.getElementById('authOverlay')?.classList.contains('open');
@@ -2094,7 +2098,6 @@ async function init() {
     else if (_club) showClubSearch(_club);
   }
   if (supabaseClient && !demoMode) subscribeRealtime();
-  setInterval(() => rerenderView({ preserveDateNavScroll: true }), 60 * 1000);
-  setInterval(updateStatusBar, 30 * 1000);
+  setInterval(refreshAmbientUi, 30 * 1000);
 }
 init();
