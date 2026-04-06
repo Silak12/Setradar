@@ -1625,6 +1625,114 @@ main {
   color: var(--red);
 }
 
+/* ── Rail Tabs ─────────────────────────────────────────────────────────── */
+.rail-tabs {
+  display: flex;
+  gap: 14px;
+}
+
+.rail-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--grey-lt);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  padding: 2px 0;
+  text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.rail-tab.active {
+  border-bottom-color: var(--red);
+  color: var(--white);
+}
+
+.rail-tab:hover:not(.active) {
+  color: var(--white);
+}
+
+.rail-empty {
+  padding: 16px 12px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+}
+
+/* ── Spotlight Cards ────────────────────────────────────────────────────── */
+.spotlight-list {
+  overflow-x: hidden;
+}
+
+.spotlight-list .spotlight-item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.spotlight-item {
+  min-width: 148px;
+  border: 1px solid #242424;
+  background: rgba(8, 8, 8, 0.88);
+  color: inherit;
+  cursor: pointer;
+  padding: 10px;
+  text-align: left;
+  font-family: var(--mono);
+  transition: border-color 0.15s, transform 0.15s, background 0.15s;
+}
+
+.spotlight-item:hover {
+  border-color: var(--red);
+  transform: translateY(-1px);
+  background: rgba(255, 32, 32, 0.05);
+}
+
+.spotlight-label {
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.spotlight-item--surprise .spotlight-label { color: #f0c040; }
+.spotlight-item--best .spotlight-label     { color: var(--red); }
+.spotlight-item--gem .spotlight-label      { color: #40c0a0; }
+
+.spotlight-name {
+  margin-top: 6px;
+  font-family: var(--display);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlight-stars {
+  margin-top: 7px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--grey-lt);
+}
+
+.spotlight-item--surprise .spotlight-stars { color: #f0c040; }
+.spotlight-item--best .spotlight-stars     { color: var(--red); }
+.spotlight-item--gem .spotlight-stars      { color: #40c0a0; }
+
+.spotlight-meta {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .card-header {
   align-items: stretch;
   gap: 12px;
