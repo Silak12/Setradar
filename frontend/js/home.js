@@ -94,6 +94,8 @@ let ratingState = null;           // { actId, actName, eventId, eventName } | nu
 let selectedRating = 0;
 let userActRatings = new Map();   // key: `${actId}:${eventId}` → rating row
 let eventHighlights = new Map();  // event_id → { bestActId, surpriseActId }
+let spotlightActs = [];           // artist spotlight cards for last night
+let railActiveTab = localStorage.getItem('setradar_rail_tab') || 'spotlight';
 let expandedEventIds = new Set(); // event IDs with timetable open
 let myQueueStartTime = null;      // Date when current user joined queue
 let myClubEntryTime  = null;      // Date when current user entered club
@@ -280,6 +282,7 @@ function applySelectedCity(nextCity) {
   activeSearch = null;
   clearSearch({ rerender: false });
   rerenderView({ preserveDateNavScroll: false });
+  loadActSpotlight().then(() => { buildPopularEvents(); renderPopularEvents(); });
 }
 function updateStatusBar() {
   const bar = document.getElementById('statusBar');
@@ -586,32 +589,67 @@ function truncateWords(text, max = 5) {
   const words = String(text || '').trim().split(/\s+/);
   return words.length <= max ? text : words.slice(0, max).join(' ') + '…';
 }
+function spotlightNameFontSize(name) {
+  const len = (name || '').length;
+  if (len <= 7)  return '22px';
+  if (len <= 11) return '18px';
+  if (len <= 15) return '14px';
+  if (len <= 22) return '11px';
+  return '9px';
+}
+function renderSpotlightPanel() {
+  if (!spotlightActs.length) {
+    return '<div class="rail-empty">Noch keine Bewertungen von letzter Nacht</div>';
+  }
+  return `<div class="popular-rail-list spotlight-list">${spotlightActs.map(act => {
+    const stars = act.avg_rating ? Math.round(act.avg_rating) : 0;
+    const starsHtml = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+    return `
+      <button class="spotlight-item spotlight-item--${act.label === 'ÜBERRASCHUNG' ? 'surprise' : act.label === 'BESTER ACT' ? 'best' : 'gem'}"
+              type="button" data-spotlight-act-id="${act.actId}" data-spotlight-act-name="${act.actName}">
+        <div class="spotlight-label">${act.label}</div>
+        <div class="spotlight-name" style="font-size:${spotlightNameFontSize(act.actName)}">${act.actName}</div>
+        <div class="spotlight-stars">${starsHtml}</div>
+        <div class="spotlight-meta">${act.clubName || ''}</div>
+      </button>`;
+  }).join('')}</div>`;
+}
+function renderEventsPanel() {
+  if (!popularEvents.length) return '<div class="rail-empty">Keine Events</div>';
+  const fallback = popularEvents.every(item => item.fallback);
+  return `<div class="popular-rail-list">${popularEvents.map(item => {
+    const ev = item.event, d = formatDateLabel(ev.event_date);
+    return `
+      <button class="popular-item" type="button" data-popular-event-id="${ev.id}" data-popular-event-date="${ev.event_date}">
+        <div class="popular-item-date">${d.weekday} ${d.day}.${d.month}</div>
+        <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
+        <div class="popular-item-meta">
+          <span>${ev.clubs?.name || '-'}</span>
+          <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
+        </div>
+      </button>`;
+  }).join('')}</div>`;
+}
 function renderPopularEvents() {
   const rail = document.getElementById('popularRail');
   if (!rail) return;
-  if (!popularEvents.length) { rail.innerHTML = ''; return; }
+  const hasSpotlight = spotlightActs.length > 0;
+  const hasEvents = popularEvents.length > 0;
+  if (!hasSpotlight && !hasEvents) { rail.innerHTML = ''; return; }
+  let activeTab = railActiveTab;
+  if (activeTab === 'spotlight' && !hasSpotlight && hasEvents) activeTab = 'events';
+  if (activeTab === 'events' && !hasEvents && hasSpotlight) activeTab = 'spotlight';
   const fallback = popularEvents.every(item => item.fallback);
   rail.innerHTML = `
     <div class="popular-rail-shell">
       <div class="popular-rail-header">
-        <span class="popular-rail-title">Beliebte Events</span>
-        <span class="popular-rail-subtitle">${fallback ? 'Noch kein Trend' : 'Trending'}</span>
+        <div class="rail-tabs">
+          <button class="rail-tab${activeTab === 'spotlight' ? ' active' : ''}" type="button" data-rail-tab="spotlight">Artist Spotlight</button>
+          <button class="rail-tab${activeTab === 'events' ? ' active' : ''}" type="button" data-rail-tab="events">Beliebte Events</button>
+        </div>
+        <span class="popular-rail-subtitle">${activeTab === 'spotlight' ? 'Letzte Nacht' : (fallback ? 'Noch kein Trend' : 'Trending')}</span>
       </div>
-      <div class="popular-rail-list">
-        ${popularEvents.map(item => {
-          const ev = item.event, d = formatDateLabel(ev.event_date);
-          return `
-            <button class="popular-item" type="button" data-popular-event-id="${ev.id}" data-popular-event-date="${ev.event_date}">
-              <div class="popular-item-date">${d.weekday} ${d.day}.${d.month}</div>
-              <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
-              <div class="popular-item-meta">
-                <span>${ev.clubs?.name || '-'}</span>
-                <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
-              </div>
-            </button>
-          `;
-        }).join('')}
-      </div>
+      ${activeTab === 'spotlight' ? renderSpotlightPanel() : renderEventsPanel()}
     </div>
   `;
 }
@@ -1023,6 +1061,18 @@ function bindActionHandlers() {
     }
   });
   document.getElementById('popularRail')?.addEventListener('click', e => {
+    const tab = e.target.closest('[data-rail-tab]');
+    if (tab) {
+      railActiveTab = tab.dataset.railTab;
+      localStorage.setItem('setradar_rail_tab', railActiveTab);
+      renderPopularEvents();
+      return;
+    }
+    const spotlight = e.target.closest('[data-spotlight-act-id]');
+    if (spotlight) {
+      openArtistPopup(spotlight.dataset.spotlightActId, spotlight.dataset.spotlightActName);
+      return;
+    }
     const item = e.target.closest('[data-popular-event-id]');
     if (item) jumpToEvent(item.dataset.popularEventDate, item.dataset.popularEventId);
   });
@@ -1328,6 +1378,69 @@ async function loadEventHighlights(events = allEvents) {
     eventHighlights = new Map();
   }
 }
+async function loadActSpotlight() {
+  const pubClient = supabaseAnonClient || supabaseClient;
+  if (!pubClient) { spotlightActs = []; return; }
+  const from = getDateStr(-2), to = getDateStr(-1);
+  try {
+    const { data: rawEvents, error: evErr } = await pubClient
+      .from('events')
+      .select('id, event_name, clubs(name, cities(name)), event_acts(acts(id, name, insta_name))')
+      .gte('event_date', from)
+      .lte('event_date', to);
+    if (evErr) throw evErr;
+    const recentEvents = (rawEvents || []).filter(ev => normalizeCityName(ev.clubs?.cities?.name) === normalizeCityName(selectedCity));
+    if (!recentEvents.length) { spotlightActs = []; return; }
+    const actEventMap = new Map();
+    for (const ev of recentEvents) {
+      for (const ea of (ev.event_acts || [])) {
+        const act = ea.acts;
+        if (!act?.id) continue;
+        if (!actEventMap.has(act.id)) {
+          actEventMap.set(act.id, { actName: act.name, instaName: act.insta_name, eventName: ev.event_name, clubName: ev.clubs?.name });
+        }
+      }
+    }
+    const actIds = [...actEventMap.keys()];
+    if (!actIds.length) { spotlightActs = []; return; }
+    const { data: stats, error: statErr } = await pubClient
+      .from('act_rating_stats')
+      .select('act_id, avg_rating, rating_count, surprise_pct, best_act_pct')
+      .in('act_id', actIds);
+    if (statErr) throw statErr;
+    const scoredActs = (stats || [])
+      .filter(s => s.rating_count >= 1)
+      .map(s => ({ ...s, actId: Number(s.act_id), ...actEventMap.get(Number(s.act_id)) }));
+    if (!scoredActs.length) { spotlightActs = []; return; }
+    const weightedScore = s => s.avg_rating * Math.log(s.rating_count + 1);
+    const bestFallback = (pool, usedIds) =>
+      pool.filter(s => !usedIds.has(s.actId)).sort((a, b) => weightedScore(b) - weightedScore(a))[0] || null;
+    const usedIds = new Set();
+    const result = [];
+    // Slot 1: Überraschung — highest surprise_pct (min 2 ratings), fallback: best available
+    const surprisePick = scoredActs
+      .filter(s => s.rating_count >= 2 && s.surprise_pct > 0)
+      .sort((a, b) => b.surprise_pct - a.surprise_pct)[0]
+      || bestFallback(scoredActs, usedIds);
+    if (surprisePick) { usedIds.add(surprisePick.actId); result.push({ ...surprisePick, label: 'ÜBERRASCHUNG' }); }
+    // Slot 2: Bester Act — highest weighted score (min 2 ratings), fallback: best available
+    const bestPick = scoredActs
+      .filter(s => !usedIds.has(s.actId) && s.rating_count >= 2)
+      .sort((a, b) => weightedScore(b) - weightedScore(a))[0]
+      || bestFallback(scoredActs, usedIds);
+    if (bestPick) { usedIds.add(bestPick.actId); result.push({ ...bestPick, label: 'BESTER ACT' }); }
+    // Slot 3: Geheimtipp — ≥4.5 Sterne, 10–50 Ratings; fallback: best available
+    const geheimPick = scoredActs
+      .filter(s => !usedIds.has(s.actId) && s.avg_rating >= 4.5 && s.rating_count >= 10 && s.rating_count <= 50)
+      .sort((a, b) => b.avg_rating - a.avg_rating)[0]
+      || bestFallback(scoredActs, usedIds);
+    if (geheimPick) result.push({ ...geheimPick, label: 'GEHEIMTIPP' });
+    spotlightActs = result;
+  } catch (err) {
+    console.warn('Spotlight fetch error:', err.message || err);
+    spotlightActs = [];
+  }
+}
 async function loadUserCollections(events = allEvents) {
   clearUserCollections();
   if (!supabaseClient || !sessionUser) return;
@@ -1428,7 +1541,7 @@ async function refreshEventData({ preserveDateNavScroll = false, flashEventId = 
     syncCitySelectorUi();
   }
   if (demoMode) loadDemoHypes();
-  else { await loadPublicHypes(allEvents); await loadEventHighlights(allEvents); }
+  else { await loadPublicHypes(allEvents); await loadEventHighlights(allEvents); await loadActSpotlight(); }
   await loadUserCollections(allEvents);
   rerenderView({ preserveDateNavScroll });
   _dataLoaded = true;
