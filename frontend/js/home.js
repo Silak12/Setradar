@@ -1070,6 +1070,7 @@ function bindActionHandlers() {
     }
     const spotlight = e.target.closest('[data-spotlight-act-id]');
     if (spotlight) {
+      e.stopPropagation();
       openArtistPopup(spotlight.dataset.spotlightActId, spotlight.dataset.spotlightActName);
       return;
     }
@@ -1147,7 +1148,7 @@ async function openArtistPopup(actId, actName) {
       if (act) { upcomingEvents.push({ start_time: act.start_time, end_time: act.end_time, events: ev }); instaName = act.acts.insta_name; }
     });
   }
-  if (requestId !== artistPopupRequestId || !document.getElementById('artistOverlay')?.classList.contains('open')) return;
+  if (requestId !== artistPopupRequestId) return;
   renderArtistModal(actName, instaName, upcomingEvents, actId, pastEvents, ratingStats, scUrl);
 }
 function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = [], ratingStats = null, scUrl = null) {
