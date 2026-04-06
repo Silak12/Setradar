@@ -8,14 +8,19 @@ const EventCardUtils = window.SetradarEventCards || {};
 
 // ── Level System ─────────────────────────────────────────────────────────────
 const LEVELS = [
-  { name: 'Newcomer',  min: 0  },
-  { name: 'Scout',     min: 5  },
-  { name: 'Explorer',  min: 15 },
-  { name: 'Regular',   min: 30 },
-  { name: 'Veteran',   min: 60 },
-  { name: 'Legend',    min: 100 },
+  { name: 'Newcomer',      min: 0     },
+  { name: 'Flyer',         min: 50    },
+  { name: 'Regular',       min: 150   },
+  { name: 'Raver',         min: 400   },
+  { name: 'Night Crawler', min: 900   },
+  { name: 'Insider',       min: 1800  },
+  { name: 'Devotee',       min: 3200  },
+  { name: 'Fixture',       min: 5000  },
+  { name: 'Veteran',       min: 7500  },
+  { name: 'Legend',        min: 11000 },
 ];
 
+// score = nightsOut*10 + totalClubHours + ratingsCount*5 + badgeBonus
 function computeLevel(score) {
   let lvl = 0;
   for (let i = 0; i < LEVELS.length; i++) {
@@ -26,24 +31,254 @@ function computeLevel(score) {
   const progress = next
     ? Math.round(((score - current.min) / (next.min - current.min)) * 100)
     : 100;
-  const progressLabel = next
-    ? `${score - current.min} / ${next.min - current.min}`
-    : 'Max';
+  const progressLabel = next ? `${score} / ${next.min}` : 'Max';
   return { index: lvl + 1, name: current.name, progress, progressLabel };
 }
 
-// ── Badges (client-side computed from stats) ─────────────────────────────────
-function computeBadges({ hyeCount, actCount, clubCount }) {
-  const earned = [];
-  if (hyeCount >= 1)  earned.push({ icon: '⚡', name: 'Erstes Interesse',  desc: 'Erstes Event interessiert' });
-  if (actCount >= 1)  earned.push({ icon: '🎵', name: 'Act-Fan',          desc: 'Erstem Act gefolgt' });
-  if (actCount >= 5)  earned.push({ icon: '🎛️', name: 'Scout',            desc: '5 Acts gefolgt' });
-  if (actCount >= 10) earned.push({ icon: '📡', name: 'Radar',            desc: '10 Acts gefolgt' });
-  if (clubCount >= 1) earned.push({ icon: '🏴', name: 'Club-Stamm',       desc: 'Erstem Club gefolgt' });
-  if (clubCount >= 3) earned.push({ icon: '🏛️', name: 'Club-Crawler',     desc: '3 Clubs gefolgt' });
-  if (hyeCount >= 10) earned.push({ icon: '🔥', name: 'Interesse-Maschine', desc: '10 Events interessiert' });
-  if (hyeCount >= 30) earned.push({ icon: '💀', name: 'Veteran',          desc: '30 Events interessiert' });
-  return earned;
+// ── Presence Stats (computed from user_presence_log rows) ────────────────────
+function computePresenceStats(logRows, clubByEventId = {}) {
+  const groups = {};
+  logRows.forEach(r => {
+    if (!groups[r.event_id]) groups[r.event_id] = [];
+    groups[r.event_id].push(r);
+  });
+
+  let totalQueueMinutes = 0, totalClubMinutes = 0;
+  const queueDurations = [];
+  let nightsOut = 0, afterTenAmExits = 0, beforeMidnightQueues = 0;
+  let longestQueueMinutes = 0, fastestEntryMinutes = Infinity;
+  let survivorCount = 0, closerCount = 0, ghostCount = 0;
+  const clubVisits = {};
+  let latestExitMinutesOfDay = -1, latestExitTimeStr = null;
+  let earliestQueueMinutesOfDay = Infinity, earliestQueueTimeStr = null;
+
+  for (const [eventId, rows] of Object.entries(groups)) {
+    rows.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const qEntry  = rows.find(r => r.status === 'queue');
+    const cEntry  = rows.find(r => r.status === 'in_club');
+    const lEntry  = rows.find(r => r.status === 'left');
+    if (!qEntry) continue;
+    nightsOut++;
+
+    const qDate = new Date(qEntry.created_at);
+    const qHour = qDate.getHours();
+    if (qHour >= 20 || qHour < 2) beforeMidnightQueues++;
+    // Earliest queue entry (evening hours 18–23 count as "early")
+    const qMinsOfDay = qHour * 60 + qDate.getMinutes();
+    // normalise: treat post-midnight as late (add 1440 for comparison in evening context)
+    const qNorm = qHour < 14 ? qMinsOfDay + 1440 : qMinsOfDay;
+    if (qNorm < earliestQueueMinutesOfDay) {
+      earliestQueueMinutesOfDay = qNorm;
+      earliestQueueTimeStr = `${String(qHour).padStart(2,'0')}:${String(qDate.getMinutes()).padStart(2,'0')}`;
+    }
+
+    const clubId = clubByEventId[Number(eventId)];
+    if (clubId) clubVisits[clubId] = (clubVisits[clubId] || 0) + 1;
+
+    if (cEntry) {
+      const qMins = (new Date(cEntry.created_at) - new Date(qEntry.created_at)) / 60000;
+      totalQueueMinutes += qMins;
+      queueDurations.push(qMins);
+      longestQueueMinutes = Math.max(longestQueueMinutes, qMins);
+      if (qMins < fastestEntryMinutes) fastestEntryMinutes = qMins;
+      if (qMins >= 120) survivorCount++;
+
+      if (lEntry) {
+        const cMins = (new Date(lEntry.created_at) - new Date(cEntry.created_at)) / 60000;
+        totalClubMinutes += cMins;
+        if (cMins >= 720) closerCount++;
+        const exitDate = new Date(lEntry.created_at);
+        const exitHour = exitDate.getHours();
+        if (exitHour >= 10 && exitHour < 16) afterTenAmExits++;
+        // Latest exit (post-midnight hours treated as later than evening)
+        const exitMinsOfDay = exitHour * 60 + exitDate.getMinutes();
+        const exitNorm = exitHour < 14 ? exitMinsOfDay + 1440 : exitMinsOfDay;
+        if (exitNorm > latestExitMinutesOfDay) {
+          latestExitMinutesOfDay = exitNorm;
+          latestExitTimeStr = `${String(exitHour).padStart(2,'0')}:${String(exitDate.getMinutes()).padStart(2,'0')}`;
+        }
+      }
+    } else {
+      ghostCount++;
+    }
+  }
+
+  const maxNightsAtOneClub = clubVisits ? Math.max(0, ...Object.values(clubVisits)) : 0;
+  const uniqueClubCount = Object.keys(clubVisits).length;
+
+  return {
+    nightsOut,
+    totalQueueHours: Math.round(totalQueueMinutes / 60),
+    totalClubHours:  Math.round(totalClubMinutes  / 60),
+    avgQueueMinutes: queueDurations.length
+      ? Math.round(totalQueueMinutes / queueDurations.length) : null,
+    longestQueueMinutes: Math.round(longestQueueMinutes),
+    fastestEntryMinutes: fastestEntryMinutes === Infinity ? null : Math.round(fastestEntryMinutes),
+    latestExitTimeStr,
+    earliestQueueTimeStr,
+    afterTenAmExits,
+    beforeMidnightQueues,
+    survivorCount,
+    closerCount,
+    ghostCount,
+    maxNightsAtOneClub,
+    uniqueClubCount,
+  };
+}
+
+// ── Badges (12 badges × 5 levels, all pre-shown) ────────────────────────────
+const BADGE_LEVEL_BONUS = [0, 5, 10, 20, 35, 50]; // bonus pts per level earned
+
+function computeBadges(stats) {
+  const {
+    nightsOut = 0,
+    totalQueueHours = 0,
+    avgQueueMinutes = null,
+    afterTenAmExits = 0,
+    beforeMidnightQueues = 0,
+    maxNightsAtOneClub = 0,
+    actCount = 0,
+    ratingsCount = 0,
+    avgRating = null,
+    ghostCount = 0,
+    survivorCount = 0,
+    closerCount = 0,
+    uniqueClubCount = 0,
+  } = stats;
+
+  function simpleLevel(thresholds, value) {
+    let lvl = 0;
+    for (let i = 0; i < thresholds.length; i++) {
+      if ((value || 0) >= thresholds[i]) lvl = i + 1;
+    }
+    return lvl;
+  }
+  function progressText(value, thresholds, unit = '') {
+    const lvl = simpleLevel(thresholds, value);
+    if (lvl >= 5) return 'Max Level erreicht';
+    const next = thresholds[lvl];
+    return `${value || 0}${unit} / ${next}${unit}`;
+  }
+
+  const defs = [
+    {
+      id: 'queue_rat', name: 'Queue Rat', icon: '🐀',
+      desc: 'Du kennst die Schlange. Du liebst die Schlange. Gesamtzeit in Warteschlangen.',
+      levelLabels: ['2h', '10h', '25h', '50h', '100h'],
+      level: simpleLevel([2, 10, 25, 50, 100], totalQueueHours),
+      progress: progressText(totalQueueHours, [2, 10, 25, 50, 100], 'h'),
+    },
+    {
+      id: 'vip_energy', name: 'VIP Energy', icon: '⚡',
+      desc: 'Du wartest nicht. Dein Ø in der Queue ist niedrig — mindestens 5 Nächte.',
+      levelLabels: ['Ø < 30min', 'Ø < 20min', 'Ø < 15min', 'Ø < 10min', 'Ø < 5min'],
+      get level() {
+        if (nightsOut < 5 || avgQueueMinutes === null) return 0;
+        if (avgQueueMinutes < 5)  return 5;
+        if (avgQueueMinutes < 10) return 4;
+        if (avgQueueMinutes < 15) return 3;
+        if (avgQueueMinutes < 20) return 2;
+        if (avgQueueMinutes < 30) return 1;
+        return 0;
+      },
+      get progress() {
+        if (nightsOut < 5) return `${nightsOut}/5 Nächte benötigt`;
+        if (avgQueueMinutes === null) return 'Noch keine Queue-Daten';
+        const lvl = this.level;
+        if (lvl >= 5) return 'Max Level erreicht';
+        const targets = [30, 20, 15, 10, 5];
+        return `Ø ${Math.round(avgQueueMinutes)}min — Ziel: <${targets[lvl]}min`;
+      },
+    },
+    {
+      id: 'night_owl', name: 'Night Owl', icon: '🦉',
+      desc: 'Der Club schließt — du nicht. Anzahl der Nächte mit Exit nach 10 Uhr.',
+      levelLabels: ['1x', '3x', '7x', '15x', '30x'],
+      level: simpleLevel([1, 3, 7, 15, 30], afterTenAmExits),
+      progress: progressText(afterTenAmExits, [1, 3, 7, 15, 30], 'x'),
+    },
+    {
+      id: 'early_bird', name: 'Early Bird', icon: '🌙',
+      desc: 'Wer früh kommt, kommt rein. Queue-Eintritt vor Mitternacht.',
+      levelLabels: ['2x', '5x', '10x', '20x', '35x'],
+      level: simpleLevel([2, 5, 10, 20, 35], beforeMidnightQueues),
+      progress: progressText(beforeMidnightQueues, [2, 5, 10, 20, 35], 'x'),
+    },
+    {
+      id: 'resident', name: 'Resident', icon: '🏛️',
+      desc: 'Ein Club. Dein Club. Maximale Nächte im selben Club.',
+      levelLabels: ['3x', '5x', '10x', '20x', '30x'],
+      level: simpleLevel([3, 5, 10, 20, 30], maxNightsAtOneClub),
+      progress: progressText(maxNightsAtOneClub, [3, 5, 10, 20, 30], 'x'),
+    },
+    {
+      id: 'scene_kid', name: 'Scene Kid', icon: '🎧',
+      desc: 'Du folgst der Szene. Anzahl der gefolgten Acts.',
+      levelLabels: ['5', '10', '20', '40', '75'],
+      level: simpleLevel([5, 10, 20, 40, 75], actCount),
+      progress: progressText(actCount, [5, 10, 20, 40, 75]),
+    },
+    {
+      id: 'tastemaker', name: 'Tastemaker', icon: '🎯',
+      desc: 'Du hörst zu und urteilst. Anzahl der bewerteten Acts.',
+      levelLabels: ['5', '15', '30', '60', '100'],
+      level: simpleLevel([5, 15, 30, 60, 100], ratingsCount),
+      progress: progressText(ratingsCount, [5, 15, 30, 60, 100]),
+    },
+    {
+      id: 'honest_critic', name: 'Honest Critic', icon: '⚖️',
+      desc: 'Kein Fake-Hype. Dein Ø liegt unter 3.5 Sternen — du sagst was du meinst.',
+      levelLabels: ['10 Ratings', '20 Ratings', '35 Ratings', '55 Ratings', '80 Ratings'],
+      get level() {
+        if (avgRating === null || avgRating >= 3.5) return 0;
+        return simpleLevel([10, 20, 35, 55, 80], ratingsCount);
+      },
+      get progress() {
+        if (avgRating === null) return 'Noch keine Bewertungen';
+        if (avgRating >= 3.5) return `Ø ${avgRating.toFixed(1)} — unter 3.5 nötig`;
+        const lvl = this.level;
+        if (lvl >= 5) return 'Max Level erreicht';
+        const next = [10, 20, 35, 55, 80][lvl];
+        return `${ratingsCount}/${next} Bewertungen`;
+      },
+    },
+    {
+      id: 'ghost', name: 'Ghost', icon: '👻',
+      desc: 'Du warst in der Queue. Du bist nie reingekommen. Ein Klassiker.',
+      levelLabels: ['1x', '3x', '6x', '10x', '15x'],
+      level: simpleLevel([1, 3, 6, 10, 15], ghostCount),
+      progress: progressText(ghostCount, [1, 3, 6, 10, 15], 'x'),
+    },
+    {
+      id: 'survivor', name: 'Survivor', icon: '💪',
+      desc: '2+ Stunden gewartet und trotzdem reingekommen. Respect.',
+      levelLabels: ['1x', '3x', '5x', '8x', '12x'],
+      level: simpleLevel([1, 3, 5, 8, 12], survivorCount),
+      progress: progressText(survivorCount, [1, 3, 5, 8, 12], 'x'),
+    },
+    {
+      id: 'closer', name: 'Closer', icon: '🌅',
+      desc: 'Du gehst wenn das Licht angeht. 12+ Stunden am Stück im Club.',
+      levelLabels: ['1x', '3x', '5x', '10x', '20x'],
+      level: simpleLevel([1, 3, 5, 10, 20], closerCount),
+      progress: progressText(closerCount, [1, 3, 5, 10, 20], 'x'),
+    },
+    {
+      id: 'explorer', name: 'Explorer', icon: '🗺️',
+      desc: 'Berlin hat viele Clubs. Du kennst sie alle. Verschiedene Clubs besucht.',
+      levelLabels: ['3', '5', '8', '12', '20'],
+      level: simpleLevel([3, 5, 8, 12, 20], uniqueClubCount),
+      progress: progressText(uniqueClubCount, [3, 5, 8, 12, 20]),
+    },
+  ];
+
+  // compute bonus points (sum of BADGE_LEVEL_BONUS[1..level] for each badge)
+  let badgeBonus = 0;
+  defs.forEach(b => {
+    for (let i = 1; i <= b.level; i++) badgeBonus += BADGE_LEVEL_BONUS[i];
+  });
+
+  return { badges: defs, badgeBonus };
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -1421,20 +1656,95 @@ function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } =
   el.innerHTML = html;
 }
 
+let _lastBadges = [];
+
 function renderBadges(badges) {
+  _lastBadges = badges;
   const el = document.getElementById('badgesGrid');
   if (!el) return;
-  if (!badges.length) {
-    el.innerHTML = `<div class="profile-empty">Noch keine Badges verdient.<br><span style="color:var(--grey);font-size:10px">Markiere Events als interessiert und folge Acts, um Badges zu verdienen.</span></div>`;
-    return;
-  }
-  el.innerHTML = badges.map(b => `
-    <div class="profile-badge">
-      <div class="profile-badge-icon">${b.icon}</div>
-      <div class="profile-badge-name">${b.name}</div>
-      <div class="profile-badge-desc">${b.desc}</div>
+  el.innerHTML = badges.map((b, idx) => {
+    const locked = b.level === 0;
+    const pips = Array.from({ length: 5 }, (_, i) =>
+      `<span class="badge-pip${i < b.level ? ' badge-pip--filled' : ''}"></span>`
+    ).join('');
+    return `
+      <button class="profile-badge${locked ? ' profile-badge--locked' : ''}" data-badge-idx="${idx}" type="button" aria-label="${b.name} details">
+        <div class="profile-badge-icon">${b.icon}</div>
+        <div class="profile-badge-name">${b.name}</div>
+        ${b.level > 0 ? `<div class="badge-level-label">LVL ${b.level}</div>` : ''}
+        <div class="badge-pips">${pips}</div>
+        <div class="profile-badge-desc">${b.progress || b.desc}</div>
+      </button>
+    `;
+  }).join('');
+
+  el.addEventListener('click', e => {
+    const btn = e.target.closest('[data-badge-idx]');
+    if (!btn) return;
+    showBadgeDetail(_lastBadges[Number(btn.dataset.badgeIdx)]);
+  });
+}
+
+function showBadgeDetail(b) {
+  closeBadgeDetail();
+  const overlay = document.createElement('div');
+  overlay.id = 'badgeDetailOverlay';
+  overlay.className = 'badge-detail-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+
+  const levelRows = (b.levelLabels || []).map((label, i) => {
+    const earned = i < b.level;
+    return `
+      <div class="badge-detail-level-row${earned ? ' earned' : ''}">
+        <span class="badge-detail-lvl-tag">LVL ${i + 1}</span>
+        <span class="badge-detail-lvl-label">${label}</span>
+        <span class="badge-detail-lvl-check">${earned ? '✓' : '○'}</span>
+      </div>
+    `;
+  }).join('');
+
+  const pips = Array.from({ length: 5 }, (_, i) =>
+    `<span class="badge-pip${i < b.level ? ' badge-pip--filled' : ''}"></span>`
+  ).join('');
+
+  overlay.innerHTML = `
+    <div class="badge-detail-bg"></div>
+    <div class="badge-detail-sheet">
+      <div class="badge-detail-topline"></div>
+      <button class="badge-detail-close" aria-label="Schließen">✕</button>
+      <div class="badge-detail-header">
+        <div class="badge-detail-icon">${b.icon}</div>
+        <div>
+          <div class="badge-detail-name">${b.name}</div>
+          ${b.level > 0 ? `<div class="badge-detail-cur-level">LVL ${b.level} / 5</div>` : '<div class="badge-detail-cur-level">Noch nicht freigeschaltet</div>'}
+          <div class="badge-pips" style="margin-top:6px">${pips}</div>
+        </div>
+      </div>
+      <div class="badge-detail-desc">${b.desc}</div>
+      <div class="badge-detail-levels">${levelRows}</div>
+      <div class="badge-detail-progress">${b.progress || ''}</div>
     </div>
-  `).join('');
+  `;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('open'));
+
+  overlay.querySelector('.badge-detail-bg').addEventListener('click', closeBadgeDetail);
+  overlay.querySelector('.badge-detail-close').addEventListener('click', closeBadgeDetail);
+  document.addEventListener('keydown', _badgeDetailKeyClose);
+}
+
+function _badgeDetailKeyClose(e) {
+  if (e.key === 'Escape') closeBadgeDetail();
+}
+
+function closeBadgeDetail() {
+  const el = document.getElementById('badgeDetailOverlay');
+  if (!el) return;
+  document.removeEventListener('keydown', _badgeDetailKeyClose);
+  el.classList.remove('open');
+  el.addEventListener('transitionend', () => el.remove(), { once: true });
 }
 
 // ── Main data load ────────────────────────────────────────────────────────────
@@ -1470,24 +1780,56 @@ async function loadProfile() {
   favoriteActIds = new Set(actIds);
   favoriteClubIds = new Set(clubIds);
 
-  // 3. Hype count
-  const { count: hyeCount = 0 } = await supabaseClient
-    .from('event_hypes')
-    .select('event_id', { count: 'exact', head: true })
-    .eq('user_id', sessionUser.id);
+  // 3. Presence log (for stats & badges)
+  let presenceStats = computePresenceStats([], {});
+  try {
+    const { data: logRows = [] } = await supabaseClient
+      .from('user_presence_log')
+      .select('event_id, status, created_at')
+      .eq('user_id', sessionUser.id)
+      .order('created_at');
 
-  // Stats
-  document.getElementById('statHypes').textContent    = hyeCount || 0;
-  document.getElementById('statActs').textContent      = actIds.length;
-  document.getElementById('statClubs').textContent     = clubIds.length;
-  document.getElementById('statFavEvents').textContent = eventIds.length;
+    // Fetch club info for events in the log
+    const logEventIds = [...new Set((logRows || []).map(r => Number(r.event_id)).filter(Boolean))];
+    let clubByEventId = {};
+    if (logEventIds.length) {
+      const { data: evRows = [] } = await supabaseClient
+        .from('events')
+        .select('id, club_id')
+        .in('id', logEventIds);
+      (evRows || []).forEach(e => { clubByEventId[Number(e.id)] = e.club_id; });
+    }
+    presenceStats = computePresenceStats(logRows || [], clubByEventId);
+  } catch (err) {
+    console.warn('Presence log fetch error (table may not exist yet):', err.message || err);
+  }
 
-  // Level
-  const score = (hyeCount || 0) + actIds.length + clubIds.length;
-  const lvl = computeLevel(score);
-  document.getElementById('levelLabel').textContent    = `Level ${lvl.index} — ${lvl.name}`;
-  document.getElementById('levelProgress').textContent = lvl.progressLabel;
-  document.getElementById('levelBarFill').style.width  = `${lvl.progress}%`;
+  // Helper: format minutes as "12min" or "1h 23min"
+  function fmtMins(m) {
+    if (m === null || m === undefined || m === 0) return '—';
+    if (m < 60) return `${m}min`;
+    const h = Math.floor(m / 60), rest = m % 60;
+    return rest > 0 ? `${h}h ${rest}min` : `${h}h`;
+  }
+
+  // Primary stats bar
+  document.getElementById('statNights').textContent     = presenceStats.nightsOut;
+  document.getElementById('statQueueHours').textContent = presenceStats.totalQueueHours + 'h';
+  document.getElementById('statClubHours').textContent  = presenceStats.totalClubHours + 'h';
+  // ratings count computed below after fetching ratings — placeholder for now
+  document.getElementById('statRatings').textContent    = 0;
+
+  // Detail stats grid
+  const ds = presenceStats;
+  function setDetail(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+  setDetail('detailAvgQueue',     fmtMins(ds.avgQueueMinutes));
+  setDetail('detailLongestQueue', fmtMins(ds.longestQueueMinutes));
+  setDetail('detailFastestEntry', fmtMins(ds.fastestEntryMinutes));
+  setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr + ' Uhr' : '—');
+  setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr + ' Uhr' : '—');
 
   // 4. Act details
   let acts = [];
@@ -1541,10 +1883,7 @@ async function loadProfile() {
     loadEventHighlights(hypedRows.map(row => row.events)),
   ]);
 
-  // 7. Badges (client-side computed)
-  const badges = computeBadges({ hyeCount: hyeCount || 0, actCount: actIds.length, clubCount: clubIds.length });
-
-  // 8. Top acts (by user's own average rating)
+  // 7. Top acts (by user's own average rating)
   userActRatings = new Map();
   const { data: myRatings = [] } = await supabaseClient
     .from('act_ratings')
@@ -1627,6 +1966,26 @@ async function loadProfile() {
       }
     }
   }
+
+  // Compute rating stats for badges + stat bar
+  const ratingsCount = (myRatings || []).length;
+  const avgRating = ratingsCount
+    ? (myRatings || []).reduce((s, r) => s + (r.rating || 0), 0) / ratingsCount
+    : null;
+  document.getElementById('statRatings').textContent = ratingsCount;
+
+  // Badges + level (now we have all stats)
+  const { badges, badgeBonus } = computeBadges({
+    ...presenceStats,
+    actCount: actIds.length,
+    ratingsCount,
+    avgRating,
+  });
+  const score = presenceStats.nightsOut * 10 + presenceStats.totalClubHours + ratingsCount * 5 + badgeBonus;
+  const lvl = computeLevel(score);
+  document.getElementById('levelLabel').textContent    = `Level ${lvl.index} — ${lvl.name}`;
+  document.getElementById('levelProgress').textContent = lvl.progressLabel;
+  document.getElementById('levelBarFill').style.width  = `${lvl.progress}%`;
 
   // Render all tabs
   initFollowedActsSection(acts);

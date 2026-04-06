@@ -68,23 +68,53 @@
       <!-- Stats -->
       <div class="profile-stats">
         <div class="profile-stat">
-          <div class="profile-stat-value" id="statHypes">0</div>
-          <div class="profile-stat-label">Interessiert</div>
+          <div class="profile-stat-value" id="statNights">0</div>
+          <div class="profile-stat-label">Nächte</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="statActs">0</div>
-          <div class="profile-stat-label">Acts</div>
+          <div class="profile-stat-value" id="statQueueHours">0h</div>
+          <div class="profile-stat-label">Queue</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="statClubs">0</div>
-          <div class="profile-stat-label">Clubs</div>
+          <div class="profile-stat-value" id="statClubHours">0h</div>
+          <div class="profile-stat-label">Im Club</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
-          <div class="profile-stat-value" id="statFavEvents">0</div>
-          <div class="profile-stat-label">Events</div>
+          <div class="profile-stat-value" id="statRatings">0</div>
+          <div class="profile-stat-label">Ratings</div>
+        </div>
+      </div>
+
+      <!-- Detail Stats -->
+      <div class="profile-detail-stats">
+        <div class="profile-detail-col">
+          <div class="profile-detail-label">// QUEUE</div>
+          <div class="profile-detail-row">
+            <span class="profile-detail-key">Ø Wartezeit</span>
+            <span class="profile-detail-val" id="detailAvgQueue">—</span>
+          </div>
+          <div class="profile-detail-row">
+            <span class="profile-detail-key">Längste Queue</span>
+            <span class="profile-detail-val" id="detailLongestQueue">—</span>
+          </div>
+          <div class="profile-detail-row">
+            <span class="profile-detail-key">Schnellster Einlass</span>
+            <span class="profile-detail-val" id="detailFastestEntry">—</span>
+          </div>
+        </div>
+        <div class="profile-detail-col">
+          <div class="profile-detail-label">// TIMING</div>
+          <div class="profile-detail-row">
+            <span class="profile-detail-key">Spätester Exit</span>
+            <span class="profile-detail-val" id="detailLatestExit">—</span>
+          </div>
+          <div class="profile-detail-row">
+            <span class="profile-detail-key">Frühester Start</span>
+            <span class="profile-detail-val" id="detailEarliestQueue">—</span>
+          </div>
         </div>
       </div>
 
@@ -417,8 +447,10 @@
     </div>
   </div>
 
+  <script src="js/cookies.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
+  <script src="js/legal.js"></script>
   <script>
     // VAPID Public Key — set this after generating keys with:
     // npx web-push generate-vapid-keys
