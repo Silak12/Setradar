@@ -2657,6 +2657,49 @@ a.profile-list-meta:hover { color: var(--white); }
   text-transform: uppercase;
 }
 
+/* Detail stats (queue & timing) */
+.profile-detail-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid #1e1e1e;
+  border-bottom: 1px solid #1e1e1e;
+  margin: 0 0 4px;
+}
+.profile-detail-col {
+  padding: 14px 16px;
+}
+.profile-detail-col:first-child {
+  border-right: 1px solid #1e1e1e;
+}
+.profile-detail-label {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--red);
+  margin-bottom: 10px;
+}
+.profile-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.profile-detail-row:last-child { margin-bottom: 0; }
+.profile-detail-key {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--grey);
+  white-space: nowrap;
+}
+.profile-detail-val {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 /* Badges grid */
 .profile-badges-grid {
   display: grid;

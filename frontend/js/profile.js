@@ -49,6 +49,8 @@ function computePresenceStats(logRows, clubByEventId = {}) {
   let longestQueueMinutes = 0, fastestEntryMinutes = Infinity;
   let survivorCount = 0, closerCount = 0, ghostCount = 0;
   const clubVisits = {};
+  let latestExitMinutesOfDay = -1, latestExitTimeStr = null;
+  let earliestQueueMinutesOfDay = Infinity, earliestQueueTimeStr = null;
 
   for (const [eventId, rows] of Object.entries(groups)) {
     rows.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -58,8 +60,17 @@ function computePresenceStats(logRows, clubByEventId = {}) {
     if (!qEntry) continue;
     nightsOut++;
 
-    const qHour = new Date(qEntry.created_at).getHours();
+    const qDate = new Date(qEntry.created_at);
+    const qHour = qDate.getHours();
     if (qHour >= 20 || qHour < 2) beforeMidnightQueues++;
+    // Earliest queue entry (evening hours 18–23 count as "early")
+    const qMinsOfDay = qHour * 60 + qDate.getMinutes();
+    // normalise: treat post-midnight as late (add 1440 for comparison in evening context)
+    const qNorm = qHour < 14 ? qMinsOfDay + 1440 : qMinsOfDay;
+    if (qNorm < earliestQueueMinutesOfDay) {
+      earliestQueueMinutesOfDay = qNorm;
+      earliestQueueTimeStr = `${String(qHour).padStart(2,'0')}:${String(qDate.getMinutes()).padStart(2,'0')}`;
+    }
 
     const clubId = clubByEventId[Number(eventId)];
     if (clubId) clubVisits[clubId] = (clubVisits[clubId] || 0) + 1;
@@ -76,8 +87,16 @@ function computePresenceStats(logRows, clubByEventId = {}) {
         const cMins = (new Date(lEntry.created_at) - new Date(cEntry.created_at)) / 60000;
         totalClubMinutes += cMins;
         if (cMins >= 720) closerCount++;
-        const exitHour = new Date(lEntry.created_at).getHours();
+        const exitDate = new Date(lEntry.created_at);
+        const exitHour = exitDate.getHours();
         if (exitHour >= 10 && exitHour < 16) afterTenAmExits++;
+        // Latest exit (post-midnight hours treated as later than evening)
+        const exitMinsOfDay = exitHour * 60 + exitDate.getMinutes();
+        const exitNorm = exitHour < 14 ? exitMinsOfDay + 1440 : exitMinsOfDay;
+        if (exitNorm > latestExitMinutesOfDay) {
+          latestExitMinutesOfDay = exitNorm;
+          latestExitTimeStr = `${String(exitHour).padStart(2,'0')}:${String(exitDate.getMinutes()).padStart(2,'0')}`;
+        }
       }
     } else {
       ghostCount++;
@@ -95,6 +114,8 @@ function computePresenceStats(logRows, clubByEventId = {}) {
       ? Math.round(totalQueueMinutes / queueDurations.length) : null,
     longestQueueMinutes: Math.round(longestQueueMinutes),
     fastestEntryMinutes: fastestEntryMinutes === Infinity ? null : Math.round(fastestEntryMinutes),
+    latestExitTimeStr,
+    earliestQueueTimeStr,
     afterTenAmExits,
     beforeMidnightQueues,
     survivorCount,
@@ -1783,12 +1804,32 @@ async function loadProfile() {
     console.warn('Presence log fetch error (table may not exist yet):', err.message || err);
   }
 
-  // Stats display
-  document.getElementById('statNights').textContent    = presenceStats.nightsOut;
+  // Helper: format minutes as "12min" or "1h 23min"
+  function fmtMins(m) {
+    if (m === null || m === undefined || m === 0) return '—';
+    if (m < 60) return `${m}min`;
+    const h = Math.floor(m / 60), rest = m % 60;
+    return rest > 0 ? `${h}h ${rest}min` : `${h}h`;
+  }
+
+  // Primary stats bar
+  document.getElementById('statNights').textContent     = presenceStats.nightsOut;
   document.getElementById('statQueueHours').textContent = presenceStats.totalQueueHours + 'h';
   document.getElementById('statClubHours').textContent  = presenceStats.totalClubHours + 'h';
   // ratings count computed below after fetching ratings — placeholder for now
-  document.getElementById('statRatings').textContent   = 0;
+  document.getElementById('statRatings').textContent    = 0;
+
+  // Detail stats grid
+  const ds = presenceStats;
+  function setDetail(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+  setDetail('detailAvgQueue',     fmtMins(ds.avgQueueMinutes));
+  setDetail('detailLongestQueue', fmtMins(ds.longestQueueMinutes));
+  setDetail('detailFastestEntry', fmtMins(ds.fastestEntryMinutes));
+  setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr + ' Uhr' : '—');
+  setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr + ' Uhr' : '—');
 
   // 4. Act details
   let acts = [];
