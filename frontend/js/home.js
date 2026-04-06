@@ -1505,6 +1505,14 @@ async function upsertPresence(eventId, status) {
       updated_at: new Date().toISOString(),
     });
     if (error) throw error;
+    // Log every status change for stats & badges (table: user_presence_log)
+    supabaseClient.from('user_presence_log').insert({
+      user_id: sessionUser.id,
+      event_id: eventId,
+      status,
+    }).then(({ error: logErr }) => {
+      if (logErr) console.warn('Presence log insert error:', logErr.message);
+    });
     return true;
   } catch (err) {
     console.warn('Presence upsert error:', err.message || err);

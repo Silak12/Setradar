@@ -2690,6 +2690,180 @@ a.profile-list-meta:hover { color: var(--white); }
   color: var(--grey-lt);
   line-height: 1.4;
 }
+.profile-badge {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  background: inherit;
+  border: inherit;
+  font-family: inherit;
+}
+.profile-badge--locked {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.profile-badge--locked .profile-badge-icon {
+  filter: grayscale(1);
+}
+
+/* Badge detail modal */
+.badge-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.badge-detail-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.badge-detail-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+}
+.badge-detail-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: #111;
+  border-top: 1px solid #2a2a2a;
+  border-radius: 12px 12px 0 0;
+  padding: 20px 20px 36px;
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.32,0,0.15,1);
+}
+.badge-detail-overlay.open .badge-detail-sheet {
+  transform: translateY(0);
+}
+.badge-detail-topline {
+  width: 32px;
+  height: 3px;
+  background: #333;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.badge-detail-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--grey);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-family: inherit;
+}
+.badge-detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.badge-detail-icon {
+  font-size: 36px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.badge-detail-name {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  line-height: 1.1;
+}
+.badge-detail-cur-level {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--red);
+  margin-top: 4px;
+}
+.badge-detail-desc {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--grey-lt);
+  line-height: 1.6;
+  margin-bottom: 18px;
+  border-top: 1px solid #1e1e1e;
+  padding-top: 14px;
+}
+.badge-detail-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.badge-detail-level-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: #161616;
+  border: 1px solid #1e1e1e;
+}
+.badge-detail-level-row.earned {
+  border-color: rgba(255,32,32,0.25);
+  background: rgba(255,32,32,0.04);
+}
+.badge-detail-lvl-tag {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--grey);
+  min-width: 32px;
+}
+.badge-detail-level-row.earned .badge-detail-lvl-tag {
+  color: var(--red);
+}
+.badge-detail-lvl-label {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--grey-lt);
+  flex: 1;
+}
+.badge-detail-level-row.earned .badge-detail-lvl-label {
+  color: var(--white);
+}
+.badge-detail-lvl-check {
+  font-size: 11px;
+  color: var(--grey);
+}
+.badge-detail-level-row.earned .badge-detail-lvl-check {
+  color: var(--red);
+}
+.badge-detail-progress {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--grey);
+  text-align: center;
+}
+.badge-level-label {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--red);
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.badge-pips {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.badge-pip {
+  width: 8px;
+  height: 3px;
+  background: #2e2e2e;
+  border-radius: 1px;
+}
+.badge-pip--filled {
+  background: var(--red);
+}
 
 /* ── Profile Top Acts & Recommendations ───────────────────────────────────── */
 .profile-list-item--top-act {
