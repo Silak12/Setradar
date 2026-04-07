@@ -51,6 +51,14 @@ window.PastEventModal = (() => {
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 
+  function _fmtDateInput(ts) {
+    return _fmtDateTimeLocal(ts).slice(0, 10);
+  }
+
+  function _fmtTimeInput(ts) {
+    return _fmtDateTimeLocal(ts).slice(11, 16);
+  }
+
   /** Rating-Fenster offen: während Event ODER bis 72h nach Ende */
   function _isRatingOpen(ev) {
     if (!ev?.event_date) return false;
@@ -146,18 +154,24 @@ window.PastEventModal = (() => {
         <div class="pem-edit-fields">
           <label class="pem-edit-field">
             <span class="pem-edit-label">Ankunft</span>
-            <input type="datetime-local" class="pem-time-input" data-status="queue"
-                   data-row-id="${qE?.id || ''}" value="${qE ? _fmtDateTimeLocal(qE.created_at) : eventDate + 'T22:00'}">
+            <span class="pem-edit-datetime" data-status="queue" data-row-id="${qE?.id || ''}">
+              <input type="date" class="pem-date-input" value="${qE ? _fmtDateInput(qE.created_at) : eventDate}">
+              <input type="time" class="pem-time-input" value="${qE ? _fmtTimeInput(qE.created_at) : '22:00'}">
+            </span>
           </label>
           <label class="pem-edit-field">
             <span class="pem-edit-label">Einlass</span>
-            <input type="datetime-local" class="pem-time-input" data-status="in_club"
-                   data-row-id="${cE?.id || ''}" value="${cE ? _fmtDateTimeLocal(cE.created_at) : eventDate + 'T23:00'}">
+            <span class="pem-edit-datetime" data-status="in_club" data-row-id="${cE?.id || ''}">
+              <input type="date" class="pem-date-input" value="${cE ? _fmtDateInput(cE.created_at) : eventDate}">
+              <input type="time" class="pem-time-input" value="${cE ? _fmtTimeInput(cE.created_at) : '23:00'}">
+            </span>
           </label>
           <label class="pem-edit-field">
             <span class="pem-edit-label">Exit</span>
-            <input type="datetime-local" class="pem-time-input" data-status="left"
-                   data-row-id="${lE?.id || ''}" value="${lE ? _fmtDateTimeLocal(lE.created_at) : ''}">
+            <span class="pem-edit-datetime" data-status="left" data-row-id="${lE?.id || ''}">
+              <input type="date" class="pem-date-input" value="${lE ? _fmtDateInput(lE.created_at) : ''}">
+              <input type="time" class="pem-time-input" value="${lE ? _fmtTimeInput(lE.created_at) : ''}">
+            </span>
           </label>
         </div>
         <div class="pem-edit-hint">Datum und Uhrzeit direkt setzen — kein automatisches Raten mehr.</div>
@@ -182,16 +196,16 @@ window.PastEventModal = (() => {
     if (!spotlights) return '';
     const { best, surprise, hiddenGem } = spotlights;
 
-    function card(label, act) {
+    function card(label, act, type) {
       if (!act) {
-        return `<div class="pem-spot-card pem-spot-empty">
+        return `<div class="pem-spot-card pem-spot-card--${type} pem-spot-empty">
           <div class="pem-spot-label">${label}</div>
           <div class="pem-spot-name">Noch keine Votes</div>
         </div>`;
       }
       const name = act.acts?.name || '—';
       const avg  = act.avgRating ? act.avgRating.toFixed(1) : '';
-      return `<div class="pem-spot-card">
+      return `<div class="pem-spot-card pem-spot-card--${type}">
         <div class="pem-spot-label">${label}</div>
         <div class="pem-spot-name">${_esc(name)}</div>
         ${avg ? `<div class="pem-spot-rating">${avg} ★</div>` : ''}
@@ -202,9 +216,9 @@ window.PastEventModal = (() => {
       <div class="pem-section">
         <div class="pem-section-label">// SPOTLIGHTS</div>
         <div class="pem-spotlights">
-          ${card('Bester Act',   best)}
-          ${card('Überraschung', surprise)}
-          ${card('Geheimtipp',   hiddenGem)}
+          ${card('Bester Act',   best,      'best')}
+          ${card('Überraschung', surprise,  'surprise')}
+          ${card('Geheimtipp',   hiddenGem, 'gem')}
         </div>
       </div>`;
   }
@@ -433,21 +447,30 @@ window.PastEventModal = (() => {
       toggleBtn.textContent = '✎';
     });
 
+    editEl.querySelectorAll('.pem-date-input, .pem-time-input').forEach(input => {
+      input.addEventListener('wheel', e => {
+        if (document.activeElement !== input) return;
+        e.preventDefault();
+        input.blur();
+      }, { passive: false });
+    });
+
     // Save
     personalEl.querySelector('.pem-edit-save').addEventListener('click', async () => {
       const saveBtn = personalEl.querySelector('.pem-edit-save');
       saveBtn.disabled = true;
       saveBtn.textContent = '...';
 
-      // datetime-local Wert direkt als lokale Zeit parsen → UTC ISO String
-      const timeToTs = dtStr => new Date(dtStr).toISOString();
+      const timeToTs = (dateStr, timeStr) => new Date(`${dateStr}T${timeStr}`).toISOString();
 
       try {
-        for (const input of editEl.querySelectorAll('.pem-time-input')) {
-          if (!input.value) continue;
-          const status  = input.dataset.status;
-          const rowId   = input.dataset.rowId;
-          const ts      = timeToTs(input.value);
+        for (const wrapper of editEl.querySelectorAll('.pem-edit-datetime')) {
+          const dateValue = wrapper.querySelector('.pem-date-input')?.value || '';
+          const timeValue = wrapper.querySelector('.pem-time-input')?.value || '';
+          if (!dateValue || !timeValue) continue;
+          const status  = wrapper.dataset.status;
+          const rowId   = wrapper.dataset.rowId;
+          const ts      = timeToTs(dateValue, timeValue);
 
           if (rowId) {
             await _sc.from('user_presence_log')
@@ -461,7 +484,7 @@ window.PastEventModal = (() => {
               .select('id, status, created_at').single();
             if (newRow) {
               myPresence.push(newRow);
-              input.dataset.rowId = String(newRow.id);
+              wrapper.dataset.rowId = String(newRow.id);
             }
           }
         }

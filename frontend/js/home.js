@@ -86,9 +86,11 @@ let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
 let eventSortMode = localStorage.getItem('setradar_event_sort') || 'interested';
 // ── Phase 2: Live Mode state ─────────────────────────────────────────────
 let userPresence = null;          // { user_id, event_id, status } | null
-let liveEventData = { queue: null, buckets: [], mood: null };
+let liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
 let livePollingId = null;
 let livePanelExpanded = false;
+let liveGoodbyeEvent = null;   // event after "Club verlassen" — persists until new queue join
+let liveGoodbyeScreen = false; // true = show goodbye message; false = show full read-only view
 // ── Phase 3: Ratings state ────────────────────────────────────────────────
 let ratingState = null;           // { actId, actName, eventId, eventName } | null
 let selectedRating = 0;
@@ -100,12 +102,29 @@ let expandedEventIds = new Set(); // event IDs with timetable open
 let myQueueStartTime = null;      // Date when current user joined queue
 let myClubEntryTime  = null;      // Date when current user entered club
 let artistPopupRequestId = 0;
+let livePanelRenderSignature = '';
 
 function fmtTime(t) { return t ? String(t).slice(0, 5) : null; }
 function formatTimeInput(d) { if (!d) return ''; return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 function parseTimeInputToDate(hhmm) { if (!hhmm) return null; const [h,m]=hhmm.split(':').map(Number); const d=new Date(); d.setHours(h,m,0,0); return d; }
 function fmtWaitTime(start, end) { const mins=Math.round(((end||new Date())-start)/60000); if(mins<0) return '?'; return mins<60?`${mins}m`:`${Math.floor(mins/60)}h ${mins%60}m`; }
 function timeToMinutes(t) { if (!t) return Infinity; const [h, m] = t.split(':').map(Number); const mins = h * 60 + m; return mins < 14 * 60 ? mins + 1440 : mins; }
+let queueInfoToastTimer = null;
+function showQueueInfoToast(message) {
+  let toast = document.getElementById('queueInfoToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'queueInfoToast';
+    toast.className = 'queue-info-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('visible');
+  clearTimeout(queueInfoToastTimer);
+  queueInfoToastTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
+}
 function sortActs(acts) {
   if (EventCardUtils.sortActs) return EventCardUtils.sortActs(acts);
   const withTime = acts.filter(a => a.start_time).sort((a, b) => timeToMinutes(fmtTime(a.start_time)) - timeToMinutes(fmtTime(b.start_time)));
@@ -396,6 +415,59 @@ function setAuthMessage(text = '', type = '') {
   el.textContent = text;
   el.className = 'auth-message' + (type ? ` ${type}` : '');
 }
+function getAuthRedirectUrl() {
+  const url = new URL(window.location.href);
+  url.hash = '';
+  url.search = '';
+  return url.toString();
+}
+function updateGoogleButtonLabel() {
+  const label = document.getElementById('authGoogleBtnLabel');
+  if (!label) return;
+  label.textContent = authMode === AUTH_MODES.SIGNUP ? 'Mit Google registrieren' : 'Mit Google anmelden';
+}
+function setAuthBusy(isBusy) {
+  const submitBtn = document.getElementById('authSubmit');
+  const googleBtn = document.getElementById('authGoogleBtn');
+  if (submitBtn) submitBtn.disabled = isBusy;
+  if (googleBtn) googleBtn.disabled = isBusy;
+}
+async function ensureUserProfile() {
+  if (!supabaseClient || !sessionUser) return null;
+  if (userProfile?.user_id === sessionUser.id) return userProfile;
+  const fallbackName = sessionUser.user_metadata?.name || sessionUser.user_metadata?.full_name || sessionUser.email || 'User';
+  try {
+    const { data, error } = await supabaseClient
+      .from('profiles')
+      .upsert({ user_id: sessionUser.id, display_name: fallbackName }, { onConflict: 'user_id' })
+      .select('user_id, display_name, avatar_url')
+      .maybeSingle();
+    if (error) throw error;
+    userProfile = data || userProfile;
+    return userProfile;
+  } catch (err) {
+    console.warn('Profile ensure error:', err.message || err);
+    return userProfile;
+  }
+}
+function cleanupAuthReturnUrl() {
+  const url = new URL(window.location.href);
+  let changed = false;
+  ['code', 'state', 'error', 'error_code', 'error_description'].forEach(key => {
+    if (!url.searchParams.has(key)) return;
+    url.searchParams.delete(key);
+    changed = true;
+  });
+  if (url.hash) {
+    const hashParams = new URLSearchParams(url.hash.slice(1));
+    const authKeys = ['access_token', 'refresh_token', 'expires_at', 'expires_in', 'token_type', 'type', 'provider_token', 'provider_refresh_token'];
+    if (authKeys.some(key => hashParams.has(key))) {
+      url.hash = '';
+      changed = true;
+    }
+  }
+  if (changed) window.history.replaceState({}, document.title, url.toString());
+}
 function setAuthMode(mode) {
   authMode = mode === AUTH_MODES.SIGNUP ? AUTH_MODES.SIGNUP : AUTH_MODES.LOGIN;
   document.getElementById('authModeLogin')?.classList.toggle('active', authMode === AUTH_MODES.LOGIN);
@@ -405,6 +477,7 @@ function setAuthMode(mode) {
   if (password) password.autocomplete = authMode === AUTH_MODES.SIGNUP ? 'new-password' : 'current-password';
   const submit = document.getElementById('authSubmit');
   if (submit) submit.textContent = authMode === AUTH_MODES.SIGNUP ? 'Signup' : 'Login';
+  updateGoogleButtonLabel();
   setAuthMessage('');
 }
 function openAuthModal(mode = AUTH_MODES.LOGIN, msg = '') {
@@ -465,8 +538,11 @@ async function hydrateSession() {
     console.warn('Auth session error:', err.message || err);
     sessionUser = null;
   }
-  if (sessionUser) await fetchUserProfile();
-  else userProfile = null;
+  if (sessionUser) {
+    await fetchUserProfile();
+    await ensureUserProfile();
+    cleanupAuthReturnUrl();
+  } else userProfile = null;
 }
 function ensureAuthenticated(label = 'Diese Aktion') {
   if (sessionUser) return true;
@@ -479,16 +555,23 @@ async function onAuthSubmit(event) {
   const email = document.getElementById('authEmail')?.value.trim();
   const password = document.getElementById('authPassword')?.value || '';
   const displayName = document.getElementById('authDisplayName')?.value.trim();
-  const submit = document.getElementById('authSubmit');
   if (!email || !password) { setAuthMessage('E-Mail und Passwort sind Pflicht.', 'error'); return; }
-  if (submit) submit.disabled = true;
+  setAuthBusy(true);
   setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Account wird erstellt...' : 'Login laeuft...');
   try {
     if (authMode === AUTH_MODES.SIGNUP) {
-      const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { name: displayName || email }, emailRedirectTo: 'https://silak12.github.io/Setradar/frontend/' } });
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name: displayName || email },
+          emailRedirectTo: getAuthRedirectUrl(),
+        },
+      });
       if (error) throw error;
       if (data.session?.user) {
         sessionUser = data.session.user;
+        await ensureUserProfile();
         await fetchUserProfile();
         await loadUserCollections(allEvents);
         rerenderView({ preserveDateNavScroll: true });
@@ -507,7 +590,28 @@ async function onAuthSubmit(event) {
   } catch (err) {
     setAuthMessage(err.message || 'Auth Fehler.', 'error');
   } finally {
-    if (submit) submit.disabled = false;
+    setAuthBusy(false);
+  }
+}
+async function onGoogleAuth() {
+  if (!supabaseClient) { setAuthMessage('Supabase ist nicht verfuegbar.', 'error'); return; }
+  setAuthBusy(true);
+  setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Google-Registrierung startet...' : 'Google-Login startet...');
+  try {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: getAuthRedirectUrl(),
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'select_account',
+        },
+      },
+    });
+    if (error) throw error;
+  } catch (err) {
+    setAuthBusy(false);
+    setAuthMessage(err.message || 'Google Login fehlgeschlagen.', 'error');
   }
 }
 async function onNavAuthClick() {
@@ -518,7 +622,7 @@ async function onNavAuthClick() {
   clearUserCollections();
   stopLivePolling();
   hideLivePanel();
-  liveEventData = { queue: null, buckets: [], mood: null };
+  liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
   livePanelExpanded = false;
   rerenderView({ preserveDateNavScroll: true });
   supabaseClient.auth.signOut().catch(err => console.warn('Logout error:', err.message || err));
@@ -529,6 +633,7 @@ function initAuthUi() {
   document.getElementById('authModeLogin')?.addEventListener('click', () => setAuthMode(AUTH_MODES.LOGIN));
   document.getElementById('authModeSignup')?.addEventListener('click', () => setAuthMode(AUTH_MODES.SIGNUP));
   document.getElementById('authForm')?.addEventListener('submit', onAuthSubmit);
+  document.getElementById('authGoogleBtn')?.addEventListener('click', onGoogleAuth);
   document.getElementById('navAuthButton')?.addEventListener('click', onNavAuthClick);
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
@@ -541,13 +646,18 @@ function subscribeAuthState() {
   if (!supabaseClient) return;
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     sessionUser = session?.user || null;
-    if (sessionUser) await fetchUserProfile();
+    if (sessionUser) {
+      await fetchUserProfile();
+      await ensureUserProfile();
+      cleanupAuthReturnUrl();
+      closeAuthModal();
+    }
     else {
       userProfile = null;
       clearUserCollections();
       stopLivePolling();
       hideLivePanel();
-      liveEventData = { queue: null, buckets: [], mood: null };
+      liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
       livePanelExpanded = false;
     }
     if (!_dataLoaded) return;
@@ -596,6 +706,69 @@ function spotlightNameFontSize(name) {
   if (len <= 15) return '14px';
   if (len <= 22) return '11px';
   return '9px';
+}
+function computeEventSpotlights(acts, allRatings) {
+  if (!allRatings?.length) return null;
+  const byAct = {};
+  allRatings.forEach(r => {
+    if (!byAct[r.act_id]) byAct[r.act_id] = { sum: 0, count: 0, surprises: 0 };
+    if (r.rating && r.rating > 0) { byAct[r.act_id].sum += r.rating; byAct[r.act_id].count++; }
+    if (r.was_surprise) byAct[r.act_id].surprises++;
+  });
+  const C = 5, PRIOR = 3.5;
+  // act_id fehlt in der Event-Query → acts.id verwenden
+  const enriched = (acts || [])
+    .filter(a => !a.canceled && a.acts?.id && byAct[a.acts.id] && (byAct[a.acts.id].count >= 1 || byAct[a.acts.id].surprises >= 1))
+    .map(a => {
+      const d = byAct[a.acts.id];
+      const avg = d.count > 0 ? d.sum / d.count : 0;
+      const score = d.count > 0 ? (d.count / (d.count + C)) * avg + (C / (d.count + C)) * PRIOR : 0;
+      return { ...a, avgRating: avg, score, surprises: d.surprises, voteCount: d.count };
+    });
+  if (!enriched.length) return null;
+  const assigned = new Set();
+  const surpriseSorted = [...enriched].sort((a, b) => b.surprises - a.surprises || b.voteCount - a.voteCount);
+  const surprise = surpriseSorted[0]?.surprises >= 1 ? surpriseSorted[0] : null;
+  if (surprise) assigned.add(surprise.acts.id);
+  const best = [...enriched].filter(a => !assigned.has(a.acts.id) && a.voteCount >= 1).sort((a, b) => b.score - a.score)[0] || null;
+  if (best) assigned.add(best.acts.id);
+  const hiddenGem = [...enriched]
+    .filter(a => !assigned.has(a.acts.id) && a.avgRating > 4.0 && a.voteCount >= 10 && a.voteCount <= 50)
+    .sort((a, b) => b.avgRating - a.avgRating)[0] || null;
+  return { best, surprise, hiddenGem };
+}
+function renderEventSpotlightCards(spotlights) {
+  if (!spotlights) return '';
+  const items = [
+    ['Bester Act', spotlights.best, 'best'],
+    ['Überraschung', spotlights.surprise, 'surprise'],
+    ['Geheimtipp', spotlights.hiddenGem, 'gem'],
+  ];
+  return `<div class="pem-spotlights">${items.map(([label, act, type]) => {
+    if (!act) {
+      return `<div class="pem-spot-card pem-spot-card--${type} pem-spot-empty">
+        <div class="pem-spot-label">${label}</div>
+        <div class="pem-spot-name">Noch keine Votes</div>
+      </div>`;
+    }
+    const name = act.acts?.name || '—';
+    const avg = act.avgRating ? act.avgRating.toFixed(1) : '';
+    return `<div class="pem-spot-card pem-spot-card--${type}">
+      <div class="pem-spot-label">${label}</div>
+      <div class="pem-spot-name">${name}</div>
+      ${avg ? `<div class="pem-spot-rating">${avg} ★</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+}
+function buildLivePanelSignature(ev, status, hypeTotal) {
+  return JSON.stringify({
+    eventId: Number(ev?.id) || null,
+    status,
+    expanded: !!livePanelExpanded,
+    queue: myQueueStartTime?.toISOString?.() || '',
+    club: myClubEntryTime?.toISOString?.() || '',
+    hype: hypeTotal,
+  });
 }
 function renderSpotlightPanel() {
   if (!spotlightActs.length) {
@@ -678,18 +851,21 @@ function renderEventCard(ev, nextActKeys) {
     const isActFavorite = numActId ? favoriteActIds.has(numActId) : false;
     const isBestAct = numActId && hl?.bestActId === numActId;
     const isSurprise = numActId && hl?.surpriseActId === numActId;
+    const isHiddenGem = numActId && hl?.hiddenGemActId === numActId;
     const actFollowBtn = actId
       ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '♥' : '♡'}</button>`
       : '';
     const existingEvRating = actId && sessionUser ? userActRatings.get(`${actId}:${ev.id}`) : null;
-    const actRateBtn = actId && sessionUser
+    const eventHasStarted = (() => { const s = getEventStartDateTime(ev); return s ? new Date() >= s : ev.event_date <= getDateStr(0); })();
+    const actRateBtn = actId && sessionUser && eventHasStarted
       ? existingEvRating
         ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
         : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
       : '';
     const flairs = [
-      isBestAct ? '<span class="act-flair act-flair--best">Bester Act</span>' : '',
-      isSurprise ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
+      isBestAct    ? '<span class="act-flair act-flair--best">Bester Act</span>'    : '',
+      isSurprise   ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
+      isHiddenGem  ? '<span class="act-flair act-flair--gem">Geheimtipp</span>'     : '',
     ].filter(Boolean).join('');
     return `
       <div class="artist-row ${start ? 'has-time' : ''}${isActFavorite ? ' artist-row--followed' : ''}">
@@ -971,7 +1147,8 @@ async function toggleHype(id) {
       const { error } = await supabaseClient.from('event_hypes').delete().eq('user_id', sessionUser.id).eq('event_id', eventId);
       if (error) throw error;
     } else {
-      const { error } = await supabaseClient.from('event_hypes').insert({ user_id: sessionUser.id, event_id: eventId });
+      const { error } = await supabaseClient.from('event_hypes')
+        .upsert({ user_id: sessionUser.id, event_id: eventId }, { onConflict: 'user_id,event_id', ignoreDuplicates: false });
       if (error) throw error;
       triggerHypeBurst(eventId);
     }
@@ -1048,8 +1225,17 @@ function bindActionHandlers() {
       const actId = Number(target.dataset.actId);
       await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFollowButtons(actId) });
     }
+    if (target.dataset.action === 'queue-locked-info') {
+      showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
+      return;
+    }
     if (target.dataset.action === 'set-presence') {
       await setPresenceStatus(Number(target.dataset.eventId), target.dataset.nextStatus);
+    }
+    if (target.dataset.action === 'open-live-panel') {
+      livePanelExpanded = true;
+      renderLivePanel();
+      return;
     }
     if (target.dataset.action === 'open-rating') {
       await openRatingModal({
@@ -1364,7 +1550,7 @@ async function loadEventHighlights(events = allEvents) {
   try {
     const { data, error } = await pubClient
       .from('event_act_highlights')
-      .select('event_id, best_act_id, surprise_act_id')
+      .select('event_id, best_act_id, surprise_act_id, hidden_gem_act_id')
       .in('event_id', ids);
     if (error) throw error;
     eventHighlights = new Map();
@@ -1372,6 +1558,7 @@ async function loadEventHighlights(events = allEvents) {
       eventHighlights.set(Number(row.event_id), {
         bestActId: row.best_act_id ? Number(row.best_act_id) : null,
         surpriseActId: row.surprise_act_id ? Number(row.surprise_act_id) : null,
+        hiddenGemActId: row.hidden_gem_act_id ? Number(row.hidden_gem_act_id) : null,
       });
     });
   } catch (err) {
@@ -1575,6 +1762,7 @@ function hideLivePanel() {
   panel.classList.remove('open', 'fullscreen');
   panel.setAttribute('aria-hidden', 'true');
   panel.innerHTML = '';
+  livePanelRenderSignature = '';
   document.body.classList.remove('live-mode-active');
 }
 
@@ -1647,25 +1835,46 @@ async function setPresenceStatus(eventId, nextStatus) {
   if (!ensureAuthenticated('Live Mode')) return;
   if (demoMode) { alert('Live Mode braucht eine echte Supabase-Verbindung.'); return; }
 
+  if (nextStatus === 'queue') {
+    const ev = allEvents.find(e => Number(e.id) === Number(eventId));
+    const eventStart = ev ? getEventStartDateTime(ev) : null;
+    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 60 * 60 * 1000) : null;
+    if (queueOpenAt && new Date() < queueOpenAt) {
+      showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
+      return;
+    }
+  }
+
   if (nextStatus === 'left' || nextStatus === null) {
     stopLivePolling();
+    const leftEv = allEvents.find(e => Number(e.id) === Number(eventId)) || null;
     userPresence = null;
-    liveEventData = { queue: null, buckets: [], mood: null };
-    livePanelExpanded = false;
-    myQueueStartTime = null;
-    myClubEntryTime  = null;
-    hideLivePanel();
+    liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
+    // Preserve myQueueStartTime / myClubEntryTime so "Deine Nacht" stays readable
+    // Set goodbye state BEFORE rerenderView so event card shows "Live ▲"
+    liveGoodbyeEvent = leftEv || null;
+    liveGoodbyeScreen = livePanelExpanded && !!leftEv; // show goodbye msg only if panel was open
+    if (!liveGoodbyeEvent) livePanelExpanded = false;
     rerenderView({ preserveDateNavScroll: true });
     await deletePresence();
+    if (liveGoodbyeEvent && livePanelExpanded) {
+      renderLivePanel();
+    } else if (!liveGoodbyeEvent) {
+      hideLivePanel();
+    }
     return;
   }
 
   const ok = await upsertPresence(eventId, nextStatus);
   if (!ok) return;
+  // Clear goodbye state when joining a new queue
+  liveGoodbyeEvent = null;
+  liveGoodbyeScreen = false;
   userPresence = { user_id: sessionUser.id, event_id: Number(eventId), status: nextStatus };
   if (nextStatus === 'queue')   { myQueueStartTime = new Date(); myClubEntryTime = null; }
   if (nextStatus === 'in_club' && !myClubEntryTime) myClubEntryTime = new Date();
 
+  livePanelExpanded = true; // direkt geöffnet beim Betreten
   await fetchLiveData(eventId);
   renderLivePanel();
   rerenderView({ preserveDateNavScroll: true });
@@ -1698,15 +1907,35 @@ async function submitMoodVote(eventId, mood) {
 async function fetchLiveData(eventId) {
   if (!supabaseClient || !eventId) return;
   try {
-    const [qRes, bRes, mRes] = await Promise.all([
+    const [qRes, bRes, mRes, pRes, rRes] = await Promise.all([
       supabaseClient.from('event_queue_current').select('*').eq('event_id', eventId).maybeSingle(),
       supabaseClient.from('event_queue_buckets').select('*').eq('event_id', eventId).order('bucket_start'),
       supabaseClient.from('event_mood_current').select('*').eq('event_id', eventId).maybeSingle(),
+      sessionUser
+        ? supabaseClient.from('user_presence_log')
+            .select('id, status, created_at')
+            .eq('event_id', eventId)
+            .eq('user_id', sessionUser.id)
+            .order('created_at')
+        : Promise.resolve({ data: [] }),
+      (supabaseAnonClient || supabaseClient)
+        .from('act_ratings')
+        .select('act_id, rating, was_surprise')
+        .eq('event_id', eventId),
     ]);
+    const presenceRows = pRes.data || [];
+    const queueRows = presenceRows.filter(r => r.status === 'queue');
+    const clubRows = presenceRows.filter(r => r.status === 'in_club');
+    const lastQueue = queueRows.length ? queueRows[queueRows.length - 1] : null;
+    const lastClub = clubRows.length ? clubRows[clubRows.length - 1] : null;
+    if (lastQueue?.created_at) myQueueStartTime = new Date(lastQueue.created_at);
+    if (lastClub?.created_at) myClubEntryTime = new Date(lastClub.created_at);
     liveEventData = {
       queue: qRes.data || null,
       buckets: bRes.data || [],
       mood: mRes.data || null,
+      presenceRows,
+      allRatings: rRes.data || [],
     };
   } catch (err) {
     console.warn('Live data fetch error:', err.message || err);
@@ -1718,99 +1947,171 @@ function startLivePolling(eventId) {
   if (!eventId) return;
   livePollingId = setInterval(async () => {
     await fetchLiveData(eventId);
+    const currentEvent = allEvents.find(e => Number(e.id) === Number(eventId));
+    if (!currentEvent || !userPresence) return;
+    const sig = buildLivePanelSignature(currentEvent, userPresence.status, getHype(currentEvent.id).total_hype);
+    if (sig === livePanelRenderSignature) {
+      renderQueueGraph();
+      updateLiveSpotlights();
+      return;
+    }
     renderLivePanel();
   }, 15 * 1000);
 }
 
+function getLiveQueuePoints() {
+  const LEVEL_MINS = { green: 15, yellow: 40, red: 80, hell: 150 };
+  const points = (liveEventData.buckets || []).map(r => ({
+    ts: new Date(r.bucket_start).getTime(),
+    value: LEVEL_MINS[r.bucket_level] ?? 15,
+    count: r.reports_count ?? 1,
+  })).filter(p => Number.isFinite(p.ts));
+
+  if (myQueueStartTime) {
+    const end = myClubEntryTime || new Date();
+    const waitMinutes = Math.max(0, Math.round((end - myQueueStartTime) / 60000));
+    const ts = end.getTime();
+    if (Number.isFinite(ts)) points.push({ ts, value: waitMinutes, count: 1 });
+  }
+
+  return points.sort((a, b) => a.ts - b.ts);
+}
+
 function renderQueueGraph() {
-  const canvas = document.getElementById('liveQueueGraph');
-  if (!canvas || !canvas.getContext) return;
-  const parent = canvas.parentElement;
-  if (parent && parent.clientWidth > 0) canvas.width = parent.clientWidth;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  const el = document.getElementById('liveQueueGraph');
+  if (!el) return;
+  const eventId = getPresenceEventId();
+  const ev = allEvents.find(e => Number(e.id) === Number(eventId));
 
-  // layout
-  const padL = 38, padR = 6, padT = 6, padB = 16;
-  const gW = W - padL - padR, gH = H - padT - padB;
-
-  const WINDOW_MIN = 30;
-  const levelColors  = { green: '#3ddc84', yellow: '#ffd60a', red: '#ff2020', hell: '#ff6020' };
-  // Y-axis: 0 → 80 min, labels every 20 min
-  const yMinLabels = ['0', '20m', '40m', '1:00', '1:20+'];
-
-  ctx.clearRect(0, 0, W, H);
-  ctx.font = '8px IBM Plex Mono, monospace';
-
-  // y-axis gridlines + minute labels (0=bottom, 80min=top)
-  for (let i = 0; i <= 4; i++) {
-    const y = padT + gH - (i / 4) * gH;
-    ctx.strokeStyle = '#1e1e1e';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
-    ctx.fillStyle = '#555';
-    ctx.textAlign = 'right';
-    ctx.fillText(yMinLabels[i], padL - 4, y + 3);
-  }
-
-  // x-axis ticks + labels every 10 min
-  for (let m = 0; m <= WINDOW_MIN; m += 10) {
-    const x = padL + (m / WINDOW_MIN) * gW;
-    ctx.strokeStyle = '#1e1e1e';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x, padT + gH); ctx.lineTo(x, padT + gH + 3); ctx.stroke();
-    ctx.fillStyle = '#555';
-    ctx.textAlign = 'center';
-    const label = m === WINDOW_MIN ? 'jetzt' : `-${WINDOW_MIN - m}m`;
-    ctx.fillText(label, x, H - 2);
-  }
-
-  const buckets = liveEventData.buckets || [];
-  if (!buckets.length) {
-    ctx.fillStyle = '#444';
-    ctx.textAlign = 'left';
-    ctx.fillText('keine meldungen', padL + 6, padT + gH / 2 + 3);
+  const points = getLiveQueuePoints();
+  if (!points.length) {
+    el.innerHTML = '<div class="pem-q-empty">Noch keine Warteschlangen-Meldungen für dieses Event.</div>';
     return;
   }
 
-  const now = new Date();
-  const bucketWidthPx = Math.max(4, (5 / WINDOW_MIN) * gW); // 5-min bar width
+  const W = 280, H = 84;
+  const ml = 34, mr = 10, mt = 10, mb = 22;
+  const cw = W - ml - mr;
+  const ch = H - mt - mb;
+  const maxPoint = Math.max(...points.map(p => p.value), 0);
+  const MAX_VAL = Math.max(150, Math.ceil(maxPoint / 30) * 30 || 150);
+  const GRID_VALS = [0, MAX_VAL * 0.2, MAX_VAL * 0.4, MAX_VAL * 0.6, MAX_VAL * 0.8, MAX_VAL]
+    .map(v => Math.round(v / 10) * 10);
 
-  // bars
-  buckets.forEach(b => {
-    if (!b.bucket_start) return;
-    const minsAgo = (now - new Date(b.bucket_start)) / 60000;
-    if (minsAgo < 0 || minsAgo > WINDOW_MIN) return;
-    const x = padL + (1 - minsAgo / WINDOW_MIN) * gW;
-    const val = Math.max(0, Math.min(3, b.level_avg || 0));
-    const bh = (val / 3) * gH;
-    const color = levelColors[b.bucket_level] || '#444';
-    ctx.fillStyle = color + '40';
-    ctx.fillRect(x - bucketWidthPx / 2, padT + gH - bh, bucketWidthPx, bh);
-    ctx.fillStyle = color + 'bb';
-    ctx.fillRect(x - bucketWidthPx / 2, padT + gH - bh, bucketWidthPx, 2);
-  });
+  const eventStart = getEventStartDateTime(ev) || new Date(points[0].ts);
+  const eventEnd = getEventEndDateTime(ev) || new Date(points[points.length - 1].ts);
+  const t0 = eventStart.getTime();
+  const t1 = Math.max(t0 + 1, eventEnd.getTime());
+  const toX = ts => ml + ((Math.min(Math.max(ts, t0), t1) - t0) / (t1 - t0)) * cw;
+  const toY = v => mt + ch - Math.min(v / MAX_VAL, 1) * ch;
+  const colorFor = v => {
+    if (v < 30) return '#22c55e';
+    if (v < 60) return '#f59e0b';
+    if (v < 90) return '#f97316';
+    if (v < 120) return '#ef4444';
+    return '#dc2626';
+  };
 
-  // trend line
-  const sorted = buckets
-    .filter(b => b.bucket_start)
-    .map(b => ({ t: new Date(b.bucket_start), val: Math.max(0, Math.min(3, b.level_avg || 0)) }))
-    .filter(b => { const m = (now - b.t) / 60000; return m >= 0 && m <= WINDOW_MIN; })
-    .sort((a, b) => a.t - b.t);
+  const gridLines = GRID_VALS.map(v => {
+    const y = toY(v).toFixed(1);
+    const label = v === 0 ? '0' : `${v}m`;
+    return `<line x1="${ml}" y1="${y}" x2="${W - mr}" y2="${y}" stroke="#1e1e1e" stroke-width="1"/>
+            <text x="${ml - 4}" y="${(+y + 3.5).toFixed(1)}" text-anchor="end" fill="#444" font-size="7" font-family="monospace">${label}</text>`;
+  }).join('');
 
-  if (sorted.length > 1) {
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255, 200, 0, 0.55)';
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = 'round';
-    sorted.forEach(({ t, val }, i) => {
-      const minsAgo = (now - t) / 60000;
-      const x = padL + (1 - minsAgo / WINDOW_MIN) * gW;
-      const y = padT + gH - (val / 3) * gH;
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
+  let fillPath = '';
+  if (points.length > 1) {
+    const ptStr = points.map(p => `${toX(p.ts).toFixed(1)},${toY(p.value).toFixed(1)}`).join(' ');
+    const bottom = toY(0).toFixed(1);
+    const firstX = toX(points[0].ts).toFixed(1);
+    const lastX = toX(points[points.length - 1].ts).toFixed(1);
+    fillPath = `<polygon points="${ptStr} ${lastX},${bottom} ${firstX},${bottom}" fill="rgba(255,32,32,0.06)" stroke="none"/>`;
   }
+
+  let lineSegs = '';
+  for (let i = 0; i < points.length - 1; i++) {
+    const p1 = points[i], p2 = points[i + 1];
+    const avg = (p1.value + p2.value) / 2;
+    lineSegs += `<line x1="${toX(p1.ts).toFixed(1)}" y1="${toY(p1.value).toFixed(1)}"
+                       x2="${toX(p2.ts).toFixed(1)}" y2="${toY(p2.value).toFixed(1)}"
+                       stroke="${colorFor(avg)}" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
+
+  const dots = points.map(p => {
+    const d = new Date(p.ts);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `<circle cx="${toX(p.ts).toFixed(1)}" cy="${toY(p.value).toFixed(1)}" r="3.5"
+              fill="${colorFor(p.value)}" stroke="#111" stroke-width="1.5">
+            <title>${hh}:${mm} — ca. ${Math.round(p.value)} min (${p.count} Meldungen)</title>
+            </circle>`;
+  }).join('');
+
+  const fmtAxis = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const xLabels = `
+    <text x="${ml}" y="${H - 5}" text-anchor="start" fill="#444" font-size="7" font-family="monospace">${fmtAxis(eventStart)}</text>
+    <text x="${W - mr}" y="${H - 5}" text-anchor="end" fill="#444" font-size="7" font-family="monospace">${fmtAxis(eventEnd)}</text>`;
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="Queue-Verlauf">
+      ${gridLines}
+      ${fillPath}
+      ${lineSegs}
+      ${dots}
+      ${xLabels}
+    </svg>`;
+}
+
+function buildMergedRatingsForEvent(eventId) {
+  const userRatingsForEvent = [];
+  for (const [key, value] of userActRatings.entries()) {
+    if (!value) continue;
+    const colon = key.lastIndexOf(':');
+    if (colon !== -1 && Number(key.slice(colon + 1)) === eventId) userRatingsForEvent.push(value);
+  }
+  const userActIds = new Set(userRatingsForEvent.map(r => r.act_id));
+  return [
+    ...(liveEventData.allRatings || []).filter(r => !userActIds.has(r.act_id)),
+    ...userRatingsForEvent,
+  ];
+}
+
+function syncEventHighlightsFromLocalRatings(eventId) {
+  const ev = allEvents.find(e => Number(e.id) === Number(eventId));
+  if (!ev) return;
+  const acts = sortActs(ev.event_acts || []);
+  const spotlights = computeEventSpotlights(acts, buildMergedRatingsForEvent(Number(eventId)));
+  if (!spotlights) {
+    eventHighlights.delete(Number(eventId));
+    return;
+  }
+  eventHighlights.set(Number(eventId), {
+    bestActId: spotlights.best?.acts?.id ? Number(spotlights.best.acts.id) : null,
+    surpriseActId: spotlights.surprise?.acts?.id ? Number(spotlights.surprise.acts.id) : null,
+    hiddenGemActId: spotlights.hiddenGem?.acts?.id ? Number(spotlights.hiddenGem.acts.id) : null,
+  });
+}
+
+function rerenderEventCardInPlace(eventId) {
+  const cardEl = document.querySelector(`.event-card[data-event-id="${eventId}"]`);
+  const ev = allEvents.find(e => Number(e.id) === Number(eventId));
+  if (!cardEl || !ev) return;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = renderEventCard(ev, getNextActIds(allEvents)).trim();
+  const nextCard = wrapper.firstElementChild;
+  if (!nextCard) return;
+  cardEl.className = nextCard.className;
+  cardEl.innerHTML = nextCard.innerHTML;
+}
+
+function updateLiveSpotlights() {
+  const container = document.getElementById('liveSpotlightCards');
+  const eventId = getPresenceEventId();
+  const ev = allEvents.find(e => Number(e.id) === eventId);
+  if (!container || !ev) return;
+  const acts = sortActs(ev.event_acts || []);
+  const spotlights = computeEventSpotlights(acts, buildMergedRatingsForEvent(eventId));
+  container.innerHTML = renderEventSpotlightCards(spotlights || { best: null, surprise: null, hiddenGem: null });
 }
 
 function renderLivePanel() {
@@ -1818,20 +2119,51 @@ function renderLivePanel() {
   if (!panel) return;
   // Don't interrupt user editing a time input
   if (document.activeElement?.classList.contains('live-time-input')) return;
+  const previousScrollTop = panel.querySelector('.live-panel-body')?.scrollTop ?? 0;
 
-  const eventId = getPresenceEventId();
-  if (!eventId || !userPresence) { hideLivePanel(); return; }
+  // Goodbye screen: shown right after leaving, before user closes with X
+  if (liveGoodbyeScreen && liveGoodbyeEvent && livePanelExpanded) {
+    const gev = liveGoodbyeEvent;
+    panel.innerHTML = `
+      <div class="live-panel-topbar live-panel-fullscreen-header">
+        <span class="live-panel-dot"></span>
+        <div class="live-panel-info">
+          <span class="live-panel-event-name">${gev.event_name}</span>
+          <span class="live-panel-venue">${gev.clubs?.name ?? ''}</span>
+        </div>
+        <button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>
+      </div>
+      <div class="live-panel-body" style="display:block">
+        <div class="live-section live-goodbye-section">
+          <div class="live-goodbye-icon">✓</div>
+          <div class="live-goodbye-title">Gute Nacht</div>
+          <div class="live-goodbye-sub">Du hast ${gev.event_name} verlassen.</div>
+        </div>
+      </div>`;
+    panel.setAttribute('aria-hidden', 'false');
+    panel.classList.add('open', 'fullscreen');
+    document.body.classList.add('live-mode-active');
+    return;
+  }
 
-  const ev = allEvents.find(e => Number(e.id) === eventId);
+  // Full read-only view: after goodbye screen was closed, reopened via "Live ▲"
+  const isGoodbyeMode = !!liveGoodbyeEvent && !userPresence && !liveGoodbyeScreen;
+
+  const eventId = isGoodbyeMode ? Number(liveGoodbyeEvent.id) : getPresenceEventId();
+  // In goodbye mode: only show panel when expanded (no collapsed bar)
+  if (!eventId || (!userPresence && !isGoodbyeMode) || (isGoodbyeMode && !livePanelExpanded)) { hideLivePanel(); return; }
+
+  const ev = isGoodbyeMode ? (allEvents.find(e => Number(e.id) === eventId) || liveGoodbyeEvent) : allEvents.find(e => Number(e.id) === eventId);
   if (!ev) { hideLivePanel(); return; }
 
-  const status = userPresence.status;
+  const status = userPresence?.status ?? 'left';
   const statusLabel = status === 'queue' ? 'Warteschlange' : 'Im Club';
-  const md = liveEventData.mood;
 
   // timetable
   const acts = sortActs(ev.event_acts || []);
-  const hl = eventHighlights.get(Number(ev.id));
+  const mergedRatings = buildMergedRatingsForEvent(eventId);
+  const spotlights = computeEventSpotlights(acts, mergedRatings);
+  const spotlightHtml = renderEventSpotlightCards(spotlights || { best: null, surprise: null, hiddenGem: null });
   const timetableHtml = acts.length
     ? acts.map(a => {
         const s = fmtTime(a.start_time), e2 = fmtTime(a.end_time);
@@ -1839,61 +2171,74 @@ function renderLivePanel() {
         const actId = a.acts?.id ?? null;
         const numActId = actId ? Number(actId) : null;
         const isActFavorite = numActId ? favoriteActIds.has(numActId) : false;
-        const isBestAct = numActId && hl?.bestActId === numActId;
-        const isSurprise = numActId && hl?.surpriseActId === numActId;
-        const flairs = [
-          isBestAct ? '<span class="act-flair act-flair--best">Bester Act</span>' : '',
-          isSurprise ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
-        ].filter(Boolean).join('');
+        const avgHtml = buildActLeftHtml(actId);
         const followBtn = actId
           ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '♥' : '♡'}</button>`
           : '';
         const existingLiveRating = actId && sessionUser ? userActRatings.get(`${actId}:${ev.id}`) : null;
-        const rateBtn = actId && sessionUser
-          ? existingLiveRating
-            ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingLiveRating.rating)}${'☆'.repeat(5 - existingLiveRating.rating)}</button>`
-            : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
-          : '';
+        const stars = [1,2,3,4,5].map(i =>
+          `<span class="pem-star${existingLiveRating?.rating >= i ? ' filled' : ''}" data-star="${i}">★</span>`
+        ).join('');
+        const isSurprise = numActId && !!userActRatings.get(`${numActId}:${ev.id}`)?.was_surprise;
+        const rateBtn = !a.canceled && actId && sessionUser
+          ? `<div class="pem-act-rating-col live-act-rating-col">
+               <div class="pem-stars" data-live-act-id="${actId}" data-act-id="${actId}">${stars}</div>
+               <button class="pem-surprise-btn${isSurprise ? ' active' : ''}" data-live-surprise-act-id="${actId}" data-act-id="${actId}" type="button" title="Überraschung des Abends">★ Überraschung</button>
+             </div>`
+          : '<span class="live-act-rating-placeholder"></span>';
         return `
           <div class="live-act-row${isActFavorite ? ' artist-row--followed' : ''}${a.canceled ? ' act-canceled' : ''}">
-            <span class="artist-row-left">
-              ${buildActLeftHtml(actId)}
-              ${followBtn}
-            </span>
-            <span class="artist-name">
-              <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
-              ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
-            </span>
-            <span class="artist-row-right">
+            <div class="live-act-meta">
+              ${avgHtml}
+              ${followBtn || '<span class="live-act-follow-placeholder"></span>'}
+            </div>
+            <div class="artist-name live-act-name-wrap">
+              <span class="artist-name-link live-act-name" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
+              <div class="pem-act-time live-inline-act-time">${a.canceled ? 'ABGESAGT' : t}</div>
+            </div>
+            <div class="artist-row-right live-act-side">
               ${rateBtn}
-              ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : `<span class="live-act-time">${t}</span>`}
-            </span>
+            </div>
           </div>`;
       }).join('')
     : '<span class="time-tba">Keine Acts</span>';
 
-  // mood buttons
-  const moodMap = { euphoric: 'Euphorisch', stable: 'Stabil', flop: 'Flop' };
-  const moodPct = { euphoric: md?.euphoric_pct || 0, stable: md?.stable_pct || 0, flop: md?.flop_pct || 0 };
-  const moodBtns = ['euphoric', 'stable', 'flop'].map(m =>
-    `<button class="live-mood-btn" data-live-action="mood-vote" data-mood="${m}" data-event-id="${eventId}"><span>${moodMap[m]}</span><span class="live-mood-pct">${moodPct[m]}%</span></button>`
-  ).join('');
-
-  // hype
-  const hype = getHype(ev.id);
-  const isHyped = userHypedEventIds.has(Number(ev.id));
-  // personal wait time section (includes "Club betreten" button when in queue)
-  const waitTimeHtml = (() => {
+  const personalHtml = (() => {
+    if (isGoodbyeMode) {
+      const qVal = formatTimeInput(myQueueStartTime);
+      const cVal = formatTimeInput(myClubEntryTime);
+      const waitResult = myQueueStartTime && myClubEntryTime
+        ? `<div class="live-wait-result"><span class="live-wait-label">Wartezeit</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
+        : '';
+      return `
+        <div class="live-section live-section--personal">
+          <div class="live-section-head">
+            <div class="live-section-label">// DEINE NACHT</div>
+            <span class="live-left-badge">Verlassen</span>
+          </div>
+          <div class="live-time-row">
+            ${myQueueStartTime ? `<div class="live-time-field"><label class="live-time-label">Queue-Eintritt</label><input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}"></div>` : ''}
+            ${myClubEntryTime  ? `<div class="live-time-field"><label class="live-time-label">Club-Eintritt</label><input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}"></div>` : ''}
+          </div>
+          ${waitResult}
+        </div>`;
+    }
     const qVal = formatTimeInput(myQueueStartTime);
     const cVal = formatTimeInput(myClubEntryTime);
     const waitResult = myQueueStartTime && status === 'in_club' && myClubEntryTime
-      ? `<div class="live-wait-result">Wartezeit: <strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
+      ? `<div class="live-wait-result"><span class="live-wait-label">Wartezeit</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
       : myQueueStartTime
-      ? `<div class="live-wait-result">In der Schlange seit: <strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
+      ? `<div class="live-wait-result"><span class="live-wait-label">In der Schlange seit</span><strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
       : '';
+    const topAction = status === 'queue'
+      ? `<button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>`
+      : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">Club verlassen</button>`;
     return `
-      <div class="live-section">
-        <div class="live-section-label">Meine Wartezeit</div>
+      <div class="live-section live-section--personal">
+        <div class="live-section-head">
+          <div class="live-section-label">// DEINE NACHT</div>
+          ${topAction}
+        </div>
         <div class="live-time-row">
           <div class="live-time-field">
             <label class="live-time-label">Queue-Eintritt</label>
@@ -1906,11 +2251,10 @@ function renderLivePanel() {
           </div>` : ''}
         </div>
         ${waitResult}
-        ${status === 'queue' ? `<button class="event-action-button live-next-btn live-next-btn--inline" data-live-action="next-status" data-event-id="${eventId}">Club betreten →</button>` : ''}
       </div>`;
   })();
 
-  panel.innerHTML = `
+  const markup = `
     <div class="live-panel-topbar${livePanelExpanded ? ' live-panel-fullscreen-header' : ''}"
          ${livePanelExpanded ? '' : 'data-live-action="toggle-expand"'}
          >
@@ -1921,33 +2265,43 @@ function renderLivePanel() {
       </div>
       ${livePanelExpanded
         ? `<button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>`
-        : `<span class="live-status-chip live-status-${status}">${statusLabel}</span>
-           <span class="live-panel-chevron">▲</span>`
+        : `<div class="live-bar-cta">
+             <span class="live-status-chip live-status-${status}">${statusLabel}</span>
+             <span class="live-bar-open-hint">Live UI öffnen ▲</span>
+           </div>`
       }
     </div>
     <div class="live-panel-body" style="display:${livePanelExpanded ? 'block' : 'none'}">
+      ${personalHtml}
       <div class="live-section">
-        <div class="live-section-label">Timetable</div>
+        <div class="live-section-label">// WARTESCHLANGE</div>
+        <div class="pem-q-chart-wrap live-queue-chart" id="liveQueueGraph"></div>
+        <div class="pem-q-legend">
+          <span><span class="pem-q-dot" style="background:#22c55e"></span>unter 30 min</span>
+          <span><span class="pem-q-dot" style="background:#f59e0b"></span>30–60 min</span>
+          <span><span class="pem-q-dot" style="background:#ef4444"></span>über 60 min</span>
+        </div>
+      </div>
+      <div class="live-section">
+        <div class="live-section-label">// SPOTLIGHTS</div>
+        <div id="liveSpotlightCards">${spotlightHtml}</div>
+      </div>
+      <div class="live-section">
+        <div class="live-section-label">// LINE-UP & TIMETABLE</div>
+        <div class="pem-rating-hint">★ Überraschung des Abends kann nur einmal vergeben werden</div>
         <div class="live-timetable">${timetableHtml}</div>
-      </div>
-      ${waitTimeHtml}
-      <div class="live-section">
-        <div class="live-section-label">Warteschlangen-Verlauf</div>
-        <canvas id="liveQueueGraph" class="live-graph" height="90"></canvas>
-      </div>
-      <div class="live-section">
-        <div class="live-section-label">Stimmung</div>
-        <div class="live-mood-buttons">${moodBtns}</div>
-      </div>
-      <div class="live-panel-actions">
-        <button class="event-action-button hype-button${isHyped ? ' active' : ''}" data-live-action="hype" data-event-id="${ev.id}">
-          <span class="spark-icon">&#10022;</span><span>Interessiert</span><span class="hype-count">${hype.total_hype}</span>
-        </button>
-        <button class="event-action-button live-leave-btn" data-live-action="leave" data-event-id="${eventId}">Event verlassen ×</button>
       </div>
     </div>
   `;
 
+  const signature = buildLivePanelSignature(ev, status, getHype(ev.id).total_hype);
+
+  if (signature !== livePanelRenderSignature) {
+    panel.innerHTML = markup;
+    const body = panel.querySelector('.live-panel-body');
+    if (body) body.scrollTop = previousScrollTop;
+  }
+  livePanelRenderSignature = signature;
   panel.setAttribute('aria-hidden', 'false');
   panel.classList.add('open');
   panel.classList.toggle('fullscreen', livePanelExpanded);
@@ -1959,7 +2313,98 @@ function renderLivePanel() {
 function initLivePanel() {
   const panel = document.getElementById('livePanel');
   if (!panel) return;
+  panel.addEventListener('mouseover', e => {
+    const star = e.target.closest('.pem-star');
+    const starsEl = e.target.closest('.pem-stars');
+    if (!star || !starsEl) return;
+    const allStars = starsEl.querySelectorAll('.pem-star');
+    const idx = Number(star.dataset.star) - 1;
+    allStars.forEach((s, i) => s.classList.toggle('preview', i <= idx));
+  });
+  panel.addEventListener('mouseout', e => {
+    const starsEl = e.target.closest('.pem-stars');
+    if (!starsEl || starsEl.contains(e.relatedTarget)) return;
+    starsEl.querySelectorAll('.pem-star').forEach(s => s.classList.remove('preview'));
+  });
   panel.addEventListener('click', async e => {
+    const star = e.target.closest('.pem-star');
+    if (star) {
+      const starsEl = star.closest('.pem-stars');
+      const actId = Number(starsEl?.dataset.liveActId || starsEl?.dataset.actId);
+      const eventId = Number(getPresenceEventId() || liveGoodbyeEvent?.id);
+      if (!actId || !eventId || !sessionUser || !supabaseClient) return;
+      const rating = Number(star.dataset.star);
+      const allStars = starsEl.querySelectorAll('.pem-star');
+      allStars.forEach((s, i) => s.classList.toggle('filled', i < rating));
+      allStars.forEach(s => s.classList.remove('preview'));
+      const cacheKey = `${actId}:${eventId}`;
+      const existingRating = userActRatings.get(cacheKey);
+      const wasSurprise = existingRating?.was_surprise ?? false;
+      const payload = { user_id: sessionUser.id, act_id: actId, event_id: eventId, rating, was_surprise: wasSurprise, was_best_act: false };
+      userActRatings.set(cacheKey, payload);
+      syncEventHighlightsFromLocalRatings(eventId);
+      rerenderEventCardInPlace(eventId);
+      updateLiveSpotlights();
+      try {
+        if (existingRating) {
+          await supabaseClient.from('act_ratings').update(payload)
+            .eq('user_id', sessionUser.id).eq('act_id', actId).eq('event_id', eventId);
+        } else {
+          await supabaseClient.from('act_ratings').insert(payload);
+        }
+      } catch (err) {
+        console.warn('Live rating save error:', err.message || err);
+      }
+      return;
+    }
+
+    const surpriseBtn = e.target.closest('.pem-surprise-btn[data-live-surprise-act-id]');
+    if (surpriseBtn) {
+      const actId = Number(surpriseBtn.dataset.liveSurpriseActId || surpriseBtn.dataset.actId);
+      const eventId = Number(getPresenceEventId() || liveGoodbyeEvent?.id);
+      if (!actId || !eventId || !sessionUser || !supabaseClient) return;
+      const wasActive = surpriseBtn.classList.contains('active');
+      const newState = !wasActive;
+      const cacheKey = `${actId}:${eventId}`;
+      const dbExisting = userActRatings.get(cacheKey); // vor lokalem Update erfassen
+
+      // Sofortiges DOM-Update (kein renderLivePanel → kein Flickern)
+      const panel = document.getElementById('livePanel');
+      panel?.querySelectorAll('.pem-surprise-btn[data-live-surprise-act-id]').forEach(b => b.classList.remove('active'));
+      if (newState) surpriseBtn.classList.add('active');
+
+      // Lokalen Cache aktualisieren
+      clearLocalSurpriseForEvent(eventId, newState ? actId : null);
+      if (newState) {
+        userActRatings.set(cacheKey, { ...(dbExisting || { act_id: actId, event_id: eventId, rating: 0 }), was_surprise: true });
+      }
+      syncEventHighlightsFromLocalRatings(eventId);
+      rerenderEventCardInPlace(eventId);
+      updateLiveSpotlights();
+
+      try {
+        await supabaseClient.from('act_ratings')
+          .update({ was_surprise: false })
+          .eq('user_id', sessionUser.id)
+          .eq('event_id', eventId);
+
+        if (newState) {
+          if (dbExisting) {
+            await supabaseClient.from('act_ratings')
+              .update({ was_surprise: true })
+              .eq('user_id', sessionUser.id).eq('act_id', actId).eq('event_id', eventId);
+          } else {
+            await supabaseClient.from('act_ratings').insert(
+              { user_id: sessionUser.id, act_id: actId, event_id: eventId, rating: 0, was_surprise: true, was_best_act: false }
+            );
+          }
+        }
+      } catch (err) {
+        console.warn('Live surprise update error:', err.message || err);
+      }
+      return;
+    }
+
     // Handle act follow/rate actions inside live panel
     const actionTarget = e.target.closest('[data-action]');
     if (actionTarget) {
@@ -1967,15 +2412,6 @@ function initLivePanel() {
       if (action === 'toggle-favorite-act') {
         const actId = Number(actionTarget.dataset.actId);
         await toggleFavorite('act', actId, { rerender: false, onChange: () => { syncActFollowButtons(actId); renderLivePanel(); } });
-        return;
-      }
-      if (action === 'open-rating') {
-        await openRatingModal({
-          actId: Number(actionTarget.dataset.actId),
-          actName: actionTarget.dataset.actName,
-          eventId: Number(actionTarget.dataset.eventId),
-          eventName: actionTarget.dataset.eventName,
-        });
         return;
       }
     }
@@ -1986,12 +2422,26 @@ function initLivePanel() {
     const eventId = Number(target.dataset.eventId || getPresenceEventId());
 
     if (action === 'toggle-expand') {
-      livePanelExpanded = !livePanelExpanded;
-      renderLivePanel();
+      if (livePanelExpanded || liveGoodbyeScreen) {
+        const p = document.getElementById('livePanel');
+        p.classList.add('live-panel--closing');
+        const onEnd = (e) => {
+          if (e.propertyName !== 'transform') return;
+          p.removeEventListener('transitionend', onEnd);
+          p.classList.remove('live-panel--closing');
+          livePanelExpanded = false;
+          liveGoodbyeScreen = false; // goodbye msg shown — next open shows full view
+          // liveGoodbyeEvent stays so "Live ▲" button remains on card
+          renderLivePanel();         // hides panel (userPresence=null, goodbye screen=false)
+        };
+        p.addEventListener('transitionend', onEnd);
+      } else {
+        livePanelExpanded = true;
+        renderLivePanel();
+      }
       return;
     }
     if (action === 'queue-report') { await submitQueueReport(eventId, target.dataset.level); return; }
-    if (action === 'mood-vote')    { await submitMoodVote(eventId, target.dataset.mood);    return; }
     if (action === 'hype')         { await toggleHype(eventId); renderLivePanel();           return; }
     if (action === 'next-status') {
       const next = userPresence?.status === 'queue' ? 'in_club' : null;
@@ -2020,15 +2470,25 @@ function buildPresenceBtn(evId) {
   if (!sessionUser || demoMode) return '';
   const eventId = Number(evId);
   const pid = getPresenceEventId();
+  // After leaving: show "Live ▲" only for the event just left
   if (!pid) {
+    if (liveGoodbyeEvent && Number(liveGoodbyeEvent.id) === eventId) {
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot"></span>Live ▲</button>`;
+    }
+    const ev = allEvents.find(e => Number(e.id) === eventId);
+    const eventStart = ev ? getEventStartDateTime(ev) : null;
+    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 60 * 60 * 1000) : null;
+    if (queueOpenAt && new Date() < queueOpenAt) {
+      return `<button class="event-action-button presence-btn presence-locked" type="button" data-action="queue-locked-info" data-event-id="${eventId}">Warteschlange betreten</button>`;
+    }
     return `<button class="event-action-button presence-btn presence-cta" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="queue"><span class="live-btn-dot"></span>Warteschlange betreten</button>`;
   }
   if (pid === eventId) {
     if (userPresence?.status === 'queue') {
-      return `<button class="event-action-button presence-btn active" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="in_club">Club betreten</button>`;
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot"></span>Warteschlange ▲</button>`;
     }
     if (userPresence?.status === 'in_club') {
-      return `<button class="event-action-button presence-btn presence-leaving" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="left">Club verlassen ×</button>`;
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot live-btn-dot--club"></span>Im Club ▲</button>`;
     }
   }
   return '';
@@ -2093,6 +2553,17 @@ function updateRatingStars(value) {
   if (submit) submit.disabled = value === 0;
 }
 
+function clearLocalSurpriseForEvent(eventId, keepActId = null) {
+  for (const [key, value] of userActRatings.entries()) {
+    if (!value) continue;
+    const colon = key.lastIndexOf(':');
+    if (colon === -1) continue;
+    if (Number(key.slice(colon + 1)) !== Number(eventId)) continue;
+    if (keepActId !== null && Number(value.act_id) === Number(keepActId)) continue;
+    userActRatings.set(key, { ...value, was_surprise: false });
+  }
+}
+
 async function submitActRating() {
   if (!ratingState || selectedRating === 0 || !supabaseClient || !sessionUser) return;
   const submit = document.getElementById('ratingSubmit');
@@ -2113,6 +2584,16 @@ async function submitActRating() {
       .eq('event_id', eventId)
       .maybeSingle();
 
+    if (wasSurprise) {
+      const { error: clearSurpriseError } = await supabaseClient
+        .from('act_ratings')
+        .update({ was_surprise: false })
+        .eq('user_id', sessionUser.id)
+        .eq('event_id', eventId);
+      if (clearSurpriseError) throw clearSurpriseError;
+      clearLocalSurpriseForEvent(eventId, actId);
+    }
+
     if (existingRow) {
       const { error } = await supabaseClient
         .from('act_ratings')
@@ -2132,13 +2613,9 @@ async function submitActRating() {
     const key = `${actId}:${eventId}`;
     userActRatings.set(key, { act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: false, was_surprise: wasSurprise });
 
-    // Refresh highlights and re-render the card in place
-    await loadEventHighlights();
-    const cardEl = document.querySelector(`.event-card[data-event-id="${eventId}"]`);
-    if (cardEl) {
-      const ev = allEvents.find(e => Number(e.id) === Number(eventId));
-      if (ev) cardEl.outerHTML = renderEventCard(ev, getNextActIds(allEvents));
-    }
+    // Refresh the visible card immediately without replacing the whole node.
+    syncEventHighlightsFromLocalRatings(eventId);
+    rerenderEventCardInPlace(eventId);
 
     if (msgEl) msgEl.textContent = 'Gespeichert!';
     setTimeout(() => {
@@ -2190,7 +2667,15 @@ async function init() {
   bindActionHandlers();
   const hasUrl = !isPlaceholderValue(SUPABASE_URL), hasKey = !isPlaceholderValue(SUPABASE_KEY), legacy = isLegacyJwtKey(SUPABASE_KEY), configured = hasUrl && hasKey && !legacy;
   if (configured) {
-    const { createClient } = supabase;
+    if (!window.supabase?.createClient) {
+      console.warn('Supabase SDK nicht geladen.');
+      availableCities = ['Berlin'];
+      syncCitySelectorUi();
+      await refreshEventData();
+      setInterval(refreshAmbientUi, 30 * 1000);
+      return;
+    }
+    const { createClient } = window.supabase;
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { storageKey: 'setradar-auth' },
     });
