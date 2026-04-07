@@ -151,6 +151,7 @@ function computeBadges(stats) {
     actCount = 0,
     ratingsCount = 0,
     avgRating = null,
+    surprisePickCount = 0,
     ghostCount = 0,
     survivorCount = 0,
     closerCount = 0,
@@ -237,21 +238,11 @@ function computeBadges(stats) {
       progress: progressText(ratingsCount, [5, 15, 30, 60, 100]),
     },
     {
-      id: 'honest_critic', name: 'Honest Critic', icon: '⚖️',
-      desc: 'Kein Fake-Hype. Dein Ø liegt unter 3.5 Sternen — du sagst was du meinst.',
-      levelLabels: ['10 Ratings', '20 Ratings', '35 Ratings', '55 Ratings', '80 Ratings'],
-      get level() {
-        if (avgRating === null || avgRating >= 3.5) return 0;
-        return simpleLevel([10, 20, 35, 55, 80], ratingsCount);
-      },
-      get progress() {
-        if (avgRating === null) return 'Noch keine Bewertungen';
-        if (avgRating >= 3.5) return `Ø ${avgRating.toFixed(1)} — unter 3.5 nötig`;
-        const lvl = this.level;
-        if (lvl >= 5) return 'Max Level erreicht';
-        const next = [10, 20, 35, 55, 80][lvl];
-        return `${ratingsCount}/${next} Bewertungen`;
-      },
+      id: 'surprise_picker', name: 'Surprise Picker', icon: '✨',
+      desc: 'Du erkennst den unerwarteten Moment. So oft hast du einen Act als Überraschung des Abends markiert.',
+      levelLabels: ['1x', '3x', '7x', '15x', '30x'],
+      level: simpleLevel([1, 3, 7, 15, 30], surprisePickCount),
+      progress: progressText(surprisePickCount, [1, 3, 7, 15, 30], 'x'),
     },
     {
       id: 'ghost', name: 'Ghost', icon: '👻',
@@ -2099,6 +2090,7 @@ async function loadProfile() {
   const avgRating = ratingsCount
     ? (myRatings || []).reduce((s, r) => s + (r.rating || 0), 0) / ratingsCount
     : null;
+  const surprisePickCount = (myRatings || []).filter(r => r.was_surprise).length;
   document.getElementById('statRatings').textContent = ratingsCount;
 
   // Badges + level (now we have all stats)
@@ -2107,6 +2099,7 @@ async function loadProfile() {
     actCount: actIds.length,
     ratingsCount,
     avgRating,
+    surprisePickCount,
   });
   const score = presenceStats.nightsOut * 10 + presenceStats.totalClubHours + ratingsCount * 5 + badgeBonus;
   const lvl = computeLevel(score);
