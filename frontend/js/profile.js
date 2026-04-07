@@ -35,6 +35,10 @@ function computeLevel(score) {
   return { index: lvl + 1, name: current.name, progress, progressLabel };
 }
 
+// Lookup map: event ID → event row (populated during loadProfile)
+let presenceEventById = {};
+let presenceLogRows   = [];
+
 // ── Presence Stats (computed from user_presence_log rows) ────────────────────
 function computePresenceStats(logRows, clubByEventId = {}) {
   const groups = {};
@@ -47,10 +51,11 @@ function computePresenceStats(logRows, clubByEventId = {}) {
   const queueDurations = [];
   let nightsOut = 0, afterTenAmExits = 0, beforeMidnightQueues = 0;
   let longestQueueMinutes = 0, fastestEntryMinutes = Infinity;
+  let longestQueueEventId = null, fastestEntryEventId = null;
   let survivorCount = 0, closerCount = 0, ghostCount = 0;
   const clubVisits = {};
-  let latestExitMinutesOfDay = -1, latestExitTimeStr = null;
-  let earliestQueueMinutesOfDay = Infinity, earliestQueueTimeStr = null;
+  let latestExitMinutesOfDay = -1, latestExitTimeStr = null, latestExitEventId = null;
+  let earliestQueueMinutesOfDay = Infinity, earliestQueueTimeStr = null, earliestQueueEventId = null;
 
   for (const [eventId, rows] of Object.entries(groups)) {
     rows.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -70,6 +75,7 @@ function computePresenceStats(logRows, clubByEventId = {}) {
     if (qNorm < earliestQueueMinutesOfDay) {
       earliestQueueMinutesOfDay = qNorm;
       earliestQueueTimeStr = `${String(qHour).padStart(2,'0')}:${String(qDate.getMinutes()).padStart(2,'0')}`;
+      earliestQueueEventId = Number(eventId);
     }
 
     const clubId = clubByEventId[Number(eventId)];
@@ -79,8 +85,8 @@ function computePresenceStats(logRows, clubByEventId = {}) {
       const qMins = (new Date(cEntry.created_at) - new Date(qEntry.created_at)) / 60000;
       totalQueueMinutes += qMins;
       queueDurations.push(qMins);
-      longestQueueMinutes = Math.max(longestQueueMinutes, qMins);
-      if (qMins < fastestEntryMinutes) fastestEntryMinutes = qMins;
+      if (qMins > longestQueueMinutes) { longestQueueMinutes = qMins; longestQueueEventId = Number(eventId); }
+      if (qMins < fastestEntryMinutes) { fastestEntryMinutes = qMins; fastestEntryEventId = Number(eventId); }
       if (qMins >= 120) survivorCount++;
 
       if (lEntry) {
@@ -96,6 +102,7 @@ function computePresenceStats(logRows, clubByEventId = {}) {
         if (exitNorm > latestExitMinutesOfDay) {
           latestExitMinutesOfDay = exitNorm;
           latestExitTimeStr = `${String(exitHour).padStart(2,'0')}:${String(exitDate.getMinutes()).padStart(2,'0')}`;
+          latestExitEventId = Number(eventId);
         }
       }
     } else {
@@ -113,9 +120,13 @@ function computePresenceStats(logRows, clubByEventId = {}) {
     avgQueueMinutes: queueDurations.length
       ? Math.round(totalQueueMinutes / queueDurations.length) : null,
     longestQueueMinutes: Math.round(longestQueueMinutes),
+    longestQueueEventId,
     fastestEntryMinutes: fastestEntryMinutes === Infinity ? null : Math.round(fastestEntryMinutes),
+    fastestEntryEventId,
     latestExitTimeStr,
+    latestExitEventId,
     earliestQueueTimeStr,
+    earliestQueueEventId,
     afterTenAmExits,
     beforeMidnightQueues,
     survivorCount,
@@ -1622,6 +1633,93 @@ function renderClubsList(clubs = allFollowedClubs, { updateSource = false } = {}
   `).join('');
 }
 
+// ── Dabei-Tab ─────────────────────────────────────────────────────────────────
+function renderDabeiTab() {
+  const el = document.getElementById('dabeiList');
+  if (!el) return;
+
+  if (!presenceLogRows.length) {
+    el.innerHTML = '<div class="profile-list-empty">Noch keine besuchten Events.</div>';
+    return;
+  }
+
+  // Gruppiere Logs nach Event-ID, ermittle Ankunftszeit (queue entry)
+  const byEvent = {};
+  presenceLogRows.forEach(r => {
+    const id = Number(r.event_id);
+    if (!byEvent[id]) byEvent[id] = [];
+    byEvent[id].push(r);
+  });
+
+  // Sortiere Events nach Datum absteigend (neueste zuerst)
+  const eventIds = Object.keys(byEvent).map(Number)
+    .filter(id => presenceEventById[id])
+    .sort((a, b) => {
+      const da = presenceEventById[a]?.event_date || '';
+      const db = presenceEventById[b]?.event_date || '';
+      return db.localeCompare(da);
+    });
+
+  if (!eventIds.length) {
+    el.innerHTML = '<div class="profile-list-empty">Noch keine besuchten Events.</div>';
+    return;
+  }
+
+  el.innerHTML = eventIds.map(id => {
+    const ev   = presenceEventById[id];
+    const rows = byEvent[id].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const qE   = rows.find(r => r.status === 'queue');
+    const cE   = rows.find(r => r.status === 'in_club');
+    const lE   = rows.find(r => r.status === 'left');
+
+    const d  = ev.event_date ? formatDateLabel(ev.event_date) : null;
+    const dateStr = d ? `${d.weekday} ${d.day}. ${d.monthShort}` : '';
+
+    const fmtTs = ts => {
+      const dt = new Date(ts);
+      return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    };
+
+    const city = ev.clubs?.cities?.name || '';
+    const club = ev.clubs?.name || '';
+    const location = [city, club].filter(Boolean).join(' · ');
+    const metaParts = [location, dateStr].filter(Boolean);
+
+    let summary = '';
+    if (qE && cE) {
+      const waitMins = Math.round((new Date(cE.created_at) - new Date(qE.created_at)) / 60000);
+      summary += `${waitMins} min Queue`;
+    }
+    if (cE && lE) {
+      const stayMins = Math.round((new Date(lE.created_at) - new Date(cE.created_at)) / 60000);
+      const h = Math.floor(stayMins / 60), m = stayMins % 60;
+      summary += (summary ? ' · ' : '') + (h > 0 ? `${h}h ${m}min` : `${m}min`) + ' im Club';
+    } else if (lE) {
+      summary += (summary ? ' · ' : '') + 'Exit ' + fmtTs(lE.created_at);
+    }
+
+    return `
+      <div class="dabei-event-row" data-event-id="${id}" role="button" tabindex="0">
+        <div class="dabei-event-main">
+          <div class="dabei-event-name">${ev.event_name || '—'}</div>
+          <div class="dabei-event-meta">${metaParts.join(' · ')}</div>
+          ${summary ? `<div class="dabei-event-summary">${summary}</div>` : ''}
+        </div>
+        <div class="dabei-event-arrow">›</div>
+      </div>`;
+  }).join('');
+
+  // Click-Handler
+  el.querySelectorAll('.dabei-event-row').forEach(row => {
+    const eventId = Number(row.dataset.eventId);
+    const handler = () => {
+      if (window.PastEventModal) PastEventModal.open(eventId, { supabaseClient, supabaseAnonClient, sessionUser });
+    };
+    row.addEventListener('click', handler);
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handler(); });
+  });
+}
+
 function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } = {}) {
   const el = document.getElementById('hypesList');
   if (!el) return;
@@ -1747,6 +1845,13 @@ function closeBadgeDetail() {
   el.addEventListener('transitionend', () => el.remove(), { once: true });
 }
 
+// ── Stat-Click → Past Event Modal ────────────────────────────────────────────
+function _openPastEventModal(eventId) {
+  if (window.PastEventModal) {
+    PastEventModal.open(eventId, { supabaseClient, supabaseAnonClient, sessionUser });
+  }
+}
+
 // ── Main data load ────────────────────────────────────────────────────────────
 async function loadProfile() {
   // 1. Profile row
@@ -1789,17 +1894,22 @@ async function loadProfile() {
       .eq('user_id', sessionUser.id)
       .order('created_at');
 
-    // Fetch club info for events in the log
+    // Fetch event info for events in the log
     const logEventIds = [...new Set((logRows || []).map(r => Number(r.event_id)).filter(Boolean))];
     let clubByEventId = {};
+    presenceEventById = {};
     if (logEventIds.length) {
       const { data: evRows = [] } = await supabaseClient
         .from('events')
-        .select('id, club_id')
+        .select('id, event_name, event_date, club_id, clubs(name, cities(name))')
         .in('id', logEventIds);
-      (evRows || []).forEach(e => { clubByEventId[Number(e.id)] = e.club_id; });
+      (evRows || []).forEach(e => {
+        clubByEventId[Number(e.id)] = e.club_id;
+        presenceEventById[Number(e.id)] = e;
+      });
     }
-    presenceStats = computePresenceStats(logRows || [], clubByEventId);
+    presenceLogRows = logRows || [];
+    presenceStats = computePresenceStats(presenceLogRows, clubByEventId);
   } catch (err) {
     console.warn('Presence log fetch error (table may not exist yet):', err.message || err);
   }
@@ -1830,6 +1940,23 @@ async function loadProfile() {
   setDetail('detailFastestEntry', fmtMins(ds.fastestEntryMinutes));
   setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr + ' Uhr' : '—');
   setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr + ' Uhr' : '—');
+
+  // Make record stats clickable → bottom sheet with source event
+  const statEventLinks = [
+    { elId: 'detailLongestQueue',  eventId: ds.longestQueueEventId,  label: 'Längste Queue' },
+    { elId: 'detailFastestEntry',  eventId: ds.fastestEntryEventId,  label: 'Schnellster Einlass' },
+    { elId: 'detailLatestExit',    eventId: ds.latestExitEventId,    label: 'Spätester Exit' },
+    { elId: 'detailEarliestQueue', eventId: ds.earliestQueueEventId, label: 'Frühester Start' },
+  ];
+  statEventLinks.forEach(({ elId, eventId, label }) => {
+    if (!eventId) return;
+    const ev = presenceEventById[eventId];
+    if (!ev) return;
+    const row = document.getElementById(elId)?.closest('.profile-detail-row');
+    if (!row) return;
+    row.classList.add('stat-row-clickable');
+    row.addEventListener('click', () => _openPastEventModal(eventId));
+  });
 
   // 4. Act details
   let acts = [];
@@ -1989,6 +2116,7 @@ async function loadProfile() {
 
   // Render all tabs
   initFollowedActsSection(acts);
+  renderDabeiTab();
   renderClubsList(clubs, { updateSource: true });
   renderHypesList(hypedRows || [], { updateSource: true });
   renderBadges(badges);

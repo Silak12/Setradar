@@ -122,9 +122,10 @@
 
       <!-- Tabs -->
       <div class="profile-tabs" role="tablist">
-        <button class="profile-tab active" data-tab="acts" role="tab" aria-selected="true">Acts</button>
-        <button class="profile-tab" data-tab="hypes" role="tab" aria-selected="false">Events</button>
-        <button class="profile-tab" data-tab="clubs" role="tab" aria-selected="false">Clubs</button>
+        <button class="profile-tab active" data-tab="acts"   role="tab" aria-selected="true">Acts</button>
+        <button class="profile-tab" data-tab="dabei"  role="tab" aria-selected="false">Dabei</button>
+        <button class="profile-tab" data-tab="hypes"  role="tab" aria-selected="false">Gespeichert</button>
+        <button class="profile-tab" data-tab="clubs"  role="tab" aria-selected="false">Clubs</button>
         <button class="profile-tab" data-tab="badges" role="tab" aria-selected="false">Badges</button>
       </div>
 
@@ -219,9 +220,17 @@
         </div>
       </div>
 
-      <!-- Events Tab -->
+      <!-- Dabei Tab -->
+      <div class="profile-tab-panel" id="tabDabei" role="tabpanel" hidden>
+        <div class="profile-section-label">Besuchte Events</div>
+        <div class="profile-list" id="dabeiList">
+          <div class="profile-list-loading">Lädt...</div>
+        </div>
+      </div>
+
+      <!-- Gespeichert Tab (ehemals Events/Hypes) -->
       <div class="profile-tab-panel" id="tabHypes" role="tabpanel" hidden>
-        <div class="profile-section-label">Events</div>
+        <div class="profile-section-label">Gespeicherte Events</div>
         <div class="search-wrapper profile-search-wrapper">
           <div class="search-container">
             <div class="search-icon">
@@ -458,6 +467,7 @@
   </script>
   <script src="js/components.js"></script>
   <script src="js/event-cards.js"></script>
+  <script src="js/past-event-modal.js"></script>
   <script src="js/profile.js"></script>
 </body>
 </html>
