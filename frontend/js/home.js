@@ -75,6 +75,8 @@ let userHypedEventIds = new Set();
 let favoriteEventIds = new Set();
 let favoriteClubIds = new Set();
 let favoriteActIds = new Set();
+let userActAvgRatings = new Map();  // actId → avg rating across all events (1–5)
+let collabRecsMap     = new Map();  // actId → collab confidence (0–100)
 let popularEvents = [];
 let pendingActionKeys = new Set();
 let activeSearch = null;
@@ -353,8 +355,70 @@ function compareSchedule(a, b) {
   if (t) return t;
   return String(a.event_name || '').localeCompare(String(b.event_name || ''), 'de');
 }
-function getEventScore(_ev) {
-  return 0;
+function loadPersonalScoreData() {
+  // Per-act average from all user ratings (across different events)
+  const actsSum = new Map(), actsCnt = new Map();
+  for (const r of userActRatings.values()) {
+    if (!r.act_id || !r.rating) continue;
+    const id = Number(r.act_id);
+    actsSum.set(id, (actsSum.get(id) || 0) + r.rating);
+    actsCnt.set(id, (actsCnt.get(id) || 0) + 1);
+  }
+  userActAvgRatings = new Map();
+  actsSum.forEach((sum, id) => userActAvgRatings.set(id, sum / actsCnt.get(id)));
+
+  // Full collab act score map from localStorage (computed on profile page).
+  // Contains ALL unrated acts from similar users (0–10 predicted score),
+  // not just the top-15 recommendations — so bad acts pull event scores down too.
+  collabRecsMap = new Map();
+  if (sessionUser) {
+    try {
+      const raw = localStorage.getItem(`sr_recs_${sessionUser.id}`);
+      if (raw) {
+        const { actScores } = JSON.parse(raw);
+        if (actScores) {
+          Object.entries(actScores).forEach(([id, score]) =>
+            collabRecsMap.set(Number(id), score)
+          );
+        }
+      }
+    } catch {}
+  }
+}
+
+function getEventScore(ev) {
+  if (!sessionUser) return null;
+  const acts = (ev.event_acts || []).filter(a => a.acts?.id && !a.canceled);
+  if (!acts.length) return null;
+
+  let weightedSum = 0, totalWeight = 0;
+  for (const a of acts) {
+    const actId = Number(a.acts.id);
+    const myRating = userActAvgRatings.get(actId);
+    if (myRating != null) {
+      // Own rating: 1–5 → 2–10, weight 2 (trusted data)
+      weightedSum += (myRating * 2) * 2;
+      totalWeight += 2;
+    } else {
+      const collabScore = collabRecsMap.get(actId); // already 0–10
+      if (collabScore != null) {
+        // Collab prediction, weight 1 (less trusted than own ratings)
+        weightedSum += collabScore * 1;
+        totalWeight += 1;
+      }
+    }
+  }
+  if (!totalWeight) return null;
+  return Math.round((weightedSum / totalWeight) * 10) / 10;
+}
+
+function buildEventScoreBadge(ev) {
+  if (!sessionUser) return '';
+  const score = getEventScore(ev);
+  if (score === null) {
+    return `<button class="event-score-badge event-score-badge--unknown" type="button" data-action="score-info">?</button>`;
+  }
+  return `<button class="event-score-badge" type="button" data-action="score-info"><span class="esb-value">${score.toFixed(1)}</span><span class="esb-denom">/10</span></button>`;
 }
 function priorityBucket(ev) {
   if (userHypedEventIds.has(Number(ev.id))) return 0;
@@ -891,6 +955,7 @@ function renderEventCard(ev, nextActKeys) {
         <div class="event-heading">
           <div class="event-name">${ev.event_name}</div>
           ${city ? `<div class="event-city-emphasis">${city}</div>` : ''}
+          ${buildEventScoreBadge(ev)}
         </div>
         <div class="event-meta">
           ${venueHtml}
@@ -1224,6 +1289,11 @@ function bindActionHandlers() {
     if (target.dataset.action === 'toggle-favorite-act') {
       const actId = Number(target.dataset.actId);
       await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFollowButtons(actId) });
+    }
+    if (target.dataset.action === 'score-info') {
+      e.stopPropagation();
+      showQueueInfoToast('Bewerte mehr DJs um einen persönlichen Score zu sehen. Je mehr du und andere User bewerten, desto genauer wird die Vorhersage wie gut dir das Event gefallen wird.');
+      return;
     }
     if (target.dataset.action === 'queue-locked-info') {
       showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
@@ -1664,6 +1734,7 @@ async function loadUserCollections(events = allEvents) {
     (ratingsData || []).forEach(r => {
       userActRatings.set(`${r.act_id}:${r.event_id ?? 'null'}`, r);
     });
+    loadPersonalScoreData();
   } catch (err) {
     console.warn('Act ratings fetch error:', err.message || err);
   }

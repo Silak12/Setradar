@@ -131,27 +131,17 @@
 
       <!-- Acts Tab -->
       <div class="profile-tab-panel active" id="tabActs" role="tabpanel">
-        <div class="profile-section-label">Gefolgte Acts <span class="rated-acts-total" id="followedActsTotal"></span></div>
-        <div class="search-wrapper profile-search-wrapper">
-          <div class="search-container">
-            <div class="search-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-            </div>
-            <input id="followedActsSearchInput" class="search-input" type="text" placeholder="ACTS SUCHEN..." autocomplete="off" spellcheck="false" />
-            <button class="search-clear" id="followedActsSearchClear" aria-label="Clear">✕</button>
-          </div>
+
+        <!-- Empfehlungen -->
+        <div class="profile-section-label rec-section-label">
+          Empfehlungen
+          <button class="rec-info-btn" id="recInfoBtn" type="button" aria-label="Was sind Empfehlungen?">?</button>
         </div>
-        <div class="rated-acts-slider-wrap" id="followedActsSlider">
-          <div class="rated-acts-page" id="followedActsPage">
-            <div class="profile-list-loading">Lädt...</div>
-          </div>
+        <div class="rec-info-tooltip" id="recInfoTooltip" hidden>
+          Basiert auf deinen Ratings und Usern mit ähnlichem Geschmack — wer dieselben DJs ähnlich bewertet hat, empfiehlt dir Artists die du noch nicht bewertet hast. Je mehr du bewertest, desto besser die Vorschläge.
         </div>
-        <div class="rated-acts-nav" id="followedActsNav" style="display:none">
-          <button class="rated-acts-arrow" id="followedActsPrev" aria-label="Vorherige">←</button>
-          <span class="rated-acts-counter" id="followedActsCounter">—</span>
-          <button class="rated-acts-arrow" id="followedActsNext" aria-label="Nächste">→</button>
+        <div id="recommendationsList">
+          <div class="profile-list-loading">Lädt...</div>
         </div>
 
         <div class="profile-section-label rated-acts-section-label" style="margin-top:24px">
@@ -195,10 +185,29 @@
           <button class="rated-acts-arrow" id="ratedActsNext" aria-label="Nächste">→</button>
         </div>
 
-        <div class="profile-section-label" style="margin-top:24px">Empfehlungen</div>
-        <div class="profile-list" id="recommendationsList">
-          <div class="profile-list-loading">Lädt...</div>
+        <div class="profile-section-label" style="margin-top:24px">Gefolgte Acts <span class="rated-acts-total" id="followedActsTotal"></span></div>
+        <div class="search-wrapper profile-search-wrapper">
+          <div class="search-container">
+            <div class="search-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <input id="followedActsSearchInput" class="search-input" type="text" placeholder="ACTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <button class="search-clear" id="followedActsSearchClear" aria-label="Clear">✕</button>
+          </div>
         </div>
+        <div class="rated-acts-slider-wrap" id="followedActsSlider">
+          <div class="rated-acts-page" id="followedActsPage">
+            <div class="profile-list-loading">Lädt...</div>
+          </div>
+        </div>
+        <div class="rated-acts-nav" id="followedActsNav" style="display:none">
+          <button class="rated-acts-arrow" id="followedActsPrev" aria-label="Vorherige">←</button>
+          <span class="rated-acts-counter" id="followedActsCounter">—</span>
+          <button class="rated-acts-arrow" id="followedActsNext" aria-label="Nächste">→</button>
+        </div>
+
       </div>
 
       <!-- Clubs Tab -->
