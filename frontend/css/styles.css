@@ -2286,7 +2286,7 @@ button.venue-tag.active {
   }
 
   .event-actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
 
   .auth-title {
@@ -2821,7 +2821,7 @@ body.live-mode-active main {
 }
 
 /* ── Presence Button on Event Card ──────────────────────────────────────── */
-.presence-btn { font-size: 10px; }
+.presence-btn { font-size: 10px; white-space: nowrap; }
 
 @media (max-width: 640px) {
   .live-section-head {
