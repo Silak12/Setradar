@@ -416,6 +416,11 @@ let expandedEventIds = new Set();
 let allProfileHypedRows = [];
 let profileHypedRows = [];
 
+// Recommendations state
+let allRecommendations = [];   // full pool (up to 15) cached here
+let dismissedRecIds = new Set();
+const RECS_TTL = 60 * 60 * 1000; // 1 hour
+
 // Rated acts section state
 let allRatedActs = [];
 let ratedFilter = 0;      // 0 = all, 1–5 = exact star match
@@ -1263,13 +1268,27 @@ function initArtistPopup() {
 
   // Delegated click on acts lists
   document.addEventListener('click', e => {
+    // Dismiss recommendation
+    const dismissBtn = e.target.closest('[data-rec-dismiss]');
+    if (dismissBtn) {
+      e.preventDefault();
+      const actId = Number(dismissBtn.dataset.recDismiss);
+      dismissedRecIds.add(actId);
+      if (sessionUser) saveRecsCache(sessionUser.id);
+      renderRecommendations();
+      return;
+    }
+
     const followBtn = e.target.closest('[data-profile-act-follow]');
     if (followBtn) {
       e.preventDefault();
       e.stopPropagation();
       const actId = Number(followBtn.dataset.profileActFollow);
       const item = followBtn.closest('.profile-act-link');
-      const actName = item?.dataset.actName || '';
+      // Resolve act name from list or recommendation pool
+      const actName = item?.dataset.actName
+        || allRecommendations.find(a => Number(a.id) === actId)?.name
+        || '';
       toggleProfileFavorite('act', actId, () => {
         if (favoriteActIds.has(actId)) upsertFollowedAct({ id: actId, name: actName });
         else allFollowedActs = allFollowedActs.filter(act => Number(act.id) !== actId);
@@ -1277,6 +1296,7 @@ function initArtistPopup() {
         syncProfileActStats();
         renderFollowedActsPage(0);
         renderRatedActsPage(0);
+        renderRecommendations(); // sync follow state in rec cards
       });
       return;
     }
@@ -1594,17 +1614,49 @@ function initRatingModal() {
   document.getElementById('ratingSubmit')?.addEventListener('click', submitActRating);
 }
 
-function renderRecommendations(recs) {
+function saveRecsCache(userId) {
+  try {
+    const raw = localStorage.getItem(`sr_recs_${userId}`);
+    const parsed = raw ? JSON.parse(raw) : {};
+    localStorage.setItem(`sr_recs_${userId}`, JSON.stringify({
+      recs: allRecommendations,
+      ts: parsed.ts || Date.now(),
+      dismissed: [...dismissedRecIds],
+    }));
+  } catch {}
+}
+
+function renderRecommendations() {
   const el = document.getElementById('recommendationsList');
   if (!el) return;
-  if (!recs.length) { renderEmpty(el, 'Keine Empfehlungen verfügbar.'); return; }
-  el.innerHTML = recs.map(a => `
-    <div class="profile-list-item profile-list-item--rec">
-      <span class="profile-list-name">${a.name}</span>
-      ${a.insta_name ? `<a class="profile-list-meta" href="https://instagram.com/${a.insta_name}" target="_blank" rel="noopener">@${a.insta_name}</a>` : ''}
-      <span class="profile-rec-score">${a.score} Match${a.score > 1 ? 'es' : ''}</span>
-    </div>
-  `).join('');
+
+  const visible = allRecommendations.filter(a => !dismissedRecIds.has(Number(a.id)));
+  const shown = visible.slice(0, 10);
+
+  if (!shown.length) {
+    el.innerHTML = `<div class="profile-list-empty">Noch nicht genug Ratings für Empfehlungen — bewerte mehr Acts!</div>`;
+    return;
+  }
+
+  el.innerHTML = shown.map(a => {
+    const conf = a.confidence ?? 50;
+    const isFollowed = favoriteActIds.has(Number(a.id));
+    return `
+      <div class="profile-list-item profile-list-item--rec" data-rec-act-id="${a.id}">
+        <div class="rec-confidence-bar"><div class="rec-confidence-fill" style="width:${conf}%"></div></div>
+        <div class="rec-main">
+          <span class="profile-list-name">${escapeHtml(a.name)}</span>
+          ${a.insta_name ? `<a class="profile-list-meta" href="https://instagram.com/${escapeHtml(a.insta_name)}" target="_blank" rel="noopener">@${escapeHtml(a.insta_name)}</a>` : ''}
+        </div>
+        <span class="profile-rec-conf">${conf}%</span>
+        <button class="profile-act-follow-btn${isFollowed ? ' active' : ''}" type="button"
+          data-profile-act-follow="${a.id}"
+          aria-pressed="${isFollowed}"
+          title="${isFollowed ? 'Artist entfolgen' : 'Artist folgen'}">${isFollowed ? '♥' : '♡'}</button>
+        <button class="rec-dismiss-btn" type="button" data-rec-dismiss="${a.id}" title="Empfehlung entfernen">×</button>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderClubsList(clubs = allFollowedClubs, { updateSource = false } = {}) {
@@ -2027,62 +2079,129 @@ async function loadProfile() {
     }))
     .sort((a, b) => b.avg - a.avg || b.count - a.count);
 
-  // 9. Collaborative filtering recommendations
-  let recommendations = [];
+  // 9. Collaborative filtering recommendations (rating-based similarity)
   const myRatedActIds = [...actRatingMap.keys()];
-  if (myRatedActIds.length) {
+  const myAvgByAct = new Map();
+  actRatingMap.forEach((v, id) => {
+    myAvgByAct.set(id, v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length);
+  });
+
+  // Check localStorage cache first
+  const recsCacheKey = `sr_recs_${sessionUser.id}`;
+  let cachedEntry = null;
+  try {
+    const raw = localStorage.getItem(recsCacheKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < RECS_TTL) cachedEntry = parsed;
+    }
+  } catch {}
+
+  if (cachedEntry) {
+    allRecommendations = cachedEntry.recs || [];
+    dismissedRecIds = new Set(cachedEntry.dismissed || []);
+  } else if (myRatedActIds.length) {
+    // Fetch other users' ratings for the same acts (with actual rating value)
     const { data: otherRatings = [] } = await supabaseClient
       .from('act_ratings')
-      .select('user_id, act_id')
+      .select('user_id, act_id, rating')
       .in('act_id', myRatedActIds)
       .neq('user_id', sessionUser.id);
 
-    // Count how many of the user's rated acts each other user has also rated
-    const similarityMap = new Map();
+    // Compute similarity: per shared act, sim = 1 - |myRating - theirRating| / 4
+    // Both high AND both low count positively (similar taste)
+    const simSumMap = new Map();
+    const simCountMap = new Map();
     (otherRatings || []).forEach(r => {
-      similarityMap.set(r.user_id, (similarityMap.get(r.user_id) || 0) + 1);
+      const myRating = myAvgByAct.get(r.act_id);
+      if (!myRating) return;
+      const sim = 1 - Math.abs(myRating - r.rating) / 4;
+      simSumMap.set(r.user_id, (simSumMap.get(r.user_id) || 0) + sim);
+      simCountMap.set(r.user_id, (simCountMap.get(r.user_id) || 0) + 1);
     });
 
-    const topSimilarUsers = [...similarityMap.entries()]
+    // Normalize by shared count so users with 1 shared act don't dominate
+    const normalizedSim = new Map();
+    simSumMap.forEach((sum, uid) => {
+      const shared = simCountMap.get(uid) || 1;
+      if (shared >= 2) normalizedSim.set(uid, sum / shared); // require at least 2 shared
+    });
+
+    const topSimilarUsers = [...normalizedSim.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20)
       .map(([uid]) => uid);
 
     if (topSimilarUsers.length) {
-      let favsQuery = supabaseClient
-        .from('favorites')
-        .select('entity_id')
-        .eq('entity_type', 'act')
+      // Fetch ALL ratings (any score) from similar users for acts I haven't rated.
+      // No rating threshold here — acts rated poorly pull event scores down too.
+      let candQuery = supabaseClient
+        .from('act_ratings')
+        .select('act_id, user_id, rating')
         .in('user_id', topSimilarUsers);
-
-      if (actIds.length) {
-        favsQuery = favsQuery.not('entity_id', 'in', `(${actIds.join(',')})`);
+      if (myRatedActIds.length) {
+        candQuery = candQuery.not('act_id', 'in', `(${myRatedActIds.join(',')})`);
       }
-      const { data: theirFavs = [] } = await favsQuery;
+      const { data: candidateRatings = [] } = await candQuery;
 
-      const recScoreMap = new Map();
-      (theirFavs || []).forEach(f => {
-        const id = Number(f.entity_id);
-        recScoreMap.set(id, (recScoreMap.get(id) || 0) + 1);
+      // Weighted sum AND weight per act (needed for proper normalization)
+      const recScoreMap  = new Map(); // actId → sum(sim × rating)
+      const recWeightMap = new Map(); // actId → sum(sim)
+      (candidateRatings || []).forEach(r => {
+        const sim = normalizedSim.get(r.user_id) || 0;
+        const id  = Number(r.act_id);
+        recScoreMap.set(id,  (recScoreMap.get(id)  || 0) + sim * r.rating);
+        recWeightMap.set(id, (recWeightMap.get(id) || 0) + sim);
       });
 
+      // Full normalized act score map: actId → predicted 0–10 score.
+      // Used on the home page to score events even for non-recommended acts.
+      const actScoresCache = {};
+      recScoreMap.forEach((weightedSum, id) => {
+        const totalSim = recWeightMap.get(id) || 1;
+        // weighted avg rating (1–5) × 2 → 0–10 scale
+        actScoresCache[id] = Math.round((weightedSum / totalSim) * 20) / 10;
+      });
+
+      // Recommendations: only well-predicted acts (≥8/10 ≈ 4★+), top 15 by raw score
       const topRecIds = [...recScoreMap.entries()]
+        .filter(([id]) => (actScoresCache[id] || 0) >= 8)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
+        .slice(0, 15)
         .map(([id]) => id);
 
-      if (topRecIds.length) {
+      const allCandidateIds = [...recScoreMap.keys()];
+      if (allCandidateIds.length) {
+        const fetchIds = [...new Set([...topRecIds, ...allCandidateIds])].slice(0, 500);
         const { data: recActDetails = [] } = await supabaseClient
           .from('acts')
           .select('id, name, insta_name')
-          .in('id', topRecIds);
+          .in('id', fetchIds);
 
-        recommendations = topRecIds
-          .map(id => recActDetails.find(a => Number(a.id) === id))
-          .filter(Boolean)
-          .map(a => ({ ...a, score: recScoreMap.get(Number(a.id)) }));
+        if (topRecIds.length) {
+          const maxScore = recScoreMap.get(topRecIds[0]) || 1;
+          allRecommendations = topRecIds
+            .map(id => recActDetails.find(a => Number(a.id) === id))
+            .filter(Boolean)
+            .map(a => ({
+              ...a,
+              id: Number(a.id),
+              confidence: Math.round((recScoreMap.get(Number(a.id)) / maxScore) * 85) + 10,
+            }));
+        }
+
+        // Persist recs + full actScores map to localStorage
+        try {
+          localStorage.setItem(recsCacheKey, JSON.stringify({
+            recs: allRecommendations,
+            actScores: actScoresCache,
+            ts: Date.now(),
+            dismissed: [],
+          }));
+        } catch {}
       }
     }
+    dismissedRecIds = new Set();
   }
 
   // Compute rating stats for badges + stat bar
@@ -2114,7 +2233,7 @@ async function loadProfile() {
   renderHypesList(hypedRows || [], { updateSource: true });
   renderBadges(badges);
   initRatedActsSection(topActs);
-  renderRecommendations(recommendations);
+  renderRecommendations();
 }
 
 // ── Push Notifications ────────────────────────────────────────────────────────
@@ -2502,6 +2621,17 @@ async function init() {
 
   loading.style.display = 'none';
   content.style.display = '';
+
+  // Rec-info tooltip toggle
+  document.getElementById('recInfoBtn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const tip = document.getElementById('recInfoTooltip');
+    if (tip) tip.hidden = !tip.hidden;
+  });
+  document.addEventListener('click', () => {
+    const tip = document.getElementById('recInfoTooltip');
+    if (tip && !tip.hidden) tip.hidden = true;
+  });
 
   try {
     await loadProfile();
