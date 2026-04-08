@@ -45,7 +45,7 @@
     const artistRows = acts.map(act => {
       const start = context.fmtTime(act.start_time);
       const end = context.fmtTime(act.end_time);
-      const label = start && end ? `${start} - ${end}` : start ? `ab ${start}` : null;
+      const label = start && end ? `${start} - ${end}` : start ? window.t('act.from', { time: start }) : null;
       const actKey = `${ev.id}_${act.sort_order}`;
       const mins = context.nextActKeys.includes(actKey) ? context.getMinutesUntil(start, ev.event_date) : null;
       const countdown = mins !== null ? context.fmtCountdown(mins) : null;
@@ -60,12 +60,12 @@
       const existingRating = actId && context.sessionUser ? context.userActRatings.get(`${actId}:${ev.id}`) : null;
       const actRateBtn = actId && context.sessionUser
         ? existingRating
-          ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(act.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Bewertung ändern">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</button>`
-          : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(act.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Jetzt bewerten">☆☆☆☆☆</button>`
+          ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(act.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${window.t('act.rate_change')}">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</button>`
+          : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(act.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${window.t('act.rate')}">☆☆☆☆☆</button>`
         : '';
       const flairs = [
-        isBestAct ? '<span class="act-flair act-flair--best">Bester Act</span>' : '',
-        isSurprise ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
+        isBestAct ? `<span class="act-flair act-flair--best">${window.t('act.best')}</span>` : '',
+        isSurprise ? `<span class="act-flair act-flair--surprise">${window.t('act.surprise')}</span>` : '',
       ].filter(Boolean).join('');
 
       return `
@@ -81,7 +81,7 @@
           <span class="artist-row-right">
             ${actRateBtn}
             ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
-            ${act.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
+            ${act.canceled ? `<span class="artist-time canceled">${window.t('act.canceled')}</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">${window.t('live.tba')}</span>`}
           </span>
         </div>
       `;

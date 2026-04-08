@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,7 +35,8 @@
         </svg>
       </div>
       <input id="searchInput" class="search-input" type="text"
-        placeholder="SUCHEN..." autocomplete="off" spellcheck="false" />
+        data-i18n-placeholder="search.placeholder"
+        placeholder="SEARCH..." autocomplete="off" spellcheck="false" />
       <button class="search-clear" id="searchClear" aria-label="Clear">✕</button>
     </div>
     <div class="search-results" id="searchResults"></div>
@@ -45,15 +46,15 @@
 
   <nav class="date-nav" id="dateNav"></nav>
   <div class="event-sort-bar" id="eventSortBar" aria-label="Sortierung">
-    <button class="event-sort-btn active" type="button" data-sort-mode="interested">Interessiert</button>
-    <button class="event-sort-btn" type="button" data-sort-mode="time">Uhrzeit</button>
-    <button class="event-sort-btn" type="button" data-sort-mode="score">Score</button>
+    <button class="event-sort-btn active" type="button" data-sort-mode="interested" data-i18n="sort.interested">Interested</button>
+    <button class="event-sort-btn" type="button" data-sort-mode="time" data-i18n="sort.time">Time</button>
+    <button class="event-sort-btn" type="button" data-sort-mode="score" data-i18n="sort.score">Score</button>
   </div>
 
   <main id="mainContent">
     <div class="loading-screen">
       <div class="loading-bar"></div>
-      <span>Lade Events</span>
+      <span data-i18n="loading.events">Loading events</span>
     </div>
   </main>
 
@@ -94,23 +95,23 @@
         <div class="auth-social">
           <button class="auth-social-btn" id="authGoogleBtn" type="button">
             <span class="auth-social-icon" aria-hidden="true">G</span>
-            <span id="authGoogleBtnLabel">Mit Google fortfahren</span>
+            <span id="authGoogleBtnLabel" data-i18n="auth.google_continue">Continue with Google</span>
           </button>
         </div>
         <div class="auth-divider" aria-hidden="true">
-          <span>oder mit E-Mail</span>
+          <span data-i18n="auth.or_email">or with email</span>
         </div>
         <form class="auth-form" id="authForm">
           <label class="auth-field">
-            <span>E-Mail</span>
+            <span data-i18n="auth.email">Email</span>
             <input id="authEmail" name="email" type="email" autocomplete="email" required />
           </label>
           <label class="auth-field auth-field-optional" id="authDisplayNameRow">
-            <span>Name</span>
+            <span data-i18n="auth.name">Name</span>
             <input id="authDisplayName" name="display_name" type="text" autocomplete="nickname" />
           </label>
           <label class="auth-field">
-            <span>Passwort</span>
+            <span data-i18n="auth.password">Password</span>
             <input id="authPassword" name="password" type="password" autocomplete="current-password" required />
           </label>
           <div class="auth-message" id="authMessage" aria-live="polite"></div>
@@ -132,7 +133,7 @@
         </svg>
       </button>
       <div class="rating-content">
-        <div class="rating-eyebrow">// BEWERTUNG</div>
+        <div class="rating-eyebrow" data-i18n="rating.title">// RATING</div>
         <div class="rating-act-name" id="ratingActName">—</div>
         <div class="rating-event-name" id="ratingEventName">—</div>
         <div class="rating-stars" id="ratingStars" role="group" aria-label="Bewertung">
@@ -145,11 +146,11 @@
         <div class="rating-flags">
           <label class="rating-flag-label">
             <input type="checkbox" id="ratingFlagSurprise" />
-            <span>Überraschung des Abends</span>
+            <span data-i18n="rating.surprise">Surprise of the night</span>
           </label>
         </div>
         <div class="rating-message" id="ratingMessage" aria-live="polite"></div>
-        <button class="rating-submit" id="ratingSubmit" type="button" disabled>Bewerten</button>
+        <button class="rating-submit" id="ratingSubmit" type="button" disabled data-i18n="rating.submit">Rate</button>
       </div>
     </div>
   </div>
@@ -157,6 +158,7 @@
   <!-- Live Mode Panel (Phase 2) -->
   <div id="livePanel" class="live-panel" aria-hidden="true" aria-label="Live Mode"></div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>

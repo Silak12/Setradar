@@ -170,16 +170,17 @@ function formatDateLabel(dateStr) {
   return {
     day: String(d.getDate()).padStart(2, '0'),
     month: String(d.getMonth() + 1).padStart(2, '0'),
-    monthShort: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()],
-    weekday: ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'][d.getDay()],
+    monthShort: t('date.months_short')[d.getMonth()],
+    weekday: t('date.weekdays_short')[d.getDay()].toUpperCase(),
   };
 }
 function formatTabLabel(dateStr) {
-  const today = getDateStr(0), yesterday = getDateStr(-1), twoDaysAgo = getDateStr(-2), tomorrow = getDateStr(1), d = new Date(`${dateStr}T00:00:00`), w = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-  if (dateStr === today) return 'Heute';
-  if (dateStr === yesterday) return 'Gestern';
-  if (dateStr === twoDaysAgo) return 'Vorgestern';
-  if (dateStr === tomorrow) return 'Morgen';
+  const today = getDateStr(0), yesterday = getDateStr(-1), twoDaysAgo = getDateStr(-2), tomorrow = getDateStr(1), d = new Date(`${dateStr}T00:00:00`);
+  if (dateStr === today) return t('date.today');
+  if (dateStr === yesterday) return t('date.yesterday');
+  if (dateStr === twoDaysAgo) return t('date.two_days_ago');
+  if (dateStr === tomorrow) return t('date.tomorrow');
+  const w = t('date.weekdays_short');
   return `${w[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.`;
 }
 function getEventCity(ev) {
@@ -279,8 +280,8 @@ function favoriteSet(type) {
   return null;
 }
 function userLabel() {
-  if (!sessionUser) return 'Gast';
-  return userProfile?.display_name || sessionUser.user_metadata?.name || sessionUser.email || 'Angemeldet';
+  if (!sessionUser) return t('user.guest');
+  return userProfile?.display_name || sessionUser.user_metadata?.name || sessionUser.email || t('user.logged_in');
 }
 function normalizeCityName(value) {
   return String(value || '').trim();
@@ -324,15 +325,17 @@ function updateStatusBar() {
   if (!bar) return;
   const visibleEvents = getVisibleEvents();
   const count = getEventsForDateBucket(getDateStr(0), visibleEvents).length;
-  const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const locale = window.LANG === 'de' ? 'de-DE' : 'en-GB';
+  const time = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const todayLabel = t('date.today').toLowerCase();
   bar.innerHTML = `
-    <div class="status-bar-left"><span class="status-live-dot"></span><span>${escapeHtml(selectedCity)} - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
+    <div class="status-bar-left"><span class="status-live-dot"></span><span>${escapeHtml(selectedCity)} - ${count} Event${count !== 1 ? 's' : ''} ${todayLabel}</span></div>
     <div class="status-bar-right">${time}</div>
   `;
 }
 function setLastUpdated() {
   const el = document.getElementById('lastUpdated');
-  if (el) el.textContent = 'Stand: ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  if (el) el.textContent = t('status.updated') + ' ' + new Date().toLocaleTimeString(window.LANG === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 function refreshAmbientUi() {
   updateStatusBar();
@@ -502,7 +505,7 @@ function getAuthRedirectUrl() {
 function updateGoogleButtonLabel() {
   const label = document.getElementById('authGoogleBtnLabel');
   if (!label) return;
-  label.textContent = authMode === AUTH_MODES.SIGNUP ? 'Mit Google registrieren' : 'Mit Google anmelden';
+  label.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.google_signup') : t('auth.google_login');
 }
 function setAuthBusy(isBusy) {
   const submitBtn = document.getElementById('authSubmit');
@@ -554,7 +557,7 @@ function setAuthMode(mode) {
   const password = document.getElementById('authPassword');
   if (password) password.autocomplete = authMode === AUTH_MODES.SIGNUP ? 'new-password' : 'current-password';
   const submit = document.getElementById('authSubmit');
-  if (submit) submit.textContent = authMode === AUTH_MODES.SIGNUP ? 'Signup' : 'Login';
+  if (submit) submit.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.signup') : t('auth.login');
   updateGoogleButtonLabel();
   setAuthMessage('');
 }
@@ -584,14 +587,14 @@ function updateAuthUi() {
     if (sessionUser) {
       user.setAttribute('href', 'profile.html');
       user.style.cursor = 'pointer';
-      user.title = 'Profil ansehen';
+      user.title = t('profile.eyebrow').replace('//', '').trim();
     } else {
       user.removeAttribute('href');
       user.style.cursor = 'default';
       user.removeAttribute('title');
     }
   }
-  if (button) button.textContent = sessionUser ? 'Logout' : 'Login';
+  if (button) button.textContent = sessionUser ? t('nav.logout') : t('nav.login');
 }
 async function fetchUserProfile() {
   if (!supabaseClient || !sessionUser) { userProfile = null; return null; }
@@ -818,15 +821,15 @@ function computeEventSpotlights(acts, allRatings) {
 function renderEventSpotlightCards(spotlights) {
   if (!spotlights) return '';
   const items = [
-    ['Bester Act', spotlights.best, 'best'],
-    ['Überraschung', spotlights.surprise, 'surprise'],
-    ['Geheimtipp', spotlights.hiddenGem, 'gem'],
+    [t('spotlight.best'), spotlights.best, 'best'],
+    [t('spotlight.surprise'), spotlights.surprise, 'surprise'],
+    [t('spotlight.gem'), spotlights.hiddenGem, 'gem'],
   ];
   return `<div class="pem-spotlights">${items.map(([label, act, type]) => {
     if (!act) {
       return `<div class="pem-spot-card pem-spot-card--${type} pem-spot-empty">
         <div class="pem-spot-label">${label}</div>
-        <div class="pem-spot-name">Noch keine Votes</div>
+        <div class="pem-spot-name">${t('empty.no_trend')}</div>
       </div>`;
     }
     const name = act.acts?.name || '—';
@@ -850,15 +853,15 @@ function buildLivePanelSignature(ev, status, hypeTotal) {
 }
 function renderSpotlightPanel() {
   if (!spotlightActs.length) {
-    return '<div class="rail-empty">Noch keine Bewertungen von letzter Nacht</div>';
+    return `<div class="rail-empty">${t('empty.no_trend')}</div>`;
   }
   return `<div class="popular-rail-list spotlight-list">${spotlightActs.map(act => {
     const stars = act.avg_rating ? Math.round(act.avg_rating) : 0;
     const starsHtml = '★'.repeat(stars) + '☆'.repeat(5 - stars);
     return `
-      <button class="spotlight-item spotlight-item--${act.label === 'ÜBERRASCHUNG' ? 'surprise' : act.label === 'BESTER ACT' ? 'best' : 'gem'}"
+      <button class="spotlight-item spotlight-item--${act.type === 'surprise' ? 'surprise' : act.type === 'best' ? 'best' : 'gem'}"
               type="button" data-spotlight-act-id="${act.actId}" data-spotlight-act-name="${act.actName}">
-        <div class="spotlight-label">${act.label}</div>
+        <div class="spotlight-label">${act.type === 'best' ? t('spotlight.best') : act.type === 'surprise' ? t('spotlight.surprise') : t('spotlight.gem')}</div>
         <div class="spotlight-name" style="font-size:${spotlightNameFontSize(act.actName)}">${act.actName}</div>
         <div class="spotlight-stars">${starsHtml}</div>
         <div class="spotlight-meta">${act.clubName || ''}</div>
@@ -866,7 +869,7 @@ function renderSpotlightPanel() {
   }).join('')}</div>`;
 }
 function renderEventsPanel() {
-  if (!popularEvents.length) return '<div class="rail-empty">Keine Events</div>';
+  if (!popularEvents.length) return `<div class="rail-empty">${t('empty.no_events')}</div>`;
   const fallback = popularEvents.every(item => item.fallback);
   return `<div class="popular-rail-list">${popularEvents.map(item => {
     const ev = item.event, d = formatDateLabel(ev.event_date);
@@ -876,7 +879,7 @@ function renderEventsPanel() {
         <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
         <div class="popular-item-meta">
           <span>${ev.clubs?.name || '-'}</span>
-          <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
+          <span class="popular-item-hype">${fallback ? t('empty.no_trend') : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
         </div>
       </button>`;
   }).join('')}</div>`;
@@ -896,9 +899,9 @@ function renderPopularEvents() {
       <div class="popular-rail-header">
         <div class="rail-tabs">
           <button class="rail-tab${activeTab === 'spotlight' ? ' active' : ''}" type="button" data-rail-tab="spotlight">Artist Spotlight</button>
-          <button class="rail-tab${activeTab === 'events' ? ' active' : ''}" type="button" data-rail-tab="events">Beliebte Events</button>
+          <button class="rail-tab${activeTab === 'events' ? ' active' : ''}" type="button" data-rail-tab="events">Popular Events</button>
         </div>
-        <span class="popular-rail-subtitle">${activeTab === 'spotlight' ? 'Letzte Nacht' : (fallback ? 'Noch kein Trend' : 'Trending')}</span>
+        <span class="popular-rail-subtitle">${activeTab === 'spotlight' ? t('spotlight.last_night') : (fallback ? t('empty.no_trend') : t('spotlight.trending'))}</span>
       </div>
       ${activeTab === 'spotlight' ? renderSpotlightPanel() : renderEventsPanel()}
     </div>
@@ -1002,7 +1005,7 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
   updateStatusBar();
   const scrollY = window.scrollY;
   if (!grouped.length) {
-    main.innerHTML = `<div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    main.innerHTML = `<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
     window.scrollTo(0, scrollY);
     setLastUpdated();
     return;
@@ -1102,7 +1105,7 @@ function doSearch(q) {
   const artists = Object.values(actMap).filter(a => (searchFilter === 'all' || searchFilter === 'artist') && String(a.name || '').toLowerCase().includes(lower));
   const clubs = Object.values(clubMap).filter(c => (searchFilter === 'all' || searchFilter === 'club') && String(c.name || '').toLowerCase().includes(lower));
   if (!artists.length && !clubs.length) {
-    results.innerHTML = `<div class="search-no-results">Keine Ergebnisse fuer "${escapeHtml(q)}"</div>`;
+    results.innerHTML = `<div class="search-no-results">${t('empty.no_results', { q: escapeHtml(q) })}</div>`;
     results.classList.add('open');
     return;
   }
@@ -1176,15 +1179,15 @@ function showClubSearch(clubName) {
     const bar = document.getElementById('clubStatsBar');
     if (!bar) return;
     if (!stats) {
-      bar.innerHTML = `<span class="club-stat-empty">Noch keine persönlichen Daten für diesen Club.</span>`;
+      bar.innerHTML = `<span class="club-stat-empty">${t('empty.no_club_data')}</span>`;
       return;
     }
     const waitStr  = stats.avgWait != null ? (stats.avgWait < 60 ? `${stats.avgWait} min` : `${Math.floor(stats.avgWait/60)}h ${stats.avgWait%60}min`) : '—';
     const rateStr  = stats.entryRate != null ? `${stats.entryRate}% (${stats.inClub}/${stats.inClub + stats.denied})` : '—';
     bar.innerHTML = `
-      <div class="club-stat"><span class="club-stat-val">${waitStr}</span><span class="club-stat-label">Ø Wartezeit</span></div>
+      <div class="club-stat"><span class="club-stat-val">${waitStr}</span><span class="club-stat-label">${t('club.avg_wait')}</span></div>
       <div class="club-stat-divider"></div>
-      <div class="club-stat"><span class="club-stat-val">${rateStr}</span><span class="club-stat-label">Einlassquote</span></div>
+      <div class="club-stat"><span class="club-stat-val">${rateStr}</span><span class="club-stat-label">${t('club.entry_rate')}</span></div>
     `;
   });
 }
@@ -1205,15 +1208,15 @@ function renderSearchResults(label, grouped) {
   renderPopularEvents();
   updateStatusBar();
   if (!grouped.length) {
-    const statsBlock = activeSearch?.type === 'club' ? `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">Lade Stats…</span></div>` : '';
-    main.innerHTML = `<div class="search-active-banner"><span><strong>${escapeHtml(label)}</strong> - Keine kommenden Events</span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>${statsBlock}<div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    const statsBlock = activeSearch?.type === 'club' ? `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">${t('loading.stats')}</span></div>` : '';
+    main.innerHTML = `<div class="search-active-banner"><span><strong>${escapeHtml(label)}</strong>${t('misc.search_banner_no_events')}</span><button class="search-banner-close" type="button" onclick="clearSearch()">${t('search.back')}</button></div>${statsBlock}<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
     setLastUpdated();
     return;
   }
   const isClub = activeSearch?.type === 'club';
-  let html = `<div class="search-active-banner"><span>Ergebnisse fuer <strong>${escapeHtml(label)}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>`;
+  let html = `<div class="search-active-banner"><span>${t('search.results_for')} <strong>${escapeHtml(label)}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">${t('search.back')}</button></div>`;
   if (isClub) {
-    html += `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">Lade Stats…</span></div>`;
+    html += `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">${t('loading.stats')}</span></div>`;
   }
   grouped.forEach(([dateStr, rawEvents]) => {
     const d = formatDateLabel(dateStr), events = sortForDay(rawEvents);
@@ -1513,7 +1516,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
         return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div><div class="modal-event-venue">${escapeHtml(venue)}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
     }).join('')
-    : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
+    : `<div class="modal-no-events">${t('empty.no_upcoming')}</div>`;
 
   // Past events with rating buttons (only when logged in)
   let pastHtml = '';
@@ -1743,19 +1746,19 @@ async function loadActSpotlight() {
       .filter(s => s.rating_count >= 2 && s.surprise_pct > 0)
       .sort((a, b) => b.surprise_pct - a.surprise_pct)[0]
       || bestFallback(scoredActs, usedIds);
-    if (surprisePick) { usedIds.add(surprisePick.actId); result.push({ ...surprisePick, label: 'ÜBERRASCHUNG' }); }
+    if (surprisePick) { usedIds.add(surprisePick.actId); result.push({ ...surprisePick, type: 'surprise' }); }
     // Slot 2: Bester Act — highest weighted score (min 2 ratings), fallback: best available
     const bestPick = scoredActs
       .filter(s => !usedIds.has(s.actId) && s.rating_count >= 2)
       .sort((a, b) => weightedScore(b) - weightedScore(a))[0]
       || bestFallback(scoredActs, usedIds);
-    if (bestPick) { usedIds.add(bestPick.actId); result.push({ ...bestPick, label: 'BESTER ACT' }); }
+    if (bestPick) { usedIds.add(bestPick.actId); result.push({ ...bestPick, type: 'best' }); }
     // Slot 3: Geheimtipp — ≥4.5 Sterne, 10–50 Ratings; fallback: best available
     const geheimPick = scoredActs
       .filter(s => !usedIds.has(s.actId) && s.avg_rating >= 4.5 && s.rating_count >= 10 && s.rating_count <= 50)
       .sort((a, b) => b.avg_rating - a.avg_rating)[0]
       || bestFallback(scoredActs, usedIds);
-    if (geheimPick) result.push({ ...geheimPick, label: 'GEHEIMTIPP' });
+    if (geheimPick) result.push({ ...geheimPick, type: 'gem' });
     spotlightActs = result;
   } catch (err) {
     console.warn('Spotlight fetch error:', err.message || err);
@@ -2141,7 +2144,7 @@ function renderQueueGraph() {
 
   const points = getLiveQueuePoints();
   if (!points.length) {
-    el.innerHTML = '<div class="pem-q-empty">Noch keine Warteschlangen-Meldungen für dieses Event.</div>';
+    el.innerHTML = `<div class="pem-q-empty">${t('live.no_queue_reports')}</div>`;
     return;
   }
 
@@ -2292,8 +2295,8 @@ function renderLivePanel() {
       <div class="live-panel-body" style="display:block">
         <div class="live-section live-goodbye-section">
           <div class="live-goodbye-icon">✓</div>
-          <div class="live-goodbye-title">Gute Nacht</div>
-          <div class="live-goodbye-sub">Du hast ${gev.event_name} verlassen.</div>
+          <div class="live-goodbye-title">${t('live.goodbye_title')}</div>
+          <div class="live-goodbye-sub">${t('live.goodbye_sub', { event: gev.event_name })}</div>
         </div>
       </div>`;
     panel.setAttribute('aria-hidden', 'false');
@@ -2313,7 +2316,7 @@ function renderLivePanel() {
   if (!ev) { hideLivePanel(); return; }
 
   const status = userPresence?.status ?? 'left';
-  const statusLabel = status === 'queue' ? 'Warteschlange' : 'Im Club';
+  const statusLabel = status === 'queue' ? t('live.status_queue') : t('live.status_inclub');
 
   // timetable
   const acts = sortActs(ev.event_acts || []);
@@ -2323,7 +2326,7 @@ function renderLivePanel() {
   const timetableHtml = acts.length
     ? acts.map(a => {
         const s = fmtTime(a.start_time), e2 = fmtTime(a.end_time);
-        const t = s && e2 ? `${s}–${e2}` : s ? `ab ${s}` : 'TBA';
+        const timeStr = s && e2 ? `${s}–${e2}` : s ? t('act.from', { time: s }) : t('live.tba');
         const actId = a.acts?.id ?? null;
         const numActId = actId ? Number(actId) : null;
         const isActFavorite = numActId ? favoriteActIds.has(numActId) : false;
@@ -2339,7 +2342,7 @@ function renderLivePanel() {
         const rateBtn = !a.canceled && actId && sessionUser
           ? `<div class="pem-act-rating-col live-act-rating-col">
                <div class="pem-stars" data-live-act-id="${actId}" data-act-id="${actId}">${stars}</div>
-               <button class="pem-surprise-btn${isSurprise ? ' active' : ''}" data-live-surprise-act-id="${actId}" data-act-id="${actId}" type="button" title="Überraschung des Abends">★ Überraschung</button>
+               <button class="pem-surprise-btn${isSurprise ? ' active' : ''}" data-live-surprise-act-id="${actId}" data-act-id="${actId}" type="button" title="${t('rating.surprise')}">${t('live.surprise_btn')}</button>
              </div>`
           : '<span class="live-act-rating-placeholder"></span>';
         return `
@@ -2350,31 +2353,31 @@ function renderLivePanel() {
             </div>
             <div class="artist-name live-act-name-wrap">
               <span class="artist-name-link live-act-name" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
-              <div class="pem-act-time live-inline-act-time">${a.canceled ? 'ABGESAGT' : t}</div>
+              <div class="pem-act-time live-inline-act-time">${a.canceled ? t('act.canceled') : timeStr}</div>
             </div>
             <div class="artist-row-right live-act-side">
               ${rateBtn}
             </div>
           </div>`;
       }).join('')
-    : '<span class="time-tba">Keine Acts</span>';
+    : `<span class="time-tba">${t('empty.no_acts')}</span>`;
 
   const personalHtml = (() => {
     if (isGoodbyeMode) {
       const qVal = formatTimeInput(myQueueStartTime);
       const cVal = formatTimeInput(myClubEntryTime);
       const waitResult = myQueueStartTime && myClubEntryTime
-        ? `<div class="live-wait-result"><span class="live-wait-label">Wartezeit</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
+        ? `<div class="live-wait-result"><span class="live-wait-label">${t('live.wait_time')}</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
         : '';
       return `
         <div class="live-section live-section--personal">
           <div class="live-section-head">
-            <div class="live-section-label">// DEINE NACHT</div>
-            <span class="live-left-badge">Verlassen</span>
+            <div class="live-section-label">${t('live.section_night')}</div>
+            <span class="live-left-badge">${t('live.status_left')}</span>
           </div>
           <div class="live-time-row">
-            ${myQueueStartTime ? `<div class="live-time-field"><label class="live-time-label">Queue-Eintritt</label><input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}"></div>` : ''}
-            ${myClubEntryTime  ? `<div class="live-time-field"><label class="live-time-label">Club-Eintritt</label><input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}"></div>` : ''}
+            ${myQueueStartTime ? `<div class="live-time-field"><label class="live-time-label">${t('live.queue_entry')}</label><input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}"></div>` : ''}
+            ${myClubEntryTime  ? `<div class="live-time-field"><label class="live-time-label">${t('live.club_entry')}</label><input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}"></div>` : ''}
           </div>
           ${waitResult}
         </div>`;
@@ -2382,30 +2385,30 @@ function renderLivePanel() {
     const qVal = formatTimeInput(myQueueStartTime);
     const cVal = formatTimeInput(myClubEntryTime);
     const waitResult = myQueueStartTime && status === 'in_club' && myClubEntryTime
-      ? `<div class="live-wait-result"><span class="live-wait-label">Wartezeit</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
+      ? `<div class="live-wait-result"><span class="live-wait-label">${t('live.wait_time')}</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
       : myQueueStartTime
-      ? `<div class="live-wait-result"><span class="live-wait-label">In der Schlange seit</span><strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
+      ? `<div class="live-wait-result"><span class="live-wait-label">${t('live.in_queue_since')}</span><strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
       : '';
     const topAction = status === 'queue'
       ? `<div class="live-entry-actions">
-           <button class="event-action-button live-denied-btn" data-live-action="denied" data-event-id="${eventId}">Access Denied</button>
-           <button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>
+           <button class="event-action-button live-denied-btn" data-live-action="denied" data-event-id="${eventId}">${t('live.denied')}</button>
+           <button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">${t('live.enter_club')}</button>
          </div>`
-      : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">Club verlassen</button>`;
+      : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">${t('live.leave_club')}</button>`;
     return `
       <div class="live-section live-section--personal">
         <div class="live-section-head">
-          <div class="live-section-label">// DEINE NACHT</div>
+          <div class="live-section-label">${t('live.section_night')}</div>
           ${topAction}
         </div>
         <div class="live-time-row">
           <div class="live-time-field">
-            <label class="live-time-label">Queue-Eintritt</label>
+            <label class="live-time-label">${t('live.queue_entry')}</label>
             <input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}">
           </div>
           ${status === 'in_club' ? `
           <div class="live-time-field">
-            <label class="live-time-label">Club-Eintritt</label>
+            <label class="live-time-label">${t('live.club_entry')}</label>
             <input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}">
           </div>` : ''}
         </div>
@@ -2426,28 +2429,28 @@ function renderLivePanel() {
         ? `<button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>`
         : `<div class="live-bar-cta">
              <span class="live-status-chip live-status-${status}">${statusLabel}</span>
-             <span class="live-bar-open-hint">Live UI öffnen ▲</span>
+             <span class="live-bar-open-hint">${t('live.open_hint')}</span>
            </div>`
       }
     </div>
     <div class="live-panel-body" style="display:${livePanelExpanded ? 'block' : 'none'}">
       ${personalHtml}
       <div class="live-section">
-        <div class="live-section-label">// WARTESCHLANGE</div>
+        <div class="live-section-label">${t('live.section_queue')}</div>
         <div class="pem-q-chart-wrap live-queue-chart" id="liveQueueGraph"></div>
         <div class="pem-q-legend">
-          <span><span class="pem-q-dot" style="background:#22c55e"></span>unter 30 min</span>
-          <span><span class="pem-q-dot" style="background:#f59e0b"></span>30–60 min</span>
-          <span><span class="pem-q-dot" style="background:#ef4444"></span>über 60 min</span>
+          <span><span class="pem-q-dot" style="background:#22c55e"></span>${t('live.queue_legend_green')}</span>
+          <span><span class="pem-q-dot" style="background:#f59e0b"></span>${t('live.queue_legend_yellow')}</span>
+          <span><span class="pem-q-dot" style="background:#ef4444"></span>${t('live.queue_legend_red')}</span>
         </div>
       </div>
       <div class="live-section">
-        <div class="live-section-label">// SPOTLIGHTS</div>
+        <div class="live-section-label">${t('live.section_spotlights')}</div>
         <div id="liveSpotlightCards">${spotlightHtml}</div>
       </div>
       <div class="live-section">
-        <div class="live-section-label">// LINE-UP & TIMETABLE</div>
-        <div class="pem-rating-hint">★ Überraschung des Abends kann nur einmal vergeben werden</div>
+        <div class="live-section-label">${t('live.section_timetable')}</div>
+        <div class="pem-rating-hint">${t('live.surprise_hint')}</div>
         <div class="live-timetable">${timetableHtml}</div>
       </div>
     </div>
@@ -2729,7 +2732,7 @@ async function submitActRating() {
   const submit = document.getElementById('ratingSubmit');
   if (submit) submit.disabled = true;
   const msgEl = document.getElementById('ratingMessage');
-  if (msgEl) msgEl.textContent = 'Wird gespeichert...';
+  if (msgEl) msgEl.textContent = t('rating.saving');
 
   const { actId, actName, eventId } = ratingState;
   const wasSurprise = document.getElementById('ratingFlagSurprise')?.checked ?? false;
@@ -2777,7 +2780,7 @@ async function submitActRating() {
     syncEventHighlightsFromLocalRatings(eventId);
     rerenderEventCardInPlace(eventId);
 
-    if (msgEl) msgEl.textContent = 'Gespeichert!';
+    if (msgEl) msgEl.textContent = t('rating.saved');
     setTimeout(() => {
       closeRatingModal();
       // Reopen artist popup to refresh stats
@@ -2785,7 +2788,7 @@ async function submitActRating() {
     }, 700);
   } catch (err) {
     console.warn('Rating submit error:', err.message || err);
-    if (msgEl) msgEl.textContent = 'Fehler beim Speichern.';
+    if (msgEl) msgEl.textContent = t('rating.error');
     if (submit) submit.disabled = false;
   }
 }
