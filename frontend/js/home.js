@@ -11,6 +11,19 @@ const DEMO_HYPE_TOTALS = {
 };
 function isPlaceholderValue(v) { return !v || /^DEIN(?:E)?_SUPABASE_/i.test(v); }
 function isLegacyJwtKey(v) { return typeof v === 'string' && v.startsWith('eyJ') && v.split('.').length === 3; }
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function safeUrl(url) {
+  if (!url) return '';
+  const s = String(url).trim();
+  return /^https?:\/\//i.test(s) ? escapeHtml(s) : '';
+}
 function formatLocalDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -77,6 +90,7 @@ let favoriteClubIds = new Set();
 let favoriteActIds = new Set();
 let userActAvgRatings = new Map();  // actId → avg rating across all events (1–5)
 let collabRecsMap     = new Map();  // actId → collab confidence (0–100)
+const clubStatsCache  = new Map();  // clubName → { waitMin, entryRate, fetched }
 let popularEvents = [];
 let pendingActionKeys = new Set();
 let activeSearch = null;
@@ -156,16 +170,17 @@ function formatDateLabel(dateStr) {
   return {
     day: String(d.getDate()).padStart(2, '0'),
     month: String(d.getMonth() + 1).padStart(2, '0'),
-    monthShort: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()],
-    weekday: ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'][d.getDay()],
+    monthShort: t('date.months_short')[d.getMonth()],
+    weekday: t('date.weekdays_short')[d.getDay()].toUpperCase(),
   };
 }
 function formatTabLabel(dateStr) {
-  const today = getDateStr(0), yesterday = getDateStr(-1), twoDaysAgo = getDateStr(-2), tomorrow = getDateStr(1), d = new Date(`${dateStr}T00:00:00`), w = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-  if (dateStr === today) return 'Heute';
-  if (dateStr === yesterday) return 'Gestern';
-  if (dateStr === twoDaysAgo) return 'Vorgestern';
-  if (dateStr === tomorrow) return 'Morgen';
+  const today = getDateStr(0), yesterday = getDateStr(-1), twoDaysAgo = getDateStr(-2), tomorrow = getDateStr(1), d = new Date(`${dateStr}T00:00:00`);
+  if (dateStr === today) return t('date.today');
+  if (dateStr === yesterday) return t('date.yesterday');
+  if (dateStr === twoDaysAgo) return t('date.two_days_ago');
+  if (dateStr === tomorrow) return t('date.tomorrow');
+  const w = t('date.weekdays_short');
   return `${w[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.`;
 }
 function getEventCity(ev) {
@@ -265,8 +280,8 @@ function favoriteSet(type) {
   return null;
 }
 function userLabel() {
-  if (!sessionUser) return 'Gast';
-  return userProfile?.display_name || sessionUser.user_metadata?.name || sessionUser.email || 'Angemeldet';
+  if (!sessionUser) return t('user.guest');
+  return userProfile?.display_name || sessionUser.user_metadata?.name || sessionUser.email || t('user.logged_in');
 }
 function normalizeCityName(value) {
   return String(value || '').trim();
@@ -310,15 +325,17 @@ function updateStatusBar() {
   if (!bar) return;
   const visibleEvents = getVisibleEvents();
   const count = getEventsForDateBucket(getDateStr(0), visibleEvents).length;
-  const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const locale = window.LANG === 'de' ? 'de-DE' : 'en-GB';
+  const time = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const todayLabel = t('date.today').toLowerCase();
   bar.innerHTML = `
-    <div class="status-bar-left"><span class="status-live-dot"></span><span>${selectedCity} - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
+    <div class="status-bar-left"><span class="status-live-dot"></span><span>${escapeHtml(selectedCity)} - ${count} Event${count !== 1 ? 's' : ''} ${todayLabel}</span></div>
     <div class="status-bar-right">${time}</div>
   `;
 }
 function setLastUpdated() {
   const el = document.getElementById('lastUpdated');
-  if (el) el.textContent = 'Stand: ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  if (el) el.textContent = t('status.updated') + ' ' + new Date().toLocaleTimeString(window.LANG === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 function refreshAmbientUi() {
   updateStatusBar();
@@ -488,7 +505,7 @@ function getAuthRedirectUrl() {
 function updateGoogleButtonLabel() {
   const label = document.getElementById('authGoogleBtnLabel');
   if (!label) return;
-  label.textContent = authMode === AUTH_MODES.SIGNUP ? 'Mit Google registrieren' : 'Mit Google anmelden';
+  label.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.google_signup') : t('auth.google_login');
 }
 function setAuthBusy(isBusy) {
   const submitBtn = document.getElementById('authSubmit');
@@ -540,7 +557,7 @@ function setAuthMode(mode) {
   const password = document.getElementById('authPassword');
   if (password) password.autocomplete = authMode === AUTH_MODES.SIGNUP ? 'new-password' : 'current-password';
   const submit = document.getElementById('authSubmit');
-  if (submit) submit.textContent = authMode === AUTH_MODES.SIGNUP ? 'Signup' : 'Login';
+  if (submit) submit.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.signup') : t('auth.login');
   updateGoogleButtonLabel();
   setAuthMessage('');
 }
@@ -570,14 +587,14 @@ function updateAuthUi() {
     if (sessionUser) {
       user.setAttribute('href', 'profile.html');
       user.style.cursor = 'pointer';
-      user.title = 'Profil ansehen';
+      user.title = t('profile.eyebrow').replace('//', '').trim();
     } else {
       user.removeAttribute('href');
       user.style.cursor = 'default';
       user.removeAttribute('title');
     }
   }
-  if (button) button.textContent = sessionUser ? 'Logout' : 'Login';
+  if (button) button.textContent = sessionUser ? t('nav.logout') : t('nav.login');
 }
 async function fetchUserProfile() {
   if (!supabaseClient || !sessionUser) { userProfile = null; return null; }
@@ -608,20 +625,20 @@ async function hydrateSession() {
     cleanupAuthReturnUrl();
   } else userProfile = null;
 }
-function ensureAuthenticated(label = 'Diese Aktion') {
+function ensureAuthenticated(label = 'This action') {
   if (sessionUser) return true;
-  openAuthModal(AUTH_MODES.LOGIN, `${label} braucht einen Login.`);
+  openAuthModal(AUTH_MODES.LOGIN, `${label} requires login.`);
   return false;
 }
 async function onAuthSubmit(event) {
   event.preventDefault();
-  if (!supabaseClient) { setAuthMessage('Supabase ist nicht verfuegbar.', 'error'); return; }
+  if (!supabaseClient) { setAuthMessage('Supabase is unavailable.', 'error'); return; }
   const email = document.getElementById('authEmail')?.value.trim();
   const password = document.getElementById('authPassword')?.value || '';
   const displayName = document.getElementById('authDisplayName')?.value.trim();
-  if (!email || !password) { setAuthMessage('E-Mail und Passwort sind Pflicht.', 'error'); return; }
+  if (!email || !password) { setAuthMessage('Email and password are required.', 'error'); return; }
   setAuthBusy(true);
-  setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Account wird erstellt...' : 'Login laeuft...');
+  setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Creating account...' : 'Logging in...');
   try {
     if (authMode === AUTH_MODES.SIGNUP) {
       const { data, error } = await supabaseClient.auth.signUp({
@@ -652,13 +669,13 @@ async function onAuthSubmit(event) {
       closeAuthModal();
     }
   } catch (err) {
-    setAuthMessage(err.message || 'Auth Fehler.', 'error');
+    setAuthMessage(err.message || 'Auth error.', 'error');
   } finally {
     setAuthBusy(false);
   }
 }
 async function onGoogleAuth() {
-  if (!supabaseClient) { setAuthMessage('Supabase ist nicht verfuegbar.', 'error'); return; }
+  if (!supabaseClient) { setAuthMessage('Supabase is unavailable.', 'error'); return; }
   setAuthBusy(true);
   setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Google-Registrierung startet...' : 'Google-Login startet...');
   try {
@@ -675,7 +692,7 @@ async function onGoogleAuth() {
     if (error) throw error;
   } catch (err) {
     setAuthBusy(false);
-    setAuthMessage(err.message || 'Google Login fehlgeschlagen.', 'error');
+    setAuthMessage(err.message || 'Google login failed.', 'error');
   }
 }
 async function onNavAuthClick() {
@@ -804,15 +821,15 @@ function computeEventSpotlights(acts, allRatings) {
 function renderEventSpotlightCards(spotlights) {
   if (!spotlights) return '';
   const items = [
-    ['Bester Act', spotlights.best, 'best'],
-    ['Überraschung', spotlights.surprise, 'surprise'],
-    ['Geheimtipp', spotlights.hiddenGem, 'gem'],
+    [t('spotlight.best'), spotlights.best, 'best'],
+    [t('spotlight.surprise'), spotlights.surprise, 'surprise'],
+    [t('spotlight.gem'), spotlights.hiddenGem, 'gem'],
   ];
   return `<div class="pem-spotlights">${items.map(([label, act, type]) => {
     if (!act) {
       return `<div class="pem-spot-card pem-spot-card--${type} pem-spot-empty">
         <div class="pem-spot-label">${label}</div>
-        <div class="pem-spot-name">Noch keine Votes</div>
+        <div class="pem-spot-name">${t('empty.no_trend')}</div>
       </div>`;
     }
     const name = act.acts?.name || '—';
@@ -836,15 +853,15 @@ function buildLivePanelSignature(ev, status, hypeTotal) {
 }
 function renderSpotlightPanel() {
   if (!spotlightActs.length) {
-    return '<div class="rail-empty">Noch keine Bewertungen von letzter Nacht</div>';
+    return `<div class="rail-empty">${t('empty.no_trend')}</div>`;
   }
   return `<div class="popular-rail-list spotlight-list">${spotlightActs.map(act => {
     const stars = act.avg_rating ? Math.round(act.avg_rating) : 0;
     const starsHtml = '★'.repeat(stars) + '☆'.repeat(5 - stars);
     return `
-      <button class="spotlight-item spotlight-item--${act.label === 'ÜBERRASCHUNG' ? 'surprise' : act.label === 'BESTER ACT' ? 'best' : 'gem'}"
+      <button class="spotlight-item spotlight-item--${act.type === 'surprise' ? 'surprise' : act.type === 'best' ? 'best' : 'gem'}"
               type="button" data-spotlight-act-id="${act.actId}" data-spotlight-act-name="${act.actName}">
-        <div class="spotlight-label">${act.label}</div>
+        <div class="spotlight-label">${act.type === 'best' ? t('spotlight.best') : act.type === 'surprise' ? t('spotlight.surprise') : t('spotlight.gem')}</div>
         <div class="spotlight-name" style="font-size:${spotlightNameFontSize(act.actName)}">${act.actName}</div>
         <div class="spotlight-stars">${starsHtml}</div>
         <div class="spotlight-meta">${act.clubName || ''}</div>
@@ -852,7 +869,7 @@ function renderSpotlightPanel() {
   }).join('')}</div>`;
 }
 function renderEventsPanel() {
-  if (!popularEvents.length) return '<div class="rail-empty">Keine Events</div>';
+  if (!popularEvents.length) return `<div class="rail-empty">${t('empty.no_events')}</div>`;
   const fallback = popularEvents.every(item => item.fallback);
   return `<div class="popular-rail-list">${popularEvents.map(item => {
     const ev = item.event, d = formatDateLabel(ev.event_date);
@@ -862,7 +879,7 @@ function renderEventsPanel() {
         <div class="popular-item-name">${truncateWords(ev.event_name)}</div>
         <div class="popular-item-meta">
           <span>${ev.clubs?.name || '-'}</span>
-          <span class="popular-item-hype">${fallback ? 'Noch kein Trend' : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
+          <span class="popular-item-hype">${fallback ? t('empty.no_trend') : `<span class="popular-item-hype-count">${item.hype.total_hype}</span><span class="popular-item-hype-icon" aria-hidden="true">◔</span>`}</span>
         </div>
       </button>`;
   }).join('')}</div>`;
@@ -882,9 +899,9 @@ function renderPopularEvents() {
       <div class="popular-rail-header">
         <div class="rail-tabs">
           <button class="rail-tab${activeTab === 'spotlight' ? ' active' : ''}" type="button" data-rail-tab="spotlight">Artist Spotlight</button>
-          <button class="rail-tab${activeTab === 'events' ? ' active' : ''}" type="button" data-rail-tab="events">Beliebte Events</button>
+          <button class="rail-tab${activeTab === 'events' ? ' active' : ''}" type="button" data-rail-tab="events">Popular Events</button>
         </div>
-        <span class="popular-rail-subtitle">${activeTab === 'spotlight' ? 'Letzte Nacht' : (fallback ? 'Noch kein Trend' : 'Trending')}</span>
+        <span class="popular-rail-subtitle">${activeTab === 'spotlight' ? t('spotlight.last_night') : (fallback ? t('empty.no_trend') : t('spotlight.trending'))}</span>
       </div>
       ${activeTab === 'spotlight' ? renderSpotlightPanel() : renderEventsPanel()}
     </div>
@@ -902,8 +919,8 @@ function renderEventCard(ev, nextActKeys) {
   const isOpen = expandedEventIds.has(Number(ev.id));
   const isClubFavorite = ev.clubs?.id ? favoriteClubIds.has(Number(ev.clubs.id)) : false;
   const venueHtml = ev.clubs?.id
-    ? `<span class="venue-name-group"><span class="venue-tag">${venue}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
-    : `<span class="venue-tag">${venue}</span>`;
+    ? `<span class="venue-name-group"><span class="venue-tag">${escapeHtml(venue)}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
+    : `<span class="venue-tag">${escapeHtml(venue)}</span>`;
   const hl = eventHighlights.get(Number(ev.id));
   const artistRows = acts.map(a => {
     const start = fmtTime(a.start_time), end = fmtTime(a.end_time), label = start && end ? `${start} - ${end}` : start ? `ab ${start}` : null;
@@ -923,13 +940,13 @@ function renderEventCard(ev, nextActKeys) {
     const eventHasStarted = (() => { const s = getEventStartDateTime(ev); return s ? new Date() >= s : ev.event_date <= getDateStr(0); })();
     const actRateBtn = actId && sessionUser && eventHasStarted
       ? existingEvRating
-        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
-        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
+        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${t('act.rate_change')}">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
+        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${t('act.rate')}">☆☆☆☆☆</button>`
       : '';
     const flairs = [
-      isBestAct    ? '<span class="act-flair act-flair--best">Bester Act</span>'    : '',
-      isSurprise   ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
-      isHiddenGem  ? '<span class="act-flair act-flair--gem">Geheimtipp</span>'     : '',
+      isBestAct    ? `<span class="act-flair act-flair--best">${t('act.best')}</span>` : '',
+      isSurprise   ? `<span class="act-flair act-flair--surprise">${t('act.surprise')}</span>` : '',
+      isHiddenGem  ? `<span class="act-flair act-flair--gem">${t('act.gem')}</span>` : '',
     ].filter(Boolean).join('');
     return `
       <div class="artist-row ${start ? 'has-time' : ''}${isActFavorite ? ' artist-row--followed' : ''}">
@@ -938,13 +955,13 @@ function renderEventCard(ev, nextActKeys) {
           ${actFollowBtn}
         </span>
         <span class="artist-name">
-          <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
+          <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${escapeHtml(a.acts?.name ?? '?')}">${escapeHtml(a.acts?.name ?? '?')}</span>
           ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
         </span>
         <span class="artist-row-right">
           ${actRateBtn}
           ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
-          ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
+          ${a.canceled ? `<span class="artist-time canceled">${t('act.canceled')}</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">${t('live.tba')}</span>`}
         </span>
       </div>
     `;
@@ -953,8 +970,8 @@ function renderEventCard(ev, nextActKeys) {
     <div class="event-card${isOpen ? ' open' : ''}" data-event-id="${ev.id}">
       <div class="card-header" data-action="toggle-timetable" data-event-id="${ev.id}">
         <div class="event-heading">
-          <div class="event-name">${ev.event_name}</div>
-          ${city ? `<div class="event-city-emphasis">${city}</div>` : ''}
+          <div class="event-name">${escapeHtml(ev.event_name)}</div>
+          ${city ? `<div class="event-city-emphasis">${escapeHtml(city)}</div>` : ''}
           ${buildEventScoreBadge(ev)}
         </div>
         <div class="event-meta">
@@ -967,12 +984,12 @@ function renderEventCard(ev, nextActKeys) {
       <div class="event-actions">
         <div class="event-actions-left">
           <button class="event-action-button hype-button${isHyped ? ' active' : ''}" type="button" data-action="toggle-hype" data-event-id="${ev.id}" aria-pressed="${isHyped}">
-            <span class="spark-icon">&#10022;</span><span>Interessiert</span><span class="hype-count">${hype.total_hype}</span>
+            <span class="spark-icon">&#10022;</span><span>${t('sort.interested')}</span><span class="hype-count">${hype.total_hype}</span>
           </button>
         </div>
         <div class="event-actions-right">${buildPresenceBtn(ev.id)}</div>
       </div>
-      <div class="artist-list">${artistRows ? '<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">Artist</span><span class="lineup-header-right"><span class="lh-label">Rate</span><span class="lh-label">Zeit</span></span></div>' : ''}${artistRows || '<span class="time-tba">Noch keine Infos</span>'}</div>
+      <div class="artist-list">${artistRows ? `<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">${t('misc.artist')}</span><span class="lineup-header-right"><span class="lh-label">${t('act.rate')}</span><span class="lh-label">${t('misc.time')}</span></span></div>` : ''}${artistRows || `<span class="time-tba">${t('misc.no_info')}</span>`}</div>
     </div>
   `;
 }
@@ -988,7 +1005,7 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
   updateStatusBar();
   const scrollY = window.scrollY;
   if (!grouped.length) {
-    main.innerHTML = `<div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    main.innerHTML = `<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
     window.scrollTo(0, scrollY);
     setLastUpdated();
     return;
@@ -1088,7 +1105,7 @@ function doSearch(q) {
   const artists = Object.values(actMap).filter(a => (searchFilter === 'all' || searchFilter === 'artist') && String(a.name || '').toLowerCase().includes(lower));
   const clubs = Object.values(clubMap).filter(c => (searchFilter === 'all' || searchFilter === 'club') && String(c.name || '').toLowerCase().includes(lower));
   if (!artists.length && !clubs.length) {
-    results.innerHTML = `<div class="search-no-results">Keine Ergebnisse fuer "${q}"</div>`;
+    results.innerHTML = `<div class="search-no-results">${t('empty.no_results', { q: escapeHtml(q) })}</div>`;
     results.classList.add('open');
     return;
   }
@@ -1097,14 +1114,14 @@ function doSearch(q) {
     html += `<div class="search-results-header">Artists (${artists.length})</div>`;
     artists.slice(0, 6).forEach(a => {
       const upcoming = countUpcomingEvents(a.id ?? a.name, 'artist');
-      html += `<div class="search-result-item" data-search-type="artist" data-id="${a.id ?? ''}" data-name="${a.name}"><span class="result-type-tag artist">DJ</span><span class="result-name">${highlight(a.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
+      html += `<div class="search-result-item" data-search-type="artist" data-id="${a.id ?? ''}" data-name="${escapeHtml(a.name)}"><span class="result-type-tag artist">DJ</span><span class="result-name">${highlight(a.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
     });
   }
   if (clubs.length) {
     html += `<div class="search-results-header">Clubs (${clubs.length})</div>`;
     clubs.slice(0, 4).forEach(c => {
       const upcoming = countUpcomingEvents(c.name, 'club');
-      html += `<div class="search-result-item" data-search-type="club" data-id="${c.id ?? ''}" data-name="${c.name}"><span class="result-type-tag club">CLUB</span><span class="result-name">${highlight(c.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
+      html += `<div class="search-result-item" data-search-type="club" data-id="${c.id ?? ''}" data-name="${escapeHtml(c.name)}"><span class="result-type-tag club">CLUB</span><span class="result-name">${highlight(c.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
     });
   }
   results.innerHTML = html;
@@ -1117,18 +1134,62 @@ function doSearch(q) {
 }
 function highlight(text, q) {
   const idx = text.toLowerCase().indexOf(q.toLowerCase());
-  if (idx < 0) return text;
-  return text.slice(0, idx) + `<mark style="background:rgba(255,32,32,0.3);color:var(--white)">${text.slice(idx, idx + q.length)}</mark>` + text.slice(idx + q.length);
+  if (idx < 0) return escapeHtml(text);
+  return escapeHtml(text.slice(0, idx)) + `<mark style="background:rgba(255,32,32,0.3);color:var(--white)">${escapeHtml(text.slice(idx, idx + q.length))}</mark>` + escapeHtml(text.slice(idx + q.length));
 }
 function countUpcomingEvents(idOrName, type) {
   const visibleEvents = getVisibleEvents();
   if (type === 'artist') return allEvents.filter(ev => isUpcomingOrRunningEvent(ev) && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
   return visibleEvents.filter(ev => isUpcomingOrRunningEvent(ev) && ev.clubs?.name === idOrName).length;
 }
+async function fetchClubStats(clubName) {
+  // Calls a SECURITY DEFINER RPC — returns aggregated data across all users,
+  // bypasses RLS safely (no individual rows exposed). Works for anon too.
+  const client = supabaseAnonClient || supabaseClient;
+  if (!client) return null;
+  if (clubStatsCache.has(clubName)) return clubStatsCache.get(clubName);
+
+  const clubEventIds = allEvents
+    .filter(ev => ev.clubs?.name === clubName)
+    .map(ev => Number(ev.id));
+  if (!clubEventIds.length) { clubStatsCache.set(clubName, null); return null; }
+
+  try {
+    const { data, error } = await client.rpc('get_club_stats', { p_event_ids: clubEventIds });
+    if (error || !data?.[0]) { clubStatsCache.set(clubName, null); return null; }
+    const row = data[0];
+    const stats = {
+      avgWait:    row.avg_wait_minutes != null ? Number(row.avg_wait_minutes) : null,
+      entryRate:  row.entry_rate      != null ? Number(row.entry_rate)       : null,
+      inClub:     Number(row.in_club_count  || 0),
+      denied:     Number(row.denied_count   || 0),
+      total:      Number(row.total_attempts || 0),
+    };
+    clubStatsCache.set(clubName, stats);
+    return stats;
+  } catch { clubStatsCache.set(clubName, null); return null; }
+}
+
 function showClubSearch(clubName) {
   activeSearch = { type: 'club', name: clubName, label: `Club: ${clubName}` };
   searchMode = true;
   renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.clubs?.name === clubName && isUpcomingOrRunningEvent(ev))));
+  // Fetch and inject stats asynchronously — doesn't block render
+  fetchClubStats(clubName).then(stats => {
+    const bar = document.getElementById('clubStatsBar');
+    if (!bar) return;
+    if (!stats) {
+      bar.innerHTML = `<span class="club-stat-empty">${t('empty.no_club_data')}</span>`;
+      return;
+    }
+    const waitStr  = stats.avgWait != null ? (stats.avgWait < 60 ? `${stats.avgWait} min` : `${Math.floor(stats.avgWait/60)}h ${stats.avgWait%60}min`) : '—';
+    const rateStr  = stats.entryRate != null ? `${stats.entryRate}% (${stats.inClub}/${stats.inClub + stats.denied})` : '—';
+    bar.innerHTML = `
+      <div class="club-stat"><span class="club-stat-val">${waitStr}</span><span class="club-stat-label">${t('club.avg_wait')}</span></div>
+      <div class="club-stat-divider"></div>
+      <div class="club-stat"><span class="club-stat-val">${rateStr}</span><span class="club-stat-label">${t('club.entry_rate')}</span></div>
+    `;
+  });
 }
 function showArtistSearch(actId, actName) {
   activeSearch = { type: 'artist', id: actId, name: actName, label: `Artist: ${actName}` };
@@ -1147,11 +1208,16 @@ function renderSearchResults(label, grouped) {
   renderPopularEvents();
   updateStatusBar();
   if (!grouped.length) {
-    main.innerHTML = `<div class="search-active-banner"><span><strong>${label}</strong> - Keine kommenden Events</span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div><div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    const statsBlock = activeSearch?.type === 'club' ? `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">${t('loading.stats')}</span></div>` : '';
+    main.innerHTML = `<div class="search-active-banner"><span><strong>${escapeHtml(label)}</strong>${t('misc.search_banner_no_events')}</span><button class="search-banner-close" type="button" onclick="clearSearch()">${t('search.back')}</button></div>${statsBlock}<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
     setLastUpdated();
     return;
   }
-  let html = `<div class="search-active-banner"><span>Ergebnisse fuer <strong>${label}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>`;
+  const isClub = activeSearch?.type === 'club';
+  let html = `<div class="search-active-banner"><span>${t('search.results_for')} <strong>${escapeHtml(label)}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">${t('search.back')}</button></div>`;
+  if (isClub) {
+    html += `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">${t('loading.stats')}</span></div>`;
+  }
   grouped.forEach(([dateStr, rawEvents]) => {
     const d = formatDateLabel(dateStr), events = sortForDay(rawEvents);
     html += `
@@ -1168,7 +1234,7 @@ function renderSearchResults(label, grouped) {
 }
 async function toggleFavorite(type, id, { rerender = true, onChange = null } = {}) {
   const numericId = Number(id), set = favoriteSet(type);
-  if (!set || !Number.isFinite(numericId) || !ensureAuthenticated('Favoriten') || !supabaseClient) return false;
+  if (!set || !Number.isFinite(numericId) || !ensureAuthenticated('Favorites') || !supabaseClient) return false;
   const key = `favorite:${type}:${numericId}`;
   if (pendingActionKeys.has(key)) return false;
   const active = set.has(numericId);
@@ -1199,7 +1265,7 @@ async function toggleFavorite(type, id, { rerender = true, onChange = null } = {
 }
 async function toggleHype(id) {
   const eventId = Number(id);
-  if (!Number.isFinite(eventId) || !ensureAuthenticated('Interessiert') || !supabaseClient) return false;
+  if (!Number.isFinite(eventId) || !ensureAuthenticated('Interested') || !supabaseClient) return false;
   const key = `hype:${eventId}`;
   if (pendingActionKeys.has(key)) return false;
   const active = userHypedEventIds.has(eventId);
@@ -1235,8 +1301,8 @@ function syncActFavoriteButton(actId) {
   button.classList.toggle('active', active);
   button.setAttribute('aria-pressed', String(active));
   button.textContent = active ? '♥' : '♡';
-  button.setAttribute('aria-label', active ? 'Artist entfolgen' : 'Artist folgen');
-  button.setAttribute('title', active ? 'Artist entfolgen' : 'Artist folgen');
+  button.setAttribute('aria-label', active ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+  button.setAttribute('title', active ? t('profile.unfollow_artist') : t('profile.follow_artist'));
 }
 function syncHypeButton(eventId) {
   const isHyped = userHypedEventIds.has(Number(eventId));
@@ -1292,11 +1358,11 @@ function bindActionHandlers() {
     }
     if (target.dataset.action === 'score-info') {
       e.stopPropagation();
-      showQueueInfoToast('Bewerte mehr DJs um einen persönlichen Score zu sehen. Je mehr du und andere User bewerten, desto genauer wird die Vorhersage wie gut dir das Event gefallen wird.');
+      showQueueInfoToast(t('live.score_info'));
       return;
     }
     if (target.dataset.action === 'queue-locked-info') {
-      showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
+      showQueueInfoToast(t('live.queue_locked_info'));
       return;
     }
     if (target.dataset.action === 'set-presence') {
@@ -1346,7 +1412,7 @@ async function openArtistPopup(actId, actName) {
   const overlay = document.getElementById('artistOverlay'), content = document.getElementById('modalContent');
   if (!overlay || !content) return;
   const requestId = ++artistPopupRequestId;
-  content.innerHTML = `<div class="modal-artist-tag">// ARTIST</div><div class="modal-artist-name">${actName}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
+  content.innerHTML = `<div class="modal-artist-tag">// ARTIST</div><div class="modal-artist-name">${escapeHtml(actName)}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   syncBodyLock();
@@ -1412,13 +1478,13 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   if (!content) return;
   const numericActId = Number(actId), isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
+    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
-    ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
+    ? `<a class="modal-ig-link" href="https://instagram.com/${escapeHtml(instaName)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${escapeHtml(instaName)}</a>`
     : `<span class="modal-ig-link modal-social-placeholder">Instagram</span>`;
   const scHtml = scUrl
-    ? `<a class="modal-sc-link" href="${scUrl}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1.175 12.225c-.041 0-.075.032-.079.074l-.55 4.754.55 4.757c.004.042.038.074.079.074.04 0 .074-.032.079-.074l.625-4.757-.625-4.754c-.005-.042-.039-.074-.079-.074zm1.558-.55c-.05 0-.09.037-.095.086l-.484 5.304.484 5.307c.005.05.045.086.095.086.05 0 .09-.036.095-.086l.549-5.307-.549-5.304c-.005-.05-.045-.086-.095-.086zm1.574-.31c-.058 0-.105.045-.11.103l-.418 5.614.418 5.617c.005.058.052.103.11.103.058 0 .106-.045.111-.103l.473-5.617-.473-5.614c-.005-.058-.053-.103-.111-.103zm1.59-.128c-.065 0-.118.052-.123.117l-.35 5.742.35 5.745c.005.065.058.117.123.117.065 0 .118-.052.123-.117l.397-5.745-.397-5.742c-.005-.065-.058-.117-.123-.117zm1.589-.077c-.073 0-.132.058-.137.13l-.283 5.819.283 5.822c.005.073.064.13.137.13.073 0 .132-.057.137-.13l.32-5.822-.32-5.819c-.005-.073-.064-.13-.137-.13zm1.591-.032c-.08 0-.145.063-.15.143l-.216 5.851.216 5.854c.005.08.07.143.15.143.08 0 .145-.063.15-.143l.244-5.854-.244-5.851c-.005-.08-.07-.143-.15-.143zm1.592-.014c-.087 0-.158.07-.163.156l-.149 5.865.149 5.868c.005.087.076.156.163.156.087 0 .158-.069.163-.156l.169-5.868-.169-5.865c-.005-.087-.076-.156-.163-.156zm1.59-.004c-.094 0-.171.076-.176.17l-.082 5.869.082 5.872c.005.094.082.17.176.17.094 0 .171-.076.176-.17l.093-5.872-.093-5.869c-.005-.094-.082-.17-.176-.17zm1.59.004c-.1 0-.181.08-.186.18l-.014 5.865.014 5.868c.005.1.086.18.186.18.1 0 .181-.08.186-.18l.016-5.868-.016-5.865c-.005-.1-.086-.18-.186-.18zm3.547-1.636C19.5 9.16 17.857 7.5 15.875 7.5c-.504 0-.983.101-1.418.283-.147-3.604-3.13-6.48-6.774-6.48-1.018 0-1.983.224-2.844.625-.31.14-.393.284-.396.41v13.31c.003.13.106.238.238.246h13.318C19.428 15.893 21 14.315 21 12.375c0-1.94-1.572-3.518-3.5-3.519z"/></svg>SoundCloud</a>`
+    ? `<a class="modal-sc-link" href="${safeUrl(scUrl)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1.175 12.225c-.041 0-.075.032-.079.074l-.55 4.754.55 4.757c.004.042.038.074.079.074.04 0 .074-.032.079-.074l.625-4.757-.625-4.754c-.005-.042-.039-.074-.079-.074zm1.558-.55c-.05 0-.09.037-.095.086l-.484 5.304.484 5.307c.005.05.045.086.095.086.05 0 .09-.036.095-.086l.549-5.307-.549-5.304c-.005-.05-.045-.086-.095-.086zm1.574-.31c-.058 0-.105.045-.11.103l-.418 5.614.418 5.617c.005.058.052.103.11.103.058 0 .106-.045.111-.103l.473-5.617-.473-5.614c-.005-.058-.053-.103-.111-.103zm1.59-.128c-.065 0-.118.052-.123.117l-.35 5.742.35 5.745c.005.065.058.117.123.117.065 0 .118-.052.123-.117l.397-5.745-.397-5.742c-.005-.065-.058-.117-.123-.117zm1.589-.077c-.073 0-.132.058-.137.13l-.283 5.819.283 5.822c.005.073.064.13.137.13.073 0 .132-.057.137-.13l.32-5.822-.32-5.819c-.005-.073-.064-.13-.137-.13zm1.591-.032c-.08 0-.145.063-.15.143l-.216 5.851.216 5.854c.005.08.07.143.15.143.08 0 .145-.063.15-.143l.244-5.854-.244-5.851c-.005-.08-.07-.143-.15-.143zm1.592-.014c-.087 0-.158.07-.163.156l-.149 5.865.149 5.868c.005.087.076.156.163.156.087 0 .158-.069.163-.156l.169-5.868-.169-5.865c-.005-.087-.076-.156-.163-.156zm1.59-.004c-.094 0-.171.076-.176.17l-.082 5.869.082 5.872c.005.094.082.17.176.17.094 0 .171-.076.176-.17l.093-5.872-.093-5.869c-.005-.094-.082-.17-.176-.17zm1.59.004c-.1 0-.181.08-.186.18l-.014 5.865.014 5.868c.005.1.086.18.186.18.1 0 .181-.08.186-.18l.016-5.868-.016-5.865c-.005-.1-.086-.18-.186-.18zm3.547-1.636C19.5 9.16 17.857 7.5 15.875 7.5c-.504 0-.983.101-1.418.283-.147-3.604-3.13-6.48-6.774-6.48-1.018 0-1.983.224-2.844.625-.31.14-.393.284-.396.41v13.31c.003.13.106.238.238.246h13.318C19.428 15.893 21 14.315 21 12.375c0-1.94-1.572-3.518-3.5-3.519z"/></svg>SoundCloud</a>`
     : `<span class="modal-sc-link modal-social-placeholder">SoundCloud</span>`;
 
   // Rating stats block
@@ -1432,7 +1498,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
           <span class="modal-act-avg">${ratingStats.avg_rating}</span>
           <span class="modal-act-count">(${ratingStats.rating_count})</span>
         </div>
-        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">Überraschung des Abends ${ratingStats.surprise_pct}%</span></div>` : ''}
+        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">${t('rating.surprise')} ${ratingStats.surprise_pct}%</span></div>` : ''}
       </div>`;
   }
 
@@ -1444,13 +1510,13 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const rateBtn = sessionUser
         ? existingRating
           ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
-          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">★</button>`
+          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}">★</button>`
         : '';
       const city = ev.clubs?.cities?.name;
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
-        return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
+        return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div><div class="modal-event-venue">${escapeHtml(venue)}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
     }).join('')
-    : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
+    : `<div class="modal-no-events">${t('empty.no_upcoming')}</div>`;
 
   // Past events with rating buttons (only when logged in)
   let pastHtml = '';
@@ -1462,11 +1528,11 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const rateBtn = sessionUser
         ? existingRating
           ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
-          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">Bewerten</button>`
+          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}">Bewerten</button>`
         : '';
       const city = ev.clubs?.cities?.name;
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
-      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
+      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div><div class="modal-event-venue">${escapeHtml(venue)}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
     pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
   }
@@ -1474,7 +1540,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   const socialRow = `<div class="modal-social-row">${igHtml}${scHtml}</div>`;
   content.innerHTML = `
     <div class="modal-artist-tag">// ARTIST</div>
-    <div class="artist-modal-header"><div class="modal-artist-name">${name}</div><div class="modal-head-actions">${favHtml}</div></div>
+    <div class="artist-modal-header"><div class="modal-artist-name">${escapeHtml(name)}</div><div class="modal-head-actions">${favHtml}</div></div>
     <div class="modal-divider"></div>
     ${socialRow}
     ${statsHtml}
@@ -1680,19 +1746,19 @@ async function loadActSpotlight() {
       .filter(s => s.rating_count >= 2 && s.surprise_pct > 0)
       .sort((a, b) => b.surprise_pct - a.surprise_pct)[0]
       || bestFallback(scoredActs, usedIds);
-    if (surprisePick) { usedIds.add(surprisePick.actId); result.push({ ...surprisePick, label: 'ÜBERRASCHUNG' }); }
+    if (surprisePick) { usedIds.add(surprisePick.actId); result.push({ ...surprisePick, type: 'surprise' }); }
     // Slot 2: Bester Act — highest weighted score (min 2 ratings), fallback: best available
     const bestPick = scoredActs
       .filter(s => !usedIds.has(s.actId) && s.rating_count >= 2)
       .sort((a, b) => weightedScore(b) - weightedScore(a))[0]
       || bestFallback(scoredActs, usedIds);
-    if (bestPick) { usedIds.add(bestPick.actId); result.push({ ...bestPick, label: 'BESTER ACT' }); }
+    if (bestPick) { usedIds.add(bestPick.actId); result.push({ ...bestPick, type: 'best' }); }
     // Slot 3: Geheimtipp — ≥4.5 Sterne, 10–50 Ratings; fallback: best available
     const geheimPick = scoredActs
       .filter(s => !usedIds.has(s.actId) && s.avg_rating >= 4.5 && s.rating_count >= 10 && s.rating_count <= 50)
       .sort((a, b) => b.avg_rating - a.avg_rating)[0]
       || bestFallback(scoredActs, usedIds);
-    if (geheimPick) result.push({ ...geheimPick, label: 'GEHEIMTIPP' });
+    if (geheimPick) result.push({ ...geheimPick, type: 'gem' });
     spotlightActs = result;
   } catch (err) {
     console.warn('Spotlight fetch error:', err.message || err);
@@ -1909,7 +1975,7 @@ async function setPresenceStatus(eventId, nextStatus) {
   if (nextStatus === 'queue') {
     const ev = allEvents.find(e => Number(e.id) === Number(eventId));
     const eventStart = ev ? getEventStartDateTime(ev) : null;
-    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 60 * 60 * 1000) : null;
+    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 10 * 60 * 60 * 1000) : null;
     if (queueOpenAt && new Date() < queueOpenAt) {
       showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
       return;
@@ -1951,6 +2017,28 @@ async function setPresenceStatus(eventId, nextStatus) {
   rerenderView({ preserveDateNavScroll: true });
 
   if (!livePollingId) startLivePolling(eventId);
+}
+
+async function handleDenied(eventId) {
+  if (!ensureAuthenticated('Live Mode') || !supabaseClient) return;
+  // Only count denial if user was in queue for at least 2 minutes.
+  // Prevents stat manipulation by quickly joining + denying + reloading.
+  const MIN_QUEUE_MS = 2 * 60 * 1000;
+  const queueSince = myQueueStartTime
+    || (userPresence?.updated_at ? new Date(userPresence.updated_at) : null);
+  const countDenial = queueSince && (Date.now() - queueSince.getTime() >= MIN_QUEUE_MS);
+  if (countDenial) {
+    try {
+      await supabaseClient.from('user_presence_log').insert({
+        user_id: sessionUser.id,
+        event_id: eventId,
+        status: 'denied',
+      });
+    } catch (err) {
+      console.warn('Denial log error:', err.message || err);
+    }
+  }
+  await setPresenceStatus(eventId, 'left');
 }
 
 async function submitQueueReport(eventId, level) {
@@ -2056,7 +2144,7 @@ function renderQueueGraph() {
 
   const points = getLiveQueuePoints();
   if (!points.length) {
-    el.innerHTML = '<div class="pem-q-empty">Noch keine Warteschlangen-Meldungen für dieses Event.</div>';
+    el.innerHTML = `<div class="pem-q-empty">${t('live.no_queue_reports')}</div>`;
     return;
   }
 
@@ -2124,7 +2212,7 @@ function renderQueueGraph() {
     <text x="${W - mr}" y="${H - 5}" text-anchor="end" fill="#444" font-size="7" font-family="monospace">${fmtAxis(eventEnd)}</text>`;
 
   el.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="Queue-Verlauf">
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="${t('live.queue_chart_aria')}">
       ${gridLines}
       ${fillPath}
       ${lineSegs}
@@ -2202,13 +2290,13 @@ function renderLivePanel() {
           <span class="live-panel-event-name">${gev.event_name}</span>
           <span class="live-panel-venue">${gev.clubs?.name ?? ''}</span>
         </div>
-        <button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>
+        <button class="live-close-btn" data-live-action="toggle-expand" aria-label="${t('common.close')}">×</button>
       </div>
       <div class="live-panel-body" style="display:block">
         <div class="live-section live-goodbye-section">
           <div class="live-goodbye-icon">✓</div>
-          <div class="live-goodbye-title">Gute Nacht</div>
-          <div class="live-goodbye-sub">Du hast ${gev.event_name} verlassen.</div>
+          <div class="live-goodbye-title">${t('live.goodbye_title')}</div>
+          <div class="live-goodbye-sub">${t('live.goodbye_sub', { event: gev.event_name })}</div>
         </div>
       </div>`;
     panel.setAttribute('aria-hidden', 'false');
@@ -2228,7 +2316,7 @@ function renderLivePanel() {
   if (!ev) { hideLivePanel(); return; }
 
   const status = userPresence?.status ?? 'left';
-  const statusLabel = status === 'queue' ? 'Warteschlange' : 'Im Club';
+  const statusLabel = status === 'queue' ? t('live.status_queue') : t('live.status_inclub');
 
   // timetable
   const acts = sortActs(ev.event_acts || []);
@@ -2238,7 +2326,7 @@ function renderLivePanel() {
   const timetableHtml = acts.length
     ? acts.map(a => {
         const s = fmtTime(a.start_time), e2 = fmtTime(a.end_time);
-        const t = s && e2 ? `${s}–${e2}` : s ? `ab ${s}` : 'TBA';
+        const timeStr = s && e2 ? `${s}–${e2}` : s ? t('act.from', { time: s }) : t('live.tba');
         const actId = a.acts?.id ?? null;
         const numActId = actId ? Number(actId) : null;
         const isActFavorite = numActId ? favoriteActIds.has(numActId) : false;
@@ -2254,7 +2342,7 @@ function renderLivePanel() {
         const rateBtn = !a.canceled && actId && sessionUser
           ? `<div class="pem-act-rating-col live-act-rating-col">
                <div class="pem-stars" data-live-act-id="${actId}" data-act-id="${actId}">${stars}</div>
-               <button class="pem-surprise-btn${isSurprise ? ' active' : ''}" data-live-surprise-act-id="${actId}" data-act-id="${actId}" type="button" title="Überraschung des Abends">★ Überraschung</button>
+               <button class="pem-surprise-btn${isSurprise ? ' active' : ''}" data-live-surprise-act-id="${actId}" data-act-id="${actId}" type="button" title="${t('rating.surprise')}">${t('live.surprise_btn')}</button>
              </div>`
           : '<span class="live-act-rating-placeholder"></span>';
         return `
@@ -2265,31 +2353,31 @@ function renderLivePanel() {
             </div>
             <div class="artist-name live-act-name-wrap">
               <span class="artist-name-link live-act-name" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
-              <div class="pem-act-time live-inline-act-time">${a.canceled ? 'ABGESAGT' : t}</div>
+              <div class="pem-act-time live-inline-act-time">${a.canceled ? t('act.canceled') : timeStr}</div>
             </div>
             <div class="artist-row-right live-act-side">
               ${rateBtn}
             </div>
           </div>`;
       }).join('')
-    : '<span class="time-tba">Keine Acts</span>';
+    : `<span class="time-tba">${t('empty.no_acts')}</span>`;
 
   const personalHtml = (() => {
     if (isGoodbyeMode) {
       const qVal = formatTimeInput(myQueueStartTime);
       const cVal = formatTimeInput(myClubEntryTime);
       const waitResult = myQueueStartTime && myClubEntryTime
-        ? `<div class="live-wait-result"><span class="live-wait-label">Wartezeit</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
+        ? `<div class="live-wait-result"><span class="live-wait-label">${t('live.wait_time')}</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
         : '';
       return `
         <div class="live-section live-section--personal">
           <div class="live-section-head">
-            <div class="live-section-label">// DEINE NACHT</div>
-            <span class="live-left-badge">Verlassen</span>
+            <div class="live-section-label">${t('live.section_night')}</div>
+            <span class="live-left-badge">${t('live.status_left')}</span>
           </div>
           <div class="live-time-row">
-            ${myQueueStartTime ? `<div class="live-time-field"><label class="live-time-label">Queue-Eintritt</label><input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}"></div>` : ''}
-            ${myClubEntryTime  ? `<div class="live-time-field"><label class="live-time-label">Club-Eintritt</label><input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}"></div>` : ''}
+            ${myQueueStartTime ? `<div class="live-time-field"><label class="live-time-label">${t('live.queue_entry')}</label><input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}"></div>` : ''}
+            ${myClubEntryTime  ? `<div class="live-time-field"><label class="live-time-label">${t('live.club_entry')}</label><input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}"></div>` : ''}
           </div>
           ${waitResult}
         </div>`;
@@ -2297,27 +2385,30 @@ function renderLivePanel() {
     const qVal = formatTimeInput(myQueueStartTime);
     const cVal = formatTimeInput(myClubEntryTime);
     const waitResult = myQueueStartTime && status === 'in_club' && myClubEntryTime
-      ? `<div class="live-wait-result"><span class="live-wait-label">Wartezeit</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
+      ? `<div class="live-wait-result"><span class="live-wait-label">${t('live.wait_time')}</span><strong>${fmtWaitTime(myQueueStartTime, myClubEntryTime)}</strong></div>`
       : myQueueStartTime
-      ? `<div class="live-wait-result"><span class="live-wait-label">In der Schlange seit</span><strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
+      ? `<div class="live-wait-result"><span class="live-wait-label">${t('live.in_queue_since')}</span><strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
       : '';
     const topAction = status === 'queue'
-      ? `<button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>`
-      : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">Club verlassen</button>`;
+      ? `<div class="live-entry-actions">
+           <button class="event-action-button live-denied-btn" data-live-action="denied" data-event-id="${eventId}">${t('live.denied')}</button>
+           <button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">${t('live.enter_club')}</button>
+         </div>`
+      : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">${t('live.leave_club')}</button>`;
     return `
       <div class="live-section live-section--personal">
         <div class="live-section-head">
-          <div class="live-section-label">// DEINE NACHT</div>
+          <div class="live-section-label">${t('live.section_night')}</div>
           ${topAction}
         </div>
         <div class="live-time-row">
           <div class="live-time-field">
-            <label class="live-time-label">Queue-Eintritt</label>
+            <label class="live-time-label">${t('live.queue_entry')}</label>
             <input type="time" class="live-time-input" id="liveQueueTimeInput" value="${qVal}">
           </div>
           ${status === 'in_club' ? `
           <div class="live-time-field">
-            <label class="live-time-label">Club-Eintritt</label>
+            <label class="live-time-label">${t('live.club_entry')}</label>
             <input type="time" class="live-time-input" id="liveClubTimeInput" value="${cVal}">
           </div>` : ''}
         </div>
@@ -2335,31 +2426,31 @@ function renderLivePanel() {
         <span class="live-panel-venue">${ev.clubs?.name ?? ''}</span>
       </div>
       ${livePanelExpanded
-        ? `<button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>`
+        ? `<button class="live-close-btn" data-live-action="toggle-expand" aria-label="${t('common.close')}">×</button>`
         : `<div class="live-bar-cta">
              <span class="live-status-chip live-status-${status}">${statusLabel}</span>
-             <span class="live-bar-open-hint">Live UI öffnen ▲</span>
+             <span class="live-bar-open-hint">${t('live.open_hint')}</span>
            </div>`
       }
     </div>
     <div class="live-panel-body" style="display:${livePanelExpanded ? 'block' : 'none'}">
       ${personalHtml}
       <div class="live-section">
-        <div class="live-section-label">// WARTESCHLANGE</div>
+        <div class="live-section-label">${t('live.section_queue')}</div>
         <div class="pem-q-chart-wrap live-queue-chart" id="liveQueueGraph"></div>
         <div class="pem-q-legend">
-          <span><span class="pem-q-dot" style="background:#22c55e"></span>unter 30 min</span>
-          <span><span class="pem-q-dot" style="background:#f59e0b"></span>30–60 min</span>
-          <span><span class="pem-q-dot" style="background:#ef4444"></span>über 60 min</span>
+          <span><span class="pem-q-dot" style="background:#22c55e"></span>${t('live.queue_legend_green')}</span>
+          <span><span class="pem-q-dot" style="background:#f59e0b"></span>${t('live.queue_legend_yellow')}</span>
+          <span><span class="pem-q-dot" style="background:#ef4444"></span>${t('live.queue_legend_red')}</span>
         </div>
       </div>
       <div class="live-section">
-        <div class="live-section-label">// SPOTLIGHTS</div>
+        <div class="live-section-label">${t('live.section_spotlights')}</div>
         <div id="liveSpotlightCards">${spotlightHtml}</div>
       </div>
       <div class="live-section">
-        <div class="live-section-label">// LINE-UP & TIMETABLE</div>
-        <div class="pem-rating-hint">★ Überraschung des Abends kann nur einmal vergeben werden</div>
+        <div class="live-section-label">${t('live.section_timetable')}</div>
+        <div class="pem-rating-hint">${t('live.surprise_hint')}</div>
         <div class="live-timetable">${timetableHtml}</div>
       </div>
     </div>
@@ -2514,6 +2605,7 @@ function initLivePanel() {
     }
     if (action === 'queue-report') { await submitQueueReport(eventId, target.dataset.level); return; }
     if (action === 'hype')         { await toggleHype(eventId); renderLivePanel();           return; }
+    if (action === 'denied')       { await handleDenied(eventId); return; }
     if (action === 'next-status') {
       const next = userPresence?.status === 'queue' ? 'in_club' : null;
       if (next) await setPresenceStatus(eventId, next);
@@ -2548,18 +2640,18 @@ function buildPresenceBtn(evId) {
     }
     const ev = allEvents.find(e => Number(e.id) === eventId);
     const eventStart = ev ? getEventStartDateTime(ev) : null;
-    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 60 * 60 * 1000) : null;
+    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 10 * 60 * 60 * 1000) : null;
     if (queueOpenAt && new Date() < queueOpenAt) {
-      return `<button class="event-action-button presence-btn presence-locked" type="button" data-action="queue-locked-info" data-event-id="${eventId}">Warteschlange betreten</button>`;
+      return `<button class="event-action-button presence-btn presence-locked" type="button" data-action="queue-locked-info" data-event-id="${eventId}">${t('live.queue_locked')}</button>`;
     }
-    return `<button class="event-action-button presence-btn presence-cta" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="queue"><span class="live-btn-dot"></span>Warteschlange betreten</button>`;
+    return `<button class="event-action-button presence-btn presence-cta" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="queue"><span class="live-btn-dot"></span>${t('live.join_queue')}</button>`;
   }
   if (pid === eventId) {
     if (userPresence?.status === 'queue') {
-      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot"></span>Warteschlange ▲</button>`;
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot"></span>${t('live.queue_open')}</button>`;
     }
     if (userPresence?.status === 'in_club') {
-      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot live-btn-dot--club"></span>Im Club ▲</button>`;
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot live-btn-dot--club"></span>${t('live.in_club_open')}</button>`;
     }
   }
   return '';
@@ -2570,7 +2662,7 @@ function buildPresenceBtn(evId) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function openRatingModal({ actId, actName, eventId, eventName }) {
-  if (!ensureAuthenticated('Bewertungen')) return;
+  if (!ensureAuthenticated('Ratings')) return;
   ratingState = { actId, actName, eventId, eventName };
   selectedRating = 0;
 
@@ -2640,7 +2732,7 @@ async function submitActRating() {
   const submit = document.getElementById('ratingSubmit');
   if (submit) submit.disabled = true;
   const msgEl = document.getElementById('ratingMessage');
-  if (msgEl) msgEl.textContent = 'Wird gespeichert...';
+  if (msgEl) msgEl.textContent = t('rating.saving');
 
   const { actId, actName, eventId } = ratingState;
   const wasSurprise = document.getElementById('ratingFlagSurprise')?.checked ?? false;
@@ -2688,7 +2780,7 @@ async function submitActRating() {
     syncEventHighlightsFromLocalRatings(eventId);
     rerenderEventCardInPlace(eventId);
 
-    if (msgEl) msgEl.textContent = 'Gespeichert!';
+    if (msgEl) msgEl.textContent = t('rating.saved');
     setTimeout(() => {
       closeRatingModal();
       // Reopen artist popup to refresh stats
@@ -2696,7 +2788,7 @@ async function submitActRating() {
     }, 700);
   } catch (err) {
     console.warn('Rating submit error:', err.message || err);
-    if (msgEl) msgEl.textContent = 'Fehler beim Speichern.';
+    if (msgEl) msgEl.textContent = t('rating.error');
     if (submit) submit.disabled = false;
   }
 }

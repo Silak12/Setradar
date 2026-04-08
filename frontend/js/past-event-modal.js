@@ -134,11 +134,11 @@ window.PastEventModal = (() => {
     const stayMins = cE && lE ? Math.round((new Date(lE.created_at) - new Date(cE.created_at)) / 60000) : null;
 
     const viewRows = [
-      qE                      ? ['Ankunft',   _fmtTs(qE.created_at) + ' Uhr'] : null,
-      waitMins !== null       ? ['Wartezeit',  _fmtMins(waitMins)]             : null,
-      cE                      ? ['Einlass',    _fmtTs(cE.created_at) + ' Uhr'] : null,
-      stayMins !== null       ? ['Im Club',    _fmtMins(stayMins)]             : null,
-      lE                      ? ['Exit',       _fmtTs(lE.created_at) + ' Uhr'] : null,
+      qE                      ? [t('past.arrival'), _fmtTs(qE.created_at)] : null,
+      waitMins !== null       ? [t('live.wait_time'), _fmtMins(waitMins)]  : null,
+      cE                      ? [t('past.entry'), _fmtTs(cE.created_at)]   : null,
+      stayMins !== null       ? [t('past.in_club'), _fmtMins(stayMins)]    : null,
+      lE                      ? [t('past.exit'), _fmtTs(lE.created_at)]    : null,
     ].filter(Boolean);
 
     const viewHtml = viewRows.length
@@ -147,45 +147,45 @@ window.PastEventModal = (() => {
             <span class="pem-personal-key">${k}</span>
             <span class="pem-personal-val">${v}</span>
           </div>`).join('')
-      : '<div class="pem-personal-empty">Keine Daten erfasst.</div>';
+      : `<div class="pem-personal-empty">${t('past.no_data')}</div>`;
 
     const editHtml = canEdit ? `
       <div class="pem-personal-edit" hidden>
         <div class="pem-edit-fields">
           <label class="pem-edit-field">
-            <span class="pem-edit-label">Ankunft</span>
+            <span class="pem-edit-label">${t('past.arrival')}</span>
             <span class="pem-edit-datetime" data-status="queue" data-row-id="${qE?.id || ''}">
               <input type="date" class="pem-date-input" value="${qE ? _fmtDateInput(qE.created_at) : eventDate}">
               <input type="time" class="pem-time-input" value="${qE ? _fmtTimeInput(qE.created_at) : '22:00'}">
             </span>
           </label>
           <label class="pem-edit-field">
-            <span class="pem-edit-label">Einlass</span>
+            <span class="pem-edit-label">${t('past.entry')}</span>
             <span class="pem-edit-datetime" data-status="in_club" data-row-id="${cE?.id || ''}">
               <input type="date" class="pem-date-input" value="${cE ? _fmtDateInput(cE.created_at) : eventDate}">
               <input type="time" class="pem-time-input" value="${cE ? _fmtTimeInput(cE.created_at) : '23:00'}">
             </span>
           </label>
           <label class="pem-edit-field">
-            <span class="pem-edit-label">Exit</span>
+            <span class="pem-edit-label">${t('past.exit')}</span>
             <span class="pem-edit-datetime" data-status="left" data-row-id="${lE?.id || ''}">
               <input type="date" class="pem-date-input" value="${lE ? _fmtDateInput(lE.created_at) : ''}">
               <input type="time" class="pem-time-input" value="${lE ? _fmtTimeInput(lE.created_at) : ''}">
             </span>
           </label>
         </div>
-        <div class="pem-edit-hint">Datum und Uhrzeit direkt setzen — kein automatisches Raten mehr.</div>
+        <div class="pem-edit-hint">${t('past.edit_hint')}</div>
         <div class="pem-edit-actions">
-          <button class="pem-edit-cancel" type="button">Abbrechen</button>
-          <button class="pem-edit-save" type="button" data-event-date="${eventDate}">Speichern</button>
+          <button class="pem-edit-cancel" type="button">${t('settings.cancel')}</button>
+          <button class="pem-edit-save" type="button" data-event-date="${eventDate}">${t('settings.save')}</button>
         </div>
       </div>` : '';
 
     return `
       <div class="pem-personal" data-event-date="${eventDate}">
         <div class="pem-personal-header">
-          <div class="pem-section-label">// DEINE NACHT</div>
-          ${canEdit ? '<button class="pem-edit-toggle" type="button" title="Zeiten bearbeiten">✎</button>' : ''}
+          <div class="pem-section-label">${t('past.your_night')}</div>
+          ${canEdit ? `<button class="pem-edit-toggle" type="button" title="${t('past.edit_times')}">✎</button>` : ''}
         </div>
         <div class="pem-personal-rows">${viewHtml}</div>
         ${editHtml}
@@ -200,7 +200,7 @@ window.PastEventModal = (() => {
       if (!act) {
         return `<div class="pem-spot-card pem-spot-card--${type} pem-spot-empty">
           <div class="pem-spot-label">${label}</div>
-          <div class="pem-spot-name">Noch keine Votes</div>
+          <div class="pem-spot-name">${t('past.no_votes')}</div>
         </div>`;
       }
       const name = act.acts?.name || '—';
@@ -216,9 +216,9 @@ window.PastEventModal = (() => {
       <div class="pem-section">
         <div class="pem-section-label">// SPOTLIGHTS</div>
         <div class="pem-spotlights">
-          ${card('Bester Act',   best,      'best')}
-          ${card('Überraschung', surprise,  'surprise')}
-          ${card('Geheimtipp',   hiddenGem, 'gem')}
+          ${card(t('act.best'), best, 'best')}
+          ${card(t('act.surprise'), surprise, 'surprise')}
+          ${card(t('act.gem'), hiddenGem, 'gem')}
         </div>
       </div>`;
   }
@@ -249,21 +249,21 @@ window.PastEventModal = (() => {
         return `
           <div class="pem-act-row${canceled ? ' pem-act-canceled' : ''}" data-act-id="${a.act_id}">
             <div class="pem-act-info">
-              <div class="pem-act-name">${_esc(a.acts.name)}${canceled ? ' <span class="pem-canceled-tag">abgesagt</span>' : ''}</div>
+              <div class="pem-act-name">${_esc(a.acts.name)}${canceled ? ` <span class="pem-canceled-tag">${t('act.canceled')}</span>` : ''}</div>
               ${timeStr ? `<div class="pem-act-time">${timeStr}</div>` : ''}
             </div>
             ${!canceled ? `
             <div class="pem-act-rating-col">
               <div class="pem-stars" data-act-id="${a.act_id}">${stars}</div>
-              ${isOpen ? `<button class="pem-surprise-btn${isSurp ? ' active' : ''}" data-act-id="${a.act_id}" type="button" title="Überraschung des Abends">★ Überraschung</button>` : ''}
+              ${isOpen ? `<button class="pem-surprise-btn${isSurp ? ' active' : ''}" data-act-id="${a.act_id}" type="button" title="${t('rating.surprise')}">${t('past.surprise_button')}</button>` : ''}
             </div>` : ''}
           </div>`;
       }).join('');
 
     return `
       <div class="pem-section">
-        <div class="pem-section-label">// LINE-UP & BEWERTUNG${!isOpen ? ' <span class="pem-label-note">· Abgeschlossen</span>' : ''}</div>
-        ${isOpen ? '<div class="pem-rating-hint">★ Überraschung des Abends kann nur einmal vergeben werden</div>' : ''}
+        <div class="pem-section-label">${t('past.lineup_rating')}${!isOpen ? ` <span class="pem-label-note">· ${t('past.completed')}</span>` : ''}</div>
+        ${isOpen ? `<div class="pem-rating-hint">${t('past.surprise_hint')}</div>` : ''}
         <div class="pem-act-list">${ratingRows}</div>
       </div>`;
   }
@@ -272,8 +272,8 @@ window.PastEventModal = (() => {
     if (!queueReports.length) {
       return `
         <div class="pem-section">
-          <div class="pem-section-label">// WARTEZEIT-VERLAUF DER NACHT</div>
-          <div class="pem-q-empty">Noch keine Warteschlangen-Meldungen für dieses Event.</div>
+          <div class="pem-section-label">${t('past.queue_timeline')}</div>
+          <div class="pem-q-empty">${t('live.no_queue_reports')}</div>
         </div>`;
     }
 
@@ -366,9 +366,9 @@ window.PastEventModal = (() => {
 
     return `
       <div class="pem-section">
-        <div class="pem-section-label">// WARTEZEIT-VERLAUF DER NACHT</div>
+        <div class="pem-section-label">${t('past.queue_timeline')}</div>
         <div class="pem-q-chart-wrap">
-          <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="Queue-Verlauf">
+          <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="${t('past.queue_chart_aria')}">
             ${gridLines}
             ${fillPath}
             ${lineSegs}
@@ -377,9 +377,9 @@ window.PastEventModal = (() => {
           </svg>
         </div>
         <div class="pem-q-legend">
-          <span><span class="pem-q-dot" style="background:#22c55e"></span>unter 30 min</span>
-          <span><span class="pem-q-dot" style="background:#f59e0b"></span>30–60 min</span>
-          <span><span class="pem-q-dot" style="background:#ef4444"></span>über 60 min</span>
+          <span><span class="pem-q-dot" style="background:#22c55e"></span>${t('live.queue_legend_green')}</span>
+          <span><span class="pem-q-dot" style="background:#f59e0b"></span>${t('live.queue_legend_yellow')}</span>
+          <span><span class="pem-q-dot" style="background:#ef4444"></span>${t('live.queue_legend_red')}</span>
         </div>
       </div>`;
   }
@@ -390,7 +390,7 @@ window.PastEventModal = (() => {
     const sheet = overlay.querySelector('.past-event-sheet');
     if (!ev) {
       sheet.innerHTML = `<div class="past-event-topline"></div>
-        <div class="pem-scroll"><div class="pem-status">Event nicht gefunden.</div></div>`;
+        <div class="pem-scroll"><div class="pem-status">${t('past.event_not_found')}</div></div>`;
       return;
     }
 
@@ -403,7 +403,7 @@ window.PastEventModal = (() => {
 
     sheet.innerHTML = `
       <div class="past-event-topline"></div>
-      <button class="past-event-close" aria-label="Schließen">✕</button>
+      <button class="past-event-close" aria-label="${t('common.close')}">✕</button>
       <div class="pem-scroll">
         <div class="pem-header">
           <div class="pem-event-name">${_esc(ev.event_name)}</div>
@@ -496,11 +496,11 @@ window.PastEventModal = (() => {
         const w   = qE2 && cE2 ? Math.round((new Date(cE2.created_at) - new Date(qE2.created_at)) / 60000) : null;
         const s   = cE2 && lE2 ? Math.round((new Date(lE2.created_at) - new Date(cE2.created_at)) / 60000) : null;
         const updated = [
-          qE2 ? ['Ankunft',  _fmtTs(qE2.created_at) + ' Uhr'] : null,
-          w !== null ? ['Wartezeit', _fmtMins(w)] : null,
-          cE2 ? ['Einlass',  _fmtTs(cE2.created_at) + ' Uhr'] : null,
-          s !== null ? ['Im Club', _fmtMins(s)] : null,
-          lE2 ? ['Exit',     _fmtTs(lE2.created_at) + ' Uhr'] : null,
+          qE2 ? [t('past.arrival'), _fmtTs(qE2.created_at)] : null,
+          w !== null ? [t('live.wait_time'), _fmtMins(w)] : null,
+          cE2 ? [t('past.entry'), _fmtTs(cE2.created_at)] : null,
+          s !== null ? [t('past.in_club'), _fmtMins(s)] : null,
+          lE2 ? [t('past.exit'), _fmtTs(lE2.created_at)] : null,
         ].filter(Boolean);
         viewRows.innerHTML = updated.map(([k, v]) => `
           <div class="pem-personal-row">
@@ -515,7 +515,7 @@ window.PastEventModal = (() => {
         console.warn('Presence edit error:', err);
       }
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Speichern';
+      saveBtn.textContent = t('settings.save');
     });
   }
 
@@ -616,7 +616,7 @@ window.PastEventModal = (() => {
       <div class="past-event-bg"></div>
       <div class="past-event-sheet">
         <div class="past-event-topline"></div>
-        <div class="pem-scroll"><div class="pem-status">Lädt…</div></div>
+        <div class="pem-scroll"><div class="pem-status">${t('common.loading')}</div></div>
       </div>`;
     overlay.querySelector('.past-event-bg').addEventListener('click', close);
     document.addEventListener('keydown', _keyClose);
@@ -713,7 +713,7 @@ window.PastEventModal = (() => {
       console.error('PastEventModal error:', err);
       const sheet = overlay.querySelector('.past-event-sheet');
       sheet.innerHTML = `<div class="past-event-topline"></div>
-        <div class="pem-scroll"><div class="pem-status">Fehler beim Laden.</div></div>`;
+        <div class="pem-scroll"><div class="pem-status">${t('past.load_error')}</div></div>`;
     }
   }
 

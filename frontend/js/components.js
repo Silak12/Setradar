@@ -5,6 +5,7 @@ async function loadComponent(id, path) {
     const res = await fetch(path);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     el.innerHTML = await res.text();
+    if (window.applyTranslations) window.applyTranslations(el);
   } catch (err) {
     console.error(`[components] Fehler beim Laden von ${path}:`, err);
   }

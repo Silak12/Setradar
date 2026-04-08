@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,7 +21,7 @@
   <div class="status-bar" id="statusBar">
     <div class="status-bar-left">
       <span class="status-live-dot"></span>
-      <span>Profil</span>
+      <span data-i18n="status.profile">Profile</span>
     </div>
     <div class="status-bar-right" id="statusBarRight">—</div>
   </div>
@@ -30,15 +30,15 @@
     <!-- Loading -->
     <div class="loading-screen" id="profileLoading">
       <div class="loading-bar"></div>
-      <span>Lade Profil</span>
+      <span data-i18n="loading.profile">Loading profile</span>
     </div>
 
     <!-- Not logged in -->
     <div class="profile-not-logged-in" id="profileNotLoggedIn" style="display:none">
-      <div class="profile-nl-eyebrow">// PROFIL</div>
-      <div class="profile-nl-title">Nicht eingeloggt</div>
-      <p class="profile-nl-text">Login erforderlich um dein Profil zu sehen.</p>
-      <a class="profile-nl-link" href="index.html">Zurück zur Startseite →</a>
+      <div class="profile-nl-eyebrow" data-i18n="profile.eyebrow">// PROFILE</div>
+      <div class="profile-nl-title" data-i18n="profile.not_logged_in">Not logged in</div>
+      <p class="profile-nl-text" data-i18n="profile.login_required">Login required to view your profile.</p>
+      <a class="profile-nl-link" href="index.html" data-i18n="profile.back_home">Back to homepage →</a>
     </div>
 
     <!-- Profile content -->
@@ -46,10 +46,10 @@
 
       <!-- Header -->
       <div class="profile-header">
-        <div class="profile-header-eyebrow">// PROFIL</div>
+        <div class="profile-header-eyebrow" data-i18n="profile.eyebrow">// PROFILE</div>
         <div class="profile-name-row">
           <div class="profile-name" id="profileName">—</div>
-          <button class="profile-settings-btn" id="profileSettingsBtn" aria-label="Einstellungen">⚙</button>
+          <button class="profile-settings-btn" id="profileSettingsBtn" data-i18n-aria-label="settings.title" aria-label="Settings">⚙</button>
         </div>
         <div class="profile-since" id="profileSince">—</div>
       </div>
@@ -69,50 +69,54 @@
       <div class="profile-stats">
         <div class="profile-stat">
           <div class="profile-stat-value" id="statNights">0</div>
-          <div class="profile-stat-label">Nächte</div>
+          <div class="profile-stat-label" data-i18n="profile.stat_nights">Nights</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="statQueueHours">0h</div>
-          <div class="profile-stat-label">Queue</div>
+          <div class="profile-stat-label" data-i18n="profile.stat_queue">Queue</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="statClubHours">0h</div>
-          <div class="profile-stat-label">Im Club</div>
+          <div class="profile-stat-label" data-i18n="profile.stat_inclub">In Club</div>
         </div>
         <div class="profile-stat-divider"></div>
         <div class="profile-stat">
           <div class="profile-stat-value" id="statRatings">0</div>
-          <div class="profile-stat-label">Ratings</div>
+          <div class="profile-stat-label" data-i18n="profile.stat_ratings">Ratings</div>
         </div>
       </div>
 
       <!-- Detail Stats -->
       <div class="profile-detail-stats">
         <div class="profile-detail-col">
-          <div class="profile-detail-label">// QUEUE</div>
+          <div class="profile-detail-label" data-i18n="profile.detail_queue">// QUEUE</div>
           <div class="profile-detail-row">
-            <span class="profile-detail-key">Ø Wartezeit</span>
+            <span class="profile-detail-key" data-i18n="profile.avg_wait">Avg. Wait</span>
             <span class="profile-detail-val" id="detailAvgQueue">—</span>
           </div>
           <div class="profile-detail-row">
-            <span class="profile-detail-key">Längste Queue</span>
+            <span class="profile-detail-key" data-i18n="profile.longest_queue">Longest Queue</span>
             <span class="profile-detail-val" id="detailLongestQueue">—</span>
           </div>
           <div class="profile-detail-row">
-            <span class="profile-detail-key">Schnellster Einlass</span>
+            <span class="profile-detail-key" data-i18n="profile.fastest_entry">Fastest Entry</span>
             <span class="profile-detail-val" id="detailFastestEntry">—</span>
+          </div>
+          <div class="profile-detail-row">
+            <span class="profile-detail-key" data-i18n="profile.entry_rate">Entry Rate</span>
+            <span class="profile-detail-val" id="detailEntryRate">—</span>
           </div>
         </div>
         <div class="profile-detail-col">
-          <div class="profile-detail-label">// TIMING</div>
+          <div class="profile-detail-label" data-i18n="profile.detail_timing">// TIMING</div>
           <div class="profile-detail-row">
-            <span class="profile-detail-key">Spätester Exit</span>
+            <span class="profile-detail-key" data-i18n="profile.latest_exit">Latest Exit</span>
             <span class="profile-detail-val" id="detailLatestExit">—</span>
           </div>
           <div class="profile-detail-row">
-            <span class="profile-detail-key">Frühester Start</span>
+            <span class="profile-detail-key" data-i18n="profile.earliest_start">Earliest Start</span>
             <span class="profile-detail-val" id="detailEarliestQueue">—</span>
           </div>
         </div>
@@ -122,11 +126,11 @@
 
       <!-- Tabs -->
       <div class="profile-tabs" role="tablist">
-        <button class="profile-tab active" data-tab="acts"   role="tab" aria-selected="true">Acts</button>
-        <button class="profile-tab" data-tab="dabei"  role="tab" aria-selected="false">Dabei</button>
-        <button class="profile-tab" data-tab="hypes"  role="tab" aria-selected="false">Gespeichert</button>
-        <button class="profile-tab" data-tab="clubs"  role="tab" aria-selected="false">Clubs</button>
-        <button class="profile-tab" data-tab="badges" role="tab" aria-selected="false">Badges</button>
+        <button class="profile-tab active" data-tab="acts"   role="tab" aria-selected="true"  data-i18n="tabs.acts">Acts</button>
+        <button class="profile-tab" data-tab="dabei"  role="tab" aria-selected="false" data-i18n="tabs.dabei">Attended</button>
+        <button class="profile-tab" data-tab="hypes"  role="tab" aria-selected="false" data-i18n="tabs.saved">Saved</button>
+        <button class="profile-tab" data-tab="clubs"  role="tab" aria-selected="false" data-i18n="tabs.clubs">Clubs</button>
+        <button class="profile-tab" data-tab="badges" role="tab" aria-selected="false" data-i18n="tabs.badges">Badges</button>
       </div>
 
       <!-- Acts Tab -->
@@ -134,22 +138,22 @@
 
         <!-- Empfehlungen -->
         <div class="profile-section-label rec-section-label">
-          Empfehlungen
-          <button class="rec-info-btn" id="recInfoBtn" type="button" aria-label="Was sind Empfehlungen?">?</button>
+          <span data-i18n="profile.recommendations">Recommendations</span>
+          <button class="rec-info-btn" id="recInfoBtn" type="button" aria-label="?">?</button>
         </div>
-        <div class="rec-info-tooltip" id="recInfoTooltip" hidden>
-          Basiert auf deinen Ratings und Usern mit ähnlichem Geschmack — wer dieselben DJs ähnlich bewertet hat, empfiehlt dir Artists die du noch nicht bewertet hast. Je mehr du bewertest, desto besser die Vorschläge.
+        <div class="rec-info-tooltip" id="recInfoTooltip" hidden data-i18n="profile.rec_tooltip">
+          Based on your ratings and users with similar taste.
         </div>
         <div id="recommendationsList">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
 
         <div class="profile-section-label rated-acts-section-label" style="margin-top:24px">
-          Bewertete Acts <span class="rated-acts-total" id="ratedActsTotal"></span>
+          <span data-i18n="profile.rated_acts_label">Rated Acts</span> <span class="rated-acts-total" id="ratedActsTotal"></span>
         </div>
         <div class="rated-acts-controls">
           <div class="rated-acts-filters" id="ratedActsFilters">
-            <button class="rated-filter-btn active" data-stars="0">Alle</button>
+            <button class="rated-filter-btn active" data-stars="0" data-i18n="profile.all">All</button>
             <button class="rated-filter-btn" data-stars="1">1★</button>
             <button class="rated-filter-btn" data-stars="2">2★</button>
             <button class="rated-filter-btn" data-stars="3">3★</button>
@@ -157,10 +161,10 @@
             <button class="rated-filter-btn" data-stars="5">5★</button>
           </div>
           <select class="rated-sort-select" id="ratedActsSort">
-            <option value="avg-desc">Beste zuerst</option>
-            <option value="avg-asc">Schlechteste zuerst</option>
-            <option value="count-desc">Meist bewertet</option>
-            <option value="name-asc">Name A–Z</option>
+            <option value="avg-desc" data-i18n="sort.best_first">Best first</option>
+            <option value="avg-asc" data-i18n="sort.worst_first">Worst first</option>
+            <option value="count-desc" data-i18n="sort.most_rated">Most rated</option>
+            <option value="name-asc" data-i18n="sort.name_az">Name A–Z</option>
           </select>
         </div>
         <div class="search-wrapper profile-search-wrapper">
@@ -170,22 +174,22 @@
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
             </div>
-            <input id="ratedActsSearchInput" class="search-input" type="text" placeholder="BEWERTETE ACTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <input id="ratedActsSearchInput" class="search-input" type="text" data-i18n-placeholder="search.rated_placeholder" placeholder="SEARCH RATED ACTS..." autocomplete="off" spellcheck="false" />
             <button class="search-clear" id="ratedActsSearchClear" aria-label="Clear">✕</button>
           </div>
         </div>
         <div class="rated-acts-slider-wrap" id="ratedActsSlider">
           <div class="rated-acts-page" id="ratedActsPage">
-            <div class="profile-list-loading">Lädt...</div>
+            <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
           </div>
         </div>
         <div class="rated-acts-nav" id="ratedActsNav" style="display:none">
-          <button class="rated-acts-arrow" id="ratedActsPrev" aria-label="Vorherige">←</button>
+          <button class="rated-acts-arrow" id="ratedActsPrev" data-i18n-aria-label="common.previous" aria-label="Previous">←</button>
           <span class="rated-acts-counter" id="ratedActsCounter">1 / 1</span>
-          <button class="rated-acts-arrow" id="ratedActsNext" aria-label="Nächste">→</button>
+          <button class="rated-acts-arrow" id="ratedActsNext" data-i18n-aria-label="common.next" aria-label="Next">→</button>
         </div>
 
-        <div class="profile-section-label" style="margin-top:24px">Gefolgte Acts <span class="rated-acts-total" id="followedActsTotal"></span></div>
+        <div class="profile-section-label" style="margin-top:24px"><span data-i18n="profile.followed_acts">Followed Acts</span> <span class="rated-acts-total" id="followedActsTotal"></span></div>
         <div class="search-wrapper profile-search-wrapper">
           <div class="search-container">
             <div class="search-icon">
@@ -193,26 +197,26 @@
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
             </div>
-            <input id="followedActsSearchInput" class="search-input" type="text" placeholder="ACTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <input id="followedActsSearchInput" class="search-input" type="text" data-i18n-placeholder="search.acts_placeholder" placeholder="SEARCH ACTS..." autocomplete="off" spellcheck="false" />
             <button class="search-clear" id="followedActsSearchClear" aria-label="Clear">✕</button>
           </div>
         </div>
         <div class="rated-acts-slider-wrap" id="followedActsSlider">
           <div class="rated-acts-page" id="followedActsPage">
-            <div class="profile-list-loading">Lädt...</div>
+            <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
           </div>
         </div>
         <div class="rated-acts-nav" id="followedActsNav" style="display:none">
-          <button class="rated-acts-arrow" id="followedActsPrev" aria-label="Vorherige">←</button>
+          <button class="rated-acts-arrow" id="followedActsPrev" data-i18n-aria-label="common.previous" aria-label="Previous">←</button>
           <span class="rated-acts-counter" id="followedActsCounter">—</span>
-          <button class="rated-acts-arrow" id="followedActsNext" aria-label="Nächste">→</button>
+          <button class="rated-acts-arrow" id="followedActsNext" data-i18n-aria-label="common.next" aria-label="Next">→</button>
         </div>
 
       </div>
 
       <!-- Clubs Tab -->
       <div class="profile-tab-panel" id="tabClubs" role="tabpanel" hidden>
-        <div class="profile-section-label">Gefolgte Clubs</div>
+        <div class="profile-section-label" data-i18n="profile.followed_clubs">Followed Clubs</div>
         <div class="search-wrapper profile-search-wrapper">
           <div class="search-container">
             <div class="search-icon">
@@ -220,26 +224,26 @@
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
             </div>
-            <input id="clubsSearchInput" class="search-input" type="text" placeholder="CLUBS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <input id="clubsSearchInput" class="search-input" type="text" data-i18n-placeholder="search.clubs_placeholder" placeholder="SEARCH CLUBS..." autocomplete="off" spellcheck="false" />
             <button class="search-clear" id="clubsSearchClear" aria-label="Clear">✕</button>
           </div>
         </div>
         <div class="profile-list" id="clubsList">
-          <div class="profile-list-loading">Lädt...</div>
+            <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
       <!-- Dabei Tab -->
       <div class="profile-tab-panel" id="tabDabei" role="tabpanel" hidden>
-        <div class="profile-section-label">Besuchte Events</div>
+        <div class="profile-section-label" data-i18n="profile.visited_events">Visited Events</div>
         <div class="profile-list" id="dabeiList">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
       <!-- Gespeichert Tab (ehemals Events/Hypes) -->
       <div class="profile-tab-panel" id="tabHypes" role="tabpanel" hidden>
-        <div class="profile-section-label">Gespeicherte Events</div>
+        <div class="profile-section-label" data-i18n="profile.saved_events">Saved Events</div>
         <div class="search-wrapper profile-search-wrapper">
           <div class="search-container">
             <div class="search-icon">
@@ -247,12 +251,12 @@
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
             </div>
-            <input id="hypesSearchInput" class="search-input" type="text" placeholder="EVENTS SUCHEN..." autocomplete="off" spellcheck="false" />
+            <input id="hypesSearchInput" class="search-input" type="text" data-i18n-placeholder="search.events_placeholder" placeholder="SEARCH EVENTS..." autocomplete="off" spellcheck="false" />
             <button class="search-clear" id="hypesSearchClear" aria-label="Clear">✕</button>
           </div>
         </div>
         <div class="profile-list" id="hypesList">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
@@ -260,7 +264,7 @@
       <div class="profile-tab-panel" id="tabBadges" role="tabpanel" hidden>
         <div class="profile-section-label">Badges</div>
         <div class="profile-badges-grid" id="badgesGrid">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
@@ -274,7 +278,7 @@
     <div class="artist-overlay-bg" id="artistOverlayBg"></div>
     <div class="artist-modal" id="artistModal" role="dialog" aria-modal="true">
       <div class="modal-glitch-bar"></div>
-      <button class="modal-close" id="modalClose" aria-label="Schließen">
+      <button class="modal-close" id="modalClose" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -289,17 +293,17 @@
     <div class="rating-overlay-bg" id="ratingOverlayBg"></div>
     <div class="rating-modal" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
       <div class="rating-modal-topline"></div>
-      <button class="rating-close" id="ratingModalClose" type="button" aria-label="Schließen">
+      <button class="rating-close" id="ratingModalClose" type="button" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
         </svg>
       </button>
       <div class="rating-content">
-        <div class="rating-eyebrow">// BEWERTUNG</div>
+        <div class="rating-eyebrow" data-i18n="rating.title">// RATING</div>
         <div class="rating-act-name" id="ratingActName">—</div>
         <div class="rating-event-name" id="ratingEventName">—</div>
-        <div class="rating-stars" id="ratingStars" role="group" aria-label="Bewertung">
+        <div class="rating-stars" id="ratingStars" role="group" data-i18n-aria-label="rating.group_label" aria-label="Rating">
           <button class="rating-star" data-star="1" type="button" aria-label="1 Stern">&#9733;</button>
           <button class="rating-star" data-star="2" type="button" aria-label="2 Sterne">&#9733;</button>
           <button class="rating-star" data-star="3" type="button" aria-label="3 Sterne">&#9733;</button>
@@ -309,11 +313,11 @@
         <div class="rating-flags">
           <label class="rating-flag-label">
             <input type="checkbox" id="ratingFlagSurprise" />
-            <span>Überraschung des Abends</span>
+            <span data-i18n="rating.surprise">Surprise of the night</span>
           </label>
         </div>
         <div class="rating-message" id="ratingMessage" aria-live="polite"></div>
-        <button class="rating-submit" id="ratingSubmit" type="button" disabled>Bewerten</button>
+        <button class="rating-submit" id="ratingSubmit" type="button" disabled data-i18n="rating.submit">Rate</button>
       </div>
     </div>
   </div>
@@ -324,45 +328,45 @@
     <div class="settings-drawer" id="settingsDrawer">
       <div class="settings-topline"></div>
       <div class="settings-header">
-        <span class="settings-title">// EINSTELLUNGEN</span>
-        <button class="settings-close" id="settingsClose">✕ SCHLIESSEN</button>
+        <span class="settings-title" data-i18n="settings.title">// SETTINGS</span>
+        <button class="settings-close" id="settingsClose" data-i18n="settings.close">✕ CLOSE</button>
       </div>
 
       <div class="settings-body">
 
         <!-- Anzeigename -->
         <div class="settings-section">
-          <div class="settings-section-label">Anzeigename</div>
+          <div class="settings-section-label" data-i18n="settings.display_name">Display Name</div>
           <div class="settings-input-row">
-            <input class="settings-input" id="settingsNameInput" type="text" placeholder="Neuer Anzeigename" autocomplete="off" />
-            <button class="settings-save-btn" id="settingsNameSave">Speichern</button>
+            <input class="settings-input" id="settingsNameInput" type="text" data-i18n-placeholder="settings.display_name_placeholder" placeholder="New display name" autocomplete="off" />
+            <button class="settings-save-btn" id="settingsNameSave" data-i18n="settings.save">Save</button>
           </div>
           <div class="settings-feedback" id="settingsNameFeedback"></div>
         </div>
 
         <!-- E-Mail -->
         <div class="settings-section">
-          <div class="settings-section-label">E-Mail-Adresse</div>
+          <div class="settings-section-label" data-i18n="settings.email">Email address</div>
           <div class="settings-input-row">
-            <input class="settings-input" id="settingsEmailInput" type="email" placeholder="Neue E-Mail" autocomplete="off" />
-            <button class="settings-save-btn" id="settingsEmailSave">Speichern</button>
+            <input class="settings-input" id="settingsEmailInput" type="email" data-i18n-placeholder="settings.email_placeholder" placeholder="New email" autocomplete="off" />
+            <button class="settings-save-btn" id="settingsEmailSave" data-i18n="settings.save">Save</button>
           </div>
           <div class="settings-feedback" id="settingsEmailFeedback"></div>
         </div>
 
         <!-- Passwort -->
         <div class="settings-section">
-          <div class="settings-section-label">Passwort</div>
+          <div class="settings-section-label" data-i18n="settings.password">Password</div>
           <div class="settings-input-row">
-            <input class="settings-input" id="settingsPasswordInput" type="password" placeholder="Neues Passwort (min. 6 Zeichen)" autocomplete="new-password" />
-            <button class="settings-save-btn" id="settingsPasswordSave">Speichern</button>
+            <input class="settings-input" id="settingsPasswordInput" type="password" data-i18n-placeholder="settings.password_placeholder" placeholder="New password (min. 6 chars)" autocomplete="new-password" />
+            <button class="settings-save-btn" id="settingsPasswordSave" data-i18n="settings.save">Save</button>
           </div>
           <div class="settings-feedback" id="settingsPasswordFeedback"></div>
         </div>
 
         <!-- Sprache -->
         <div class="settings-section">
-          <div class="settings-section-label">Sprache / Language</div>
+          <div class="settings-section-label" data-i18n="settings.language">Language / Sprache</div>
           <div class="settings-lang-options" id="settingsLangOptions">
             <button class="settings-lang-btn" data-lang="de">🇩🇪 Deutsch</button>
             <button class="settings-lang-btn" data-lang="en">🇬🇧 English</button>
@@ -374,18 +378,18 @@
 
         <!-- Push-Benachrichtigungen -->
         <div class="settings-section">
-          <div class="settings-section-label">Push-Benachrichtigungen</div>
+          <div class="settings-section-label" data-i18n="settings.push_notif">Push notifications</div>
           <div class="settings-push-status" id="settingsPushStatus"></div>
-          <button class="settings-push-enable-btn" id="settingsPushEnableBtn" style="display:none">
-            Benachrichtigungen aktivieren →
+          <button class="settings-push-enable-btn" id="settingsPushEnableBtn" style="display:none" data-i18n="settings.enable_notif">
+            Enable notifications →
           </button>
 
           <div class="settings-notif-list" id="settingsNotifList" style="display:none">
 
             <label class="settings-notif-row">
               <div class="settings-notif-text">
-                <span class="settings-notif-label">Timetable — DJ + Event</span>
-                <span class="settings-notif-desc">Wenn Zeiten für einen DJ rauskommen bei einem Event dem du folgst und dem DJ dem du folgst</span>
+                <span class="settings-notif-label" data-i18n="notif.act_event_label">Timetable — DJ + Event</span>
+                <span class="settings-notif-desc" data-i18n="notif.act_event_desc">When times are released for a DJ at an event you follow</span>
               </div>
               <div class="settings-toggle-wrap">
                 <input type="checkbox" class="settings-toggle-input" id="notifActEvent" data-pref="notify_timetable_act_event" />
@@ -395,8 +399,8 @@
 
             <label class="settings-notif-row">
               <div class="settings-notif-text">
-                <span class="settings-notif-label">Timetable öffentlich</span>
-                <span class="settings-notif-desc">Wenn der Timetable für ein Event veröffentlicht wird dem du folgst</span>
+                <span class="settings-notif-label" data-i18n="notif.timetable_public_label">Timetable public</span>
+                <span class="settings-notif-desc" data-i18n="notif.timetable_public_desc">When the timetable for an event you follow is published</span>
               </div>
               <div class="settings-toggle-wrap">
                 <input type="checkbox" class="settings-toggle-input" id="notifTimetablePublic" data-pref="notify_timetable_event_public" />
@@ -406,8 +410,8 @@
 
             <label class="settings-notif-row">
               <div class="settings-notif-text">
-                <span class="settings-notif-label">Gästeliste / Friendlist / Skiplist</span>
-                <span class="settings-notif-desc">Wenn ein DJ dem du folgst in seiner Story eine Gästeliste für ein Event anbietet dem du folgst</span>
+                <span class="settings-notif-label" data-i18n="notif.guestlist_label">Guestlist / Friendlist / Skiplist</span>
+                <span class="settings-notif-desc" data-i18n="notif.guestlist_desc">When a DJ you follow offers a guestlist in their story</span>
               </div>
               <div class="settings-toggle-wrap">
                 <input type="checkbox" class="settings-toggle-input" id="notifGuestlist" data-pref="notify_guestlist_story" />
@@ -417,8 +421,8 @@
 
             <label class="settings-notif-row">
               <div class="settings-notif-text">
-                <span class="settings-notif-label">Neues Event — Club</span>
-                <span class="settings-notif-desc">Wenn ein Club dem du folgst ein neues Event ankündigt</span>
+                <span class="settings-notif-label" data-i18n="notif.new_event_club_label">New Event — Club</span>
+                <span class="settings-notif-desc" data-i18n="notif.new_event_club_desc">When a club you follow announces a new event</span>
               </div>
               <div class="settings-toggle-wrap">
                 <input type="checkbox" class="settings-toggle-input" id="notifNewEventClub" data-pref="notify_new_event_club" />
@@ -428,8 +432,8 @@
 
             <label class="settings-notif-row">
               <div class="settings-notif-text">
-                <span class="settings-notif-label">Event-Erinnerung</span>
-                <span class="settings-notif-desc">Erinnerung morgens am Tag eines Events dem du folgst</span>
+                <span class="settings-notif-label" data-i18n="notif.reminder_label">Event Reminder</span>
+                <span class="settings-notif-desc" data-i18n="notif.reminder_desc">Morning reminder on the day of an event you follow</span>
               </div>
               <div class="settings-toggle-wrap">
                 <input type="checkbox" class="settings-toggle-input" id="notifEventReminder" data-pref="notify_event_day_reminder" />
@@ -445,19 +449,19 @@
 
         <!-- Ausloggen -->
         <button class="settings-action-row settings-action-row--logout" id="settingsLogout">
-          <span>Ausloggen</span>
+          <span data-i18n="settings.logout">Log out</span>
           <span class="settings-action-arrow">→</span>
         </button>
 
         <!-- Account löschen -->
         <button class="settings-action-row settings-action-row--delete" id="settingsDeleteBtn">
-          <span>Account löschen</span>
+          <span data-i18n="settings.delete_account">Delete account</span>
           <span class="settings-action-arrow">→</span>
         </button>
         <div class="settings-delete-confirm" id="settingsDeleteConfirm">
-          <div class="settings-delete-warning">Achtung: Alle deine Daten werden unwiderruflich gelöscht.</div>
-          <button class="settings-confirm-delete-btn" id="settingsConfirmDelete">Ja, Account endgültig löschen</button>
-          <button class="settings-cancel-delete-btn" id="settingsCancelDelete">Abbrechen</button>
+          <div class="settings-delete-warning" data-i18n="settings.delete_warning">Warning: All your data will be permanently deleted.</div>
+          <button class="settings-confirm-delete-btn" id="settingsConfirmDelete" data-i18n="settings.confirm_delete">Yes, permanently delete account</button>
+          <button class="settings-cancel-delete-btn" id="settingsCancelDelete" data-i18n="settings.cancel">Cancel</button>
         </div>
         <div class="settings-feedback" id="settingsDeleteFeedback"></div>
 
@@ -465,6 +469,7 @@
     </div>
   </div>
 
+  <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>

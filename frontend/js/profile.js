@@ -31,7 +31,7 @@ function computeLevel(score) {
   const progress = next
     ? Math.round(((score - current.min) / (next.min - current.min)) * 100)
     : 100;
-  const progressLabel = next ? `${score} / ${next.min}` : 'Max';
+  const progressLabel = next ? `${score} / ${next.min}` : t('profile.max');
   return { index: lvl + 1, name: current.name, progress, progressLabel };
 }
 
@@ -167,7 +167,7 @@ function computeBadges(stats) {
   }
   function progressText(value, thresholds, unit = '') {
     const lvl = simpleLevel(thresholds, value);
-    if (lvl >= 5) return 'Max Level erreicht';
+    if (lvl >= 5) return t('profile.max_level');
     const next = thresholds[lvl];
     return `${value || 0}${unit} / ${next}${unit}`;
   }
@@ -175,14 +175,14 @@ function computeBadges(stats) {
   const defs = [
     {
       id: 'queue_rat', name: 'Queue Rat', icon: '🐀',
-      desc: 'Du kennst die Schlange. Du liebst die Schlange. Gesamtzeit in Warteschlangen.',
+      desc: t('badge.queue_rat_desc'),
       levelLabels: ['2h', '10h', '25h', '50h', '100h'],
       level: simpleLevel([2, 10, 25, 50, 100], totalQueueHours),
       progress: progressText(totalQueueHours, [2, 10, 25, 50, 100], 'h'),
     },
     {
       id: 'vip_energy', name: 'VIP Energy', icon: '⚡',
-      desc: 'Du wartest nicht. Dein Ø in der Queue ist niedrig — mindestens 5 Nächte.',
+      desc: t('badge.vip_energy_desc'),
       levelLabels: ['Ø < 30min', 'Ø < 20min', 'Ø < 15min', 'Ø < 10min', 'Ø < 5min'],
       get level() {
         if (nightsOut < 5 || avgQueueMinutes === null) return 0;
@@ -194,8 +194,8 @@ function computeBadges(stats) {
         return 0;
       },
       get progress() {
-        if (nightsOut < 5) return `${nightsOut}/5 Nächte benötigt`;
-        if (avgQueueMinutes === null) return 'Noch keine Queue-Daten';
+        if (nightsOut < 5) return t('badge.vip_energy_nights', { n: nightsOut });
+        if (avgQueueMinutes === null) return t('badge.vip_energy_no_data');
         const lvl = this.level;
         if (lvl >= 5) return 'Max Level erreicht';
         const targets = [30, 20, 15, 10, 5];
@@ -204,70 +204,70 @@ function computeBadges(stats) {
     },
     {
       id: 'night_owl', name: 'Night Owl', icon: '🦉',
-      desc: 'Der Club schließt — du nicht. Anzahl der Nächte mit Exit nach 10 Uhr.',
+      desc: t('badge.night_owl_desc'),
       levelLabels: ['1x', '3x', '7x', '15x', '30x'],
       level: simpleLevel([1, 3, 7, 15, 30], afterTenAmExits),
       progress: progressText(afterTenAmExits, [1, 3, 7, 15, 30], 'x'),
     },
     {
       id: 'early_bird', name: 'Early Bird', icon: '🌙',
-      desc: 'Wer früh kommt, kommt rein. Queue-Eintritt vor Mitternacht.',
+      desc: t('badge.early_bird_desc'),
       levelLabels: ['2x', '5x', '10x', '20x', '35x'],
       level: simpleLevel([2, 5, 10, 20, 35], beforeMidnightQueues),
       progress: progressText(beforeMidnightQueues, [2, 5, 10, 20, 35], 'x'),
     },
     {
       id: 'resident', name: 'Resident', icon: '🏛️',
-      desc: 'Ein Club. Dein Club. Maximale Nächte im selben Club.',
+      desc: t('badge.resident_desc'),
       levelLabels: ['3x', '5x', '10x', '20x', '30x'],
       level: simpleLevel([3, 5, 10, 20, 30], maxNightsAtOneClub),
       progress: progressText(maxNightsAtOneClub, [3, 5, 10, 20, 30], 'x'),
     },
     {
       id: 'scene_kid', name: 'Scene Kid', icon: '🎧',
-      desc: 'Du folgst der Szene. Anzahl der gefolgten Acts.',
+      desc: t('badge.scene_kid_desc'),
       levelLabels: ['5', '10', '20', '40', '75'],
       level: simpleLevel([5, 10, 20, 40, 75], actCount),
       progress: progressText(actCount, [5, 10, 20, 40, 75]),
     },
     {
       id: 'tastemaker', name: 'Tastemaker', icon: '🎯',
-      desc: 'Du hörst zu und urteilst. Anzahl der bewerteten Acts.',
+      desc: t('badge.tastemaker_desc'),
       levelLabels: ['5', '15', '30', '60', '100'],
       level: simpleLevel([5, 15, 30, 60, 100], ratingsCount),
       progress: progressText(ratingsCount, [5, 15, 30, 60, 100]),
     },
     {
       id: 'surprise_picker', name: 'Surprise Picker', icon: '✨',
-      desc: 'Du erkennst den unerwarteten Moment. So oft hast du einen Act als Überraschung des Abends markiert.',
+      desc: t('badge.surprise_picker_desc'),
       levelLabels: ['1x', '3x', '7x', '15x', '30x'],
       level: simpleLevel([1, 3, 7, 15, 30], surprisePickCount),
       progress: progressText(surprisePickCount, [1, 3, 7, 15, 30], 'x'),
     },
     {
       id: 'ghost', name: 'Ghost', icon: '👻',
-      desc: 'Du warst in der Queue. Du bist nie reingekommen. Ein Klassiker.',
+      desc: t('badge.ghost_desc'),
       levelLabels: ['1x', '3x', '6x', '10x', '15x'],
       level: simpleLevel([1, 3, 6, 10, 15], ghostCount),
       progress: progressText(ghostCount, [1, 3, 6, 10, 15], 'x'),
     },
     {
       id: 'survivor', name: 'Survivor', icon: '💪',
-      desc: '2+ Stunden gewartet und trotzdem reingekommen. Respect.',
+      desc: t('badge.survivor_desc'),
       levelLabels: ['1x', '3x', '5x', '8x', '12x'],
       level: simpleLevel([1, 3, 5, 8, 12], survivorCount),
       progress: progressText(survivorCount, [1, 3, 5, 8, 12], 'x'),
     },
     {
       id: 'closer', name: 'Closer', icon: '🌅',
-      desc: 'Du gehst wenn das Licht angeht. 12+ Stunden am Stück im Club.',
+      desc: t('badge.closer_desc'),
       levelLabels: ['1x', '3x', '5x', '10x', '20x'],
       level: simpleLevel([1, 3, 5, 10, 20], closerCount),
       progress: progressText(closerCount, [1, 3, 5, 10, 20], 'x'),
     },
     {
       id: 'explorer', name: 'Explorer', icon: '🗺️',
-      desc: 'Berlin hat viele Clubs. Du kennst sie alle. Verschiedene Clubs besucht.',
+      desc: t('badge.explorer_desc'),
       levelLabels: ['3', '5', '8', '12', '20'],
       level: simpleLevel([3, 5, 8, 12, 20], uniqueClubCount),
       progress: progressText(uniqueClubCount, [3, 5, 8, 12, 20]),
@@ -287,13 +287,14 @@ function computeBadges(stats) {
 function formatSince(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
-  return 'Seit ' + d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+  const locale = window.LANG === 'de' ? 'de-DE' : 'en-US';
+  return t('profile.since') + ' ' + d.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 }
 
 function formatEventDate(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(`${dateStr}T00:00:00`);
-  const weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const weekdays = t('date.weekdays_short');
   return `${weekdays[d.getDay()]} ${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 }
 
@@ -319,7 +320,8 @@ function fmtTime(value) {
 }
 
 function updateProfileClocks() {
-  const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const locale = window.LANG === 'de' ? 'de-DE' : 'en-GB';
+  const time = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   const footer = document.getElementById('lastUpdated');
   if (footer) footer.textContent = `Stand: ${time}`;
   const status = document.getElementById('statusBarRight');
@@ -681,7 +683,7 @@ function getProfileEventCardContext(events) {
 function renderProfileActFollowButton(actId) {
   const numericId = Number(actId);
   const isActive = Number.isFinite(numericId) && favoriteActIds.has(numericId);
-  return `<button class="profile-act-follow-btn${isActive ? ' active' : ''}" type="button" data-profile-act-follow="${numericId}" aria-pressed="${isActive}" aria-label="${isActive ? 'Artist entfolgen' : 'Artist folgen'}" title="${isActive ? 'Artist entfolgen' : 'Artist folgen'}">${isActive ? '♥' : '♡'}</button>`;
+  return `<button class="profile-act-follow-btn${isActive ? ' active' : ''}" type="button" data-profile-act-follow="${numericId}" aria-pressed="${isActive}" aria-label="${isActive ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isActive ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isActive ? '♥' : '♡'}</button>`;
 }
 
 function upsertFollowedAct({ id, name, insta_name = null }) {
@@ -734,7 +736,7 @@ function renderFollowedActsPage(animDir = 0) {
 
   const doRender = () => {
     if (!acts.length) {
-      page.innerHTML = `<div class="profile-empty">${followedActsSearchQuery ? 'Keine Acts fuer diese Suche gefunden.' : 'Noch keine Acts gefolgt.'}</div>`;
+      page.innerHTML = `<div class="profile-empty">${followedActsSearchQuery ? t('profile.no_followed_acts_search') : t('profile.no_followed_acts')}</div>`;
       return;
     }
     page.innerHTML = slice.map(a => `
@@ -1131,7 +1133,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   const numericActId = Number(actId);
   const isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
+    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
@@ -1150,7 +1152,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
           <span class="modal-act-avg">${ratingStats.avg_rating}</span>
           <span class="modal-act-count">(${ratingStats.rating_count})</span>
         </div>
-        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">Überraschung des Abends ${ratingStats.surprise_pct}%</span></div>` : ''}
+        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">${t('rating.surprise')} ${ratingStats.surprise_pct}%</span></div>` : ''}
       </div>`;
   }
 
@@ -1370,15 +1372,15 @@ function syncProfileActButtons(actId) {
   document.querySelectorAll(`[data-profile-act-follow="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
-    btn.setAttribute('aria-label', isActive ? 'Artist entfolgen' : 'Artist folgen');
-    btn.setAttribute('title', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.setAttribute('aria-label', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+    btn.setAttribute('title', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
     btn.textContent = isActive ? '\u2665' : '\u2661';
   });
   document.querySelectorAll(`[data-favorite-act-id="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
-    btn.setAttribute('aria-label', isActive ? 'Artist entfolgen' : 'Artist folgen');
-    btn.setAttribute('title', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.setAttribute('aria-label', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+    btn.setAttribute('title', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
     btn.textContent = isActive ? '\u2665' : '\u2661';
   });
 }
@@ -1592,11 +1594,11 @@ async function submitActRating() {
     }
     userActRatings.set(`${actId}:${eventId}`, { act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: false, was_surprise: wasSurprise });
     renderHypesList();
-    if (msgEl) msgEl.textContent = 'Gespeichert!';
+    if (msgEl) msgEl.textContent = t('rating.saved');
     setTimeout(() => { closeRatingModal(); openArtistPopup(actId, actName); }, 700);
   } catch (err) {
     console.warn('Rating submit error:', err.message || err);
-    if (msgEl) msgEl.textContent = 'Fehler beim Speichern.';
+    if (msgEl) msgEl.textContent = t('rating.error');
     if (submit) submit.disabled = false;
   }
 }
@@ -1634,7 +1636,7 @@ function renderRecommendations() {
   const shown = visible.slice(0, 10);
 
   if (!shown.length) {
-    el.innerHTML = `<div class="profile-list-empty">Noch nicht genug Ratings für Empfehlungen — bewerte mehr Acts!</div>`;
+    el.innerHTML = `<div class="profile-list-empty">${t('profile.recommendations_empty')}</div>`;
     return;
   }
 
@@ -1652,8 +1654,8 @@ function renderRecommendations() {
         <button class="profile-act-follow-btn${isFollowed ? ' active' : ''}" type="button"
           data-profile-act-follow="${a.id}"
           aria-pressed="${isFollowed}"
-          title="${isFollowed ? 'Artist entfolgen' : 'Artist folgen'}">${isFollowed ? '♥' : '♡'}</button>
-        <button class="rec-dismiss-btn" type="button" data-rec-dismiss="${a.id}" title="Empfehlung entfernen">×</button>
+          title="${isFollowed ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFollowed ? '♥' : '♡'}</button>
+        <button class="rec-dismiss-btn" type="button" data-rec-dismiss="${a.id}" title="${t('profile.dismiss_recommendation')}">×</button>
       </div>
     `;
   }).join('');
@@ -1665,7 +1667,7 @@ function renderClubsList(clubs = allFollowedClubs, { updateSource = false } = {}
   if (updateSource) allFollowedClubs = [...clubs];
   const visibleClubs = getFilteredClubs(clubs);
   if (!visibleClubs.length) {
-    renderEmpty(el, clubsSearchQuery ? 'Keine Clubs fuer diese Suche gefunden.' : 'Noch keine Clubs gefolgt.');
+    renderEmpty(el, clubsSearchQuery ? t('profile.no_followed_clubs_search') : t('profile.no_followed_clubs'));
     return;
   }
   el.innerHTML = visibleClubs.map(c => `
@@ -1682,7 +1684,7 @@ function renderDabeiTab() {
   if (!el) return;
 
   if (!presenceLogRows.length) {
-    el.innerHTML = '<div class="profile-list-empty">Noch keine besuchten Events.</div>';
+    el.innerHTML = `<div class="profile-list-empty">${t('profile.no_visited_events')}</div>`;
     return;
   }
 
@@ -1704,7 +1706,7 @@ function renderDabeiTab() {
     });
 
   if (!eventIds.length) {
-    el.innerHTML = '<div class="profile-list-empty">Noch keine besuchten Events.</div>';
+    el.innerHTML = `<div class="profile-list-empty">${t('profile.no_visited_events')}</div>`;
     return;
   }
 
@@ -1731,14 +1733,14 @@ function renderDabeiTab() {
     let summary = '';
     if (qE && cE) {
       const waitMins = Math.round((new Date(cE.created_at) - new Date(qE.created_at)) / 60000);
-      summary += `${waitMins} min Queue`;
+      summary += t('profile.summary_queue', { minutes: waitMins });
     }
     if (cE && lE) {
       const stayMins = Math.round((new Date(lE.created_at) - new Date(cE.created_at)) / 60000);
       const h = Math.floor(stayMins / 60), m = stayMins % 60;
-      summary += (summary ? ' · ' : '') + (h > 0 ? `${h}h ${m}min` : `${m}min`) + ' im Club';
+      summary += (summary ? ' · ' : '') + t('profile.summary_in_club', { duration: h > 0 ? `${h}h ${m}min` : `${m}min` });
     } else if (lE) {
-      summary += (summary ? ' · ' : '') + 'Exit ' + fmtTs(lE.created_at);
+      summary += (summary ? ' · ' : '') + t('profile.summary_exit', { time: fmtTs(lE.created_at) });
     }
 
     return `
@@ -1769,7 +1771,7 @@ function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } =
   if (updateSource) allProfileHypedRows = [...hyped];
   profileHypedRows = getFilteredHypedRows(hyped);
   if (!profileHypedRows.length) {
-    renderEmpty(el, hypesSearchQuery ? 'Keine Events fuer diese Suche gefunden.' : 'Noch keine Events als Interessiert markiert.');
+    renderEmpty(el, hypesSearchQuery ? t('profile.no_saved_events_search') : t('profile.no_saved_events'));
     return;
   }
 
@@ -1853,12 +1855,12 @@ function showBadgeDetail(b) {
     <div class="badge-detail-bg"></div>
     <div class="badge-detail-sheet">
       <div class="badge-detail-topline"></div>
-      <button class="badge-detail-close" aria-label="Schließen">✕</button>
+      <button class="badge-detail-close" aria-label="${t('common.close')}">✕</button>
       <div class="badge-detail-header">
         <div class="badge-detail-icon">${b.icon}</div>
         <div>
           <div class="badge-detail-name">${b.name}</div>
-          ${b.level > 0 ? `<div class="badge-detail-cur-level">LVL ${b.level} / 5</div>` : '<div class="badge-detail-cur-level">Noch nicht freigeschaltet</div>'}
+          ${b.level > 0 ? `<div class="badge-detail-cur-level">LVL ${b.level} / 5</div>` : `<div class="badge-detail-cur-level">${t('profile.locked_badge')}</div>`}
           <div class="badge-pips" style="margin-top:6px">${pips}</div>
         </div>
       </div>
@@ -1907,7 +1909,7 @@ async function loadProfile() {
   const displayName = profile?.display_name
     || sessionUser.user_metadata?.name
     || sessionUser.email
-    || 'Angemeldet';
+    || t('user.logged_in');
 
   updateNavbar(displayName);
 
@@ -1953,6 +1955,17 @@ async function loadProfile() {
     }
     presenceLogRows = logRows || [];
     presenceStats = computePresenceStats(presenceLogRows, clubByEventId);
+
+    // Einlassquote: in_club / (in_club + denied)
+    const inClubCount  = presenceLogRows.filter(r => r.status === 'in_club').length;
+    const deniedCount  = presenceLogRows.filter(r => r.status === 'denied').length;
+    const totalAttempts = inClubCount + deniedCount;
+    const entryRateEl = document.getElementById('detailEntryRate');
+    if (entryRateEl) {
+      entryRateEl.textContent = totalAttempts
+        ? `${Math.round((inClubCount / totalAttempts) * 100)}% (${inClubCount}/${totalAttempts})`
+        : '—';
+    }
   } catch (err) {
     console.warn('Presence log fetch error (table may not exist yet):', err.message || err);
   }
@@ -1981,8 +1994,8 @@ async function loadProfile() {
   setDetail('detailAvgQueue',     fmtMins(ds.avgQueueMinutes));
   setDetail('detailLongestQueue', fmtMins(ds.longestQueueMinutes));
   setDetail('detailFastestEntry', fmtMins(ds.fastestEntryMinutes));
-  setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr + ' Uhr' : '—');
-  setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr + ' Uhr' : '—');
+  setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr : '—');
+  setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr : '—');
 
   // Make record stats clickable → bottom sheet with source event
   const statEventLinks = [
@@ -2328,7 +2341,7 @@ async function initPushSettings() {
   const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 
   if (!supported) {
-    statusEl.textContent = 'Push-Benachrichtigungen werden von diesem Browser nicht unterstützt.';
+    statusEl.textContent = t('push.unsupported');
     statusEl.classList.add('settings-push-status--warn');
     return;
   }
@@ -2336,17 +2349,17 @@ async function initPushSettings() {
   const permission = Notification.permission;
 
   if (permission === 'denied') {
-    statusEl.innerHTML = 'Benachrichtigungen blockiert. <br><span style="font-size:10px;color:var(--grey-lt)">Bitte in den Browser-Einstellungen freigeben.</span>';
+    statusEl.innerHTML = t('push.blocked');
     statusEl.classList.add('settings-push-status--warn');
     return;
   }
 
   if (permission === 'default') {
-    statusEl.textContent = 'Nicht aktiviert';
+    statusEl.textContent = t('push.not_enabled');
     enableBtn.style.display = '';
     enableBtn.addEventListener('click', async () => {
       enableBtn.disabled = true;
-      enableBtn.textContent = 'Wird aktiviert…';
+      enableBtn.textContent = t('push.enabling');
       const perm = await Notification.requestPermission();
       if (perm === 'granted') {
         const reg = await registerServiceWorker();
@@ -2355,13 +2368,13 @@ async function initPushSettings() {
           if (sub) await savePushSubscription(sub);
         }
         enableBtn.style.display = 'none';
-        statusEl.textContent = 'Aktiviert';
+        statusEl.textContent = t('push.enabled');
         statusEl.classList.add('settings-push-status--ok');
         await showNotifToggles(notifList, feedbackEl);
       } else {
         enableBtn.disabled = false;
         enableBtn.textContent = 'Benachrichtigungen aktivieren →';
-        statusEl.textContent = 'Berechtigung verweigert.';
+        statusEl.textContent = t('push.permission_denied');
         statusEl.classList.add('settings-push-status--warn');
       }
     });
@@ -2377,7 +2390,7 @@ async function initPushSettings() {
       if (sub) await savePushSubscription(sub);
     }
   }
-  statusEl.textContent = 'Aktiviert';
+  statusEl.textContent = t('push.enabled');
   statusEl.classList.add('settings-push-status--ok');
   await showNotifToggles(notifList, feedbackEl);
 }
@@ -2404,7 +2417,7 @@ async function showNotifToggles(notifList, feedbackEl) {
     input.addEventListener('change', async () => {
       await saveNotificationPref(input.dataset.pref, input.checked);
       if (feedbackEl) {
-        feedbackEl.textContent = 'Gespeichert.';
+        feedbackEl.textContent = t('common.saved');
         setTimeout(() => { if (feedbackEl) feedbackEl.textContent = ''; }, 1500);
       }
     });
@@ -2432,7 +2445,7 @@ function openSettings() {
     nameInput.value = nameEl.textContent !== '—' ? nameEl.textContent : '';
   }
   // Mark active language
-  const currentLang = localStorage.getItem('setradar_lang') || 'de';
+  const currentLang = localStorage.getItem('setradar_lang') || 'en';
   document.querySelectorAll('.settings-lang-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === currentLang);
   });
@@ -2461,7 +2474,7 @@ function initSettings() {
   document.getElementById('settingsNameSave')?.addEventListener('click', async () => {
     const input = document.getElementById('settingsNameInput');
     const val = input?.value.trim();
-    if (!val) { setFeedback('settingsNameFeedback', 'Bitte Namen eingeben.', true); return; }
+    if (!val) { setFeedback('settingsNameFeedback', t('settings.name_required'), true); return; }
     const saveBtn = document.getElementById('settingsNameSave');
     saveBtn.disabled = true;
     setFeedback('settingsNameFeedback', '');
@@ -2471,11 +2484,11 @@ function initSettings() {
       .eq('user_id', sessionUser.id);
     saveBtn.disabled = false;
     if (error) {
-      setFeedback('settingsNameFeedback', 'Fehler: ' + error.message, true);
+      setFeedback('settingsNameFeedback', t('settings.delete_error') + error.message, true);
     } else {
       document.getElementById('profileName').textContent = val.toUpperCase();
       updateNavbar(val);
-      setFeedback('settingsNameFeedback', 'Name gespeichert.');
+      setFeedback('settingsNameFeedback', t('settings.name_saved'));
     }
   });
 
@@ -2483,16 +2496,16 @@ function initSettings() {
   document.getElementById('settingsEmailSave')?.addEventListener('click', async () => {
     const input = document.getElementById('settingsEmailInput');
     const val = input?.value.trim();
-    if (!val) { setFeedback('settingsEmailFeedback', 'Bitte E-Mail eingeben.', true); return; }
+    if (!val) { setFeedback('settingsEmailFeedback', t('settings.email_required'), true); return; }
     const saveBtn = document.getElementById('settingsEmailSave');
     saveBtn.disabled = true;
     setFeedback('settingsEmailFeedback', '');
     const { error } = await supabaseClient.auth.updateUser({ email: val });
     saveBtn.disabled = false;
     if (error) {
-      setFeedback('settingsEmailFeedback', 'Fehler: ' + error.message, true);
+      setFeedback('settingsEmailFeedback', t('settings.delete_error') + error.message, true);
     } else {
-      setFeedback('settingsEmailFeedback', 'Bestätigungsmail gesendet.');
+      setFeedback('settingsEmailFeedback', t('settings.email_saved'));
       input.value = '';
     }
   });
@@ -2501,16 +2514,16 @@ function initSettings() {
   document.getElementById('settingsPasswordSave')?.addEventListener('click', async () => {
     const input = document.getElementById('settingsPasswordInput');
     const val = input?.value;
-    if (!val || val.length < 6) { setFeedback('settingsPasswordFeedback', 'Min. 6 Zeichen erforderlich.', true); return; }
+    if (!val || val.length < 6) { setFeedback('settingsPasswordFeedback', t('settings.password_min'), true); return; }
     const saveBtn = document.getElementById('settingsPasswordSave');
     saveBtn.disabled = true;
     setFeedback('settingsPasswordFeedback', '');
     const { error } = await supabaseClient.auth.updateUser({ password: val });
     saveBtn.disabled = false;
     if (error) {
-      setFeedback('settingsPasswordFeedback', 'Fehler: ' + error.message, true);
+      setFeedback('settingsPasswordFeedback', t('settings.delete_error') + error.message, true);
     } else {
-      setFeedback('settingsPasswordFeedback', 'Passwort geändert.');
+      setFeedback('settingsPasswordFeedback', t('settings.password_saved'));
       input.value = '';
     }
   });
@@ -2521,8 +2534,8 @@ function initSettings() {
     if (!btn) return;
     const lang = btn.dataset.lang;
     localStorage.setItem('setradar_lang', lang);
-    document.querySelectorAll('.settings-lang-btn').forEach(b => b.classList.toggle('active', b === btn));
-    setFeedback('settingsLangFeedback', lang === 'de' ? 'Sprache gespeichert.' : 'Language saved.');
+    setFeedback('settingsLangFeedback', t('settings.lang_saved'));
+    setTimeout(() => location.reload(), 400);
   });
 
   // Logout
@@ -2546,7 +2559,7 @@ function initSettings() {
   document.getElementById('settingsConfirmDelete')?.addEventListener('click', async () => {
     const confirmBtn = document.getElementById('settingsConfirmDelete');
     confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Wird gelöscht…';
+    confirmBtn.textContent = t('settings.deleting');
     setFeedback('settingsDeleteFeedback', '');
     try {
       await Promise.all([
@@ -2561,8 +2574,8 @@ function initSettings() {
       window.location.href = 'index.html';
     } catch (err) {
       confirmBtn.disabled = false;
-      confirmBtn.textContent = 'Ja, Account endgültig löschen';
-      setFeedback('settingsDeleteFeedback', 'Fehler: ' + (err.message || 'Unbekannter Fehler'), true);
+      confirmBtn.textContent = t('settings.confirm_delete');
+      setFeedback('settingsDeleteFeedback', t('settings.delete_error') + (err.message || t('settings.unknown_error')), true);
     }
   });
 }
