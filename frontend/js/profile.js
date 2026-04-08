@@ -683,7 +683,7 @@ function getProfileEventCardContext(events) {
 function renderProfileActFollowButton(actId) {
   const numericId = Number(actId);
   const isActive = Number.isFinite(numericId) && favoriteActIds.has(numericId);
-  return `<button class="profile-act-follow-btn${isActive ? ' active' : ''}" type="button" data-profile-act-follow="${numericId}" aria-pressed="${isActive}" aria-label="${isActive ? 'Artist entfolgen' : 'Artist folgen'}" title="${isActive ? 'Artist entfolgen' : 'Artist folgen'}">${isActive ? '♥' : '♡'}</button>`;
+  return `<button class="profile-act-follow-btn${isActive ? ' active' : ''}" type="button" data-profile-act-follow="${numericId}" aria-pressed="${isActive}" aria-label="${isActive ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isActive ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isActive ? '♥' : '♡'}</button>`;
 }
 
 function upsertFollowedAct({ id, name, insta_name = null }) {
@@ -736,7 +736,7 @@ function renderFollowedActsPage(animDir = 0) {
 
   const doRender = () => {
     if (!acts.length) {
-      page.innerHTML = `<div class="profile-empty">${followedActsSearchQuery ? 'Keine Acts fuer diese Suche gefunden.' : 'Noch keine Acts gefolgt.'}</div>`;
+      page.innerHTML = `<div class="profile-empty">${followedActsSearchQuery ? t('profile.no_followed_acts_search') : t('profile.no_followed_acts')}</div>`;
       return;
     }
     page.innerHTML = slice.map(a => `
@@ -1133,7 +1133,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   const numericActId = Number(actId);
   const isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
+    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
@@ -1152,7 +1152,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
           <span class="modal-act-avg">${ratingStats.avg_rating}</span>
           <span class="modal-act-count">(${ratingStats.rating_count})</span>
         </div>
-        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">Überraschung des Abends ${ratingStats.surprise_pct}%</span></div>` : ''}
+        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">${t('rating.surprise')} ${ratingStats.surprise_pct}%</span></div>` : ''}
       </div>`;
   }
 
@@ -1372,15 +1372,15 @@ function syncProfileActButtons(actId) {
   document.querySelectorAll(`[data-profile-act-follow="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
-    btn.setAttribute('aria-label', isActive ? 'Artist entfolgen' : 'Artist folgen');
-    btn.setAttribute('title', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.setAttribute('aria-label', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+    btn.setAttribute('title', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
     btn.textContent = isActive ? '\u2665' : '\u2661';
   });
   document.querySelectorAll(`[data-favorite-act-id="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
-    btn.setAttribute('aria-label', isActive ? 'Artist entfolgen' : 'Artist folgen');
-    btn.setAttribute('title', isActive ? 'Artist entfolgen' : 'Artist folgen');
+    btn.setAttribute('aria-label', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+    btn.setAttribute('title', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
     btn.textContent = isActive ? '\u2665' : '\u2661';
   });
 }
@@ -1594,11 +1594,11 @@ async function submitActRating() {
     }
     userActRatings.set(`${actId}:${eventId}`, { act_id: actId, event_id: eventId, rating: selectedRating, was_best_act: false, was_surprise: wasSurprise });
     renderHypesList();
-    if (msgEl) msgEl.textContent = 'Gespeichert!';
+    if (msgEl) msgEl.textContent = t('rating.saved');
     setTimeout(() => { closeRatingModal(); openArtistPopup(actId, actName); }, 700);
   } catch (err) {
     console.warn('Rating submit error:', err.message || err);
-    if (msgEl) msgEl.textContent = 'Fehler beim Speichern.';
+    if (msgEl) msgEl.textContent = t('rating.error');
     if (submit) submit.disabled = false;
   }
 }
@@ -1636,7 +1636,7 @@ function renderRecommendations() {
   const shown = visible.slice(0, 10);
 
   if (!shown.length) {
-    el.innerHTML = `<div class="profile-list-empty">Noch nicht genug Ratings für Empfehlungen — bewerte mehr Acts!</div>`;
+    el.innerHTML = `<div class="profile-list-empty">${t('profile.recommendations_empty')}</div>`;
     return;
   }
 
@@ -1654,8 +1654,8 @@ function renderRecommendations() {
         <button class="profile-act-follow-btn${isFollowed ? ' active' : ''}" type="button"
           data-profile-act-follow="${a.id}"
           aria-pressed="${isFollowed}"
-          title="${isFollowed ? 'Artist entfolgen' : 'Artist folgen'}">${isFollowed ? '♥' : '♡'}</button>
-        <button class="rec-dismiss-btn" type="button" data-rec-dismiss="${a.id}" title="Empfehlung entfernen">×</button>
+          title="${isFollowed ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFollowed ? '♥' : '♡'}</button>
+        <button class="rec-dismiss-btn" type="button" data-rec-dismiss="${a.id}" title="${t('profile.dismiss_recommendation')}">×</button>
       </div>
     `;
   }).join('');
@@ -1667,7 +1667,7 @@ function renderClubsList(clubs = allFollowedClubs, { updateSource = false } = {}
   if (updateSource) allFollowedClubs = [...clubs];
   const visibleClubs = getFilteredClubs(clubs);
   if (!visibleClubs.length) {
-    renderEmpty(el, clubsSearchQuery ? 'Keine Clubs fuer diese Suche gefunden.' : 'Noch keine Clubs gefolgt.');
+    renderEmpty(el, clubsSearchQuery ? t('profile.no_followed_clubs_search') : t('profile.no_followed_clubs'));
     return;
   }
   el.innerHTML = visibleClubs.map(c => `
@@ -1684,7 +1684,7 @@ function renderDabeiTab() {
   if (!el) return;
 
   if (!presenceLogRows.length) {
-    el.innerHTML = '<div class="profile-list-empty">Noch keine besuchten Events.</div>';
+    el.innerHTML = `<div class="profile-list-empty">${t('profile.no_visited_events')}</div>`;
     return;
   }
 
@@ -1706,7 +1706,7 @@ function renderDabeiTab() {
     });
 
   if (!eventIds.length) {
-    el.innerHTML = '<div class="profile-list-empty">Noch keine besuchten Events.</div>';
+    el.innerHTML = `<div class="profile-list-empty">${t('profile.no_visited_events')}</div>`;
     return;
   }
 
@@ -1733,14 +1733,14 @@ function renderDabeiTab() {
     let summary = '';
     if (qE && cE) {
       const waitMins = Math.round((new Date(cE.created_at) - new Date(qE.created_at)) / 60000);
-      summary += `${waitMins} min Queue`;
+      summary += t('profile.summary_queue', { minutes: waitMins });
     }
     if (cE && lE) {
       const stayMins = Math.round((new Date(lE.created_at) - new Date(cE.created_at)) / 60000);
       const h = Math.floor(stayMins / 60), m = stayMins % 60;
-      summary += (summary ? ' · ' : '') + (h > 0 ? `${h}h ${m}min` : `${m}min`) + ' im Club';
+      summary += (summary ? ' · ' : '') + t('profile.summary_in_club', { duration: h > 0 ? `${h}h ${m}min` : `${m}min` });
     } else if (lE) {
-      summary += (summary ? ' · ' : '') + 'Exit ' + fmtTs(lE.created_at);
+      summary += (summary ? ' · ' : '') + t('profile.summary_exit', { time: fmtTs(lE.created_at) });
     }
 
     return `
@@ -1771,7 +1771,7 @@ function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } =
   if (updateSource) allProfileHypedRows = [...hyped];
   profileHypedRows = getFilteredHypedRows(hyped);
   if (!profileHypedRows.length) {
-    renderEmpty(el, hypesSearchQuery ? 'Keine Events fuer diese Suche gefunden.' : 'Noch keine Events als Interessiert markiert.');
+    renderEmpty(el, hypesSearchQuery ? t('profile.no_saved_events_search') : t('profile.no_saved_events'));
     return;
   }
 
@@ -1855,12 +1855,12 @@ function showBadgeDetail(b) {
     <div class="badge-detail-bg"></div>
     <div class="badge-detail-sheet">
       <div class="badge-detail-topline"></div>
-      <button class="badge-detail-close" aria-label="Schließen">✕</button>
+      <button class="badge-detail-close" aria-label="${t('common.close')}">✕</button>
       <div class="badge-detail-header">
         <div class="badge-detail-icon">${b.icon}</div>
         <div>
           <div class="badge-detail-name">${b.name}</div>
-          ${b.level > 0 ? `<div class="badge-detail-cur-level">LVL ${b.level} / 5</div>` : '<div class="badge-detail-cur-level">Noch nicht freigeschaltet</div>'}
+          ${b.level > 0 ? `<div class="badge-detail-cur-level">LVL ${b.level} / 5</div>` : `<div class="badge-detail-cur-level">${t('profile.locked_badge')}</div>`}
           <div class="badge-pips" style="margin-top:6px">${pips}</div>
         </div>
       </div>
@@ -1909,7 +1909,7 @@ async function loadProfile() {
   const displayName = profile?.display_name
     || sessionUser.user_metadata?.name
     || sessionUser.email
-    || 'Angemeldet';
+    || t('user.logged_in');
 
   updateNavbar(displayName);
 
@@ -1994,8 +1994,8 @@ async function loadProfile() {
   setDetail('detailAvgQueue',     fmtMins(ds.avgQueueMinutes));
   setDetail('detailLongestQueue', fmtMins(ds.longestQueueMinutes));
   setDetail('detailFastestEntry', fmtMins(ds.fastestEntryMinutes));
-  setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr + ' Uhr' : '—');
-  setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr + ' Uhr' : '—');
+  setDetail('detailLatestExit',   ds.latestExitTimeStr   ? ds.latestExitTimeStr : '—');
+  setDetail('detailEarliestQueue', ds.earliestQueueTimeStr ? ds.earliestQueueTimeStr : '—');
 
   // Make record stats clickable → bottom sheet with source event
   const statEventLinks = [
@@ -2341,7 +2341,7 @@ async function initPushSettings() {
   const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 
   if (!supported) {
-    statusEl.textContent = 'Push-Benachrichtigungen werden von diesem Browser nicht unterstützt.';
+    statusEl.textContent = t('push.unsupported');
     statusEl.classList.add('settings-push-status--warn');
     return;
   }
@@ -2349,17 +2349,17 @@ async function initPushSettings() {
   const permission = Notification.permission;
 
   if (permission === 'denied') {
-    statusEl.innerHTML = 'Benachrichtigungen blockiert. <br><span style="font-size:10px;color:var(--grey-lt)">Bitte in den Browser-Einstellungen freigeben.</span>';
+    statusEl.innerHTML = t('push.blocked');
     statusEl.classList.add('settings-push-status--warn');
     return;
   }
 
   if (permission === 'default') {
-    statusEl.textContent = 'Nicht aktiviert';
+    statusEl.textContent = t('push.not_enabled');
     enableBtn.style.display = '';
     enableBtn.addEventListener('click', async () => {
       enableBtn.disabled = true;
-      enableBtn.textContent = 'Wird aktiviert…';
+      enableBtn.textContent = t('push.enabling');
       const perm = await Notification.requestPermission();
       if (perm === 'granted') {
         const reg = await registerServiceWorker();
@@ -2368,13 +2368,13 @@ async function initPushSettings() {
           if (sub) await savePushSubscription(sub);
         }
         enableBtn.style.display = 'none';
-        statusEl.textContent = 'Aktiviert';
+        statusEl.textContent = t('push.enabled');
         statusEl.classList.add('settings-push-status--ok');
         await showNotifToggles(notifList, feedbackEl);
       } else {
         enableBtn.disabled = false;
         enableBtn.textContent = 'Benachrichtigungen aktivieren →';
-        statusEl.textContent = 'Berechtigung verweigert.';
+        statusEl.textContent = t('push.permission_denied');
         statusEl.classList.add('settings-push-status--warn');
       }
     });
@@ -2390,7 +2390,7 @@ async function initPushSettings() {
       if (sub) await savePushSubscription(sub);
     }
   }
-  statusEl.textContent = 'Aktiviert';
+  statusEl.textContent = t('push.enabled');
   statusEl.classList.add('settings-push-status--ok');
   await showNotifToggles(notifList, feedbackEl);
 }
@@ -2417,7 +2417,7 @@ async function showNotifToggles(notifList, feedbackEl) {
     input.addEventListener('change', async () => {
       await saveNotificationPref(input.dataset.pref, input.checked);
       if (feedbackEl) {
-        feedbackEl.textContent = 'Gespeichert.';
+        feedbackEl.textContent = t('common.saved');
         setTimeout(() => { if (feedbackEl) feedbackEl.textContent = ''; }, 1500);
       }
     });
@@ -2445,7 +2445,7 @@ function openSettings() {
     nameInput.value = nameEl.textContent !== '—' ? nameEl.textContent : '';
   }
   // Mark active language
-  const currentLang = localStorage.getItem('setradar_lang') || 'de';
+  const currentLang = localStorage.getItem('setradar_lang') || 'en';
   document.querySelectorAll('.settings-lang-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === currentLang);
   });
@@ -2559,7 +2559,7 @@ function initSettings() {
   document.getElementById('settingsConfirmDelete')?.addEventListener('click', async () => {
     const confirmBtn = document.getElementById('settingsConfirmDelete');
     confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Wird gelöscht…';
+    confirmBtn.textContent = t('settings.deleting');
     setFeedback('settingsDeleteFeedback', '');
     try {
       await Promise.all([
@@ -2574,7 +2574,7 @@ function initSettings() {
       window.location.href = 'index.html';
     } catch (err) {
       confirmBtn.disabled = false;
-      confirmBtn.textContent = 'Ja, Account endgültig löschen';
+      confirmBtn.textContent = t('settings.confirm_delete');
       setFeedback('settingsDeleteFeedback', t('settings.delete_error') + (err.message || t('settings.unknown_error')), true);
     }
   });

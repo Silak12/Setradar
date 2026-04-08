@@ -17,9 +17,15 @@
       'nav.search_city':  'Search city',
 
       // Footer
-      'footer.impressum': 'Impressum',
+      'footer.impressum': 'Imprint',
       'footer.privacy':   'Privacy',
       'footer.terms':     'Terms',
+      'common.close':     'Close',
+      'common.previous':  'Previous',
+      'common.next':      'Next',
+      'common.saved':     'Saved.',
+      'common.loading':   'Loading...',
+      'common.not_found': 'Not found',
 
       // Search
       'search.placeholder':       'SEARCH...',
@@ -46,6 +52,9 @@
       'loading.stats':   'Loading stats…',
 
       // Auth
+      'auth.title':            'Join the Radar',
+      'auth.account':          'Account',
+      'auth.mode_label':       'Auth mode',
       'auth.google_continue': 'Continue with Google',
       'auth.google_login':    'Login with Google',
       'auth.google_signup':   'Sign up with Google',
@@ -57,7 +66,8 @@
       'auth.signup':          'Signup',
 
       // Rating modal
-      'rating.title':    '// RATING',
+      'rating.title':       '// RATING',
+      'rating.group_label': 'Rating',
       'rating.surprise': 'Surprise of the night',
       'rating.submit':   'Rate',
       'rating.saving':   'Saving...',
@@ -96,6 +106,23 @@
       'profile.max_level':      'Max level reached',
       'profile.max':            'Max',
       'profile.since':          'Since',
+      'profile.recommendations_empty': 'Not enough ratings for recommendations yet - rate more acts!',
+      'profile.rated_acts_label': 'Rated Acts',
+      'profile.all':               'All',
+      'profile.follow_artist':     'Follow artist',
+      'profile.unfollow_artist':   'Unfollow artist',
+      'profile.dismiss_recommendation': 'Dismiss recommendation',
+      'profile.no_followed_acts':        'No followed acts yet.',
+      'profile.no_followed_acts_search': 'No acts found for this search.',
+      'profile.no_followed_clubs':       'No followed clubs yet.',
+      'profile.no_followed_clubs_search':'No clubs found for this search.',
+      'profile.no_visited_events':       'No visited events yet.',
+      'profile.no_saved_events':         'No saved events marked as interested yet.',
+      'profile.no_saved_events_search':  'No events found for this search.',
+      'profile.summary_queue':           '{minutes} min queue',
+      'profile.summary_in_club':         '{duration} in club',
+      'profile.summary_exit':            'Exit {time}',
+      'profile.locked_badge':            'Not unlocked yet',
 
       // Profile tabs
       'tabs.acts':   'Acts',
@@ -129,8 +156,15 @@
       'settings.email_saved':          'Confirmation email sent.',
       'settings.password_saved':       'Password changed.',
       'settings.lang_saved':           'Language saved.',
+      'settings.deleting':             'Deleting...',
       'settings.delete_error':         'Error: ',
       'settings.unknown_error':        'Unknown error',
+      'push.unsupported':       'Push notifications are not supported by this browser.',
+      'push.blocked':           'Notifications blocked. <br><span style="font-size:10px;color:var(--grey-lt)">Please allow them in your browser settings.</span>',
+      'push.not_enabled':       'Not enabled',
+      'push.enabling':          'Enabling...',
+      'push.enabled':           'Enabled',
+      'push.permission_denied': 'Permission denied.',
 
       // Notifications
       'notif.act_event_label':         'Timetable — DJ + Event',
@@ -181,6 +215,8 @@
       'spotlight.best':       'Best Act',
       'spotlight.surprise':   'Surprise',
       'spotlight.gem':        'Hidden Gem',
+      'spotlight.no_votes':   'No votes yet',
+      'spotlight.no_votes':   'No votes yet',
 
       // User
       'user.guest':     'Guest',
@@ -211,6 +247,21 @@
       'live.surprise_hint':     '★ Surprise of the night can only be given once',
       'live.tba':               'TBA',
       'live.no_queue_reports':  'No queue reports for this event yet.',
+      'live.queue_chart_aria':  'Queue trend',
+      'live.join_queue':        'Join queue',
+      'live.queue_locked':      'Join queue',
+      'live.queue_open':        'Queue â–²',
+      'live.in_club_open':      'In Club â–²',
+      'live.queue_locked_info': 'You can join the queue at the earliest 1 hour before the event starts.',
+      'live.score_info':        'Rate more DJs to see a personal score. The more you and other users rate, the more accurately we can predict how much you will enjoy the event.',
+
+      'live.queue_chart_aria':  'Queue-Verlauf',
+      'live.join_queue':        'Warteschlange betreten',
+      'live.queue_locked':      'Warteschlange betreten',
+      'live.queue_open':        'Warteschlange â–²',
+      'live.in_club_open':      'Im Club â–²',
+      'live.queue_locked_info': 'Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.',
+      'live.score_info':        'Bewerte mehr DJs um einen persoenlichen Score zu sehen. Je mehr du und andere User bewerten, desto genauer wird die Vorhersage wie gut dir das Event gefallen wird.',
 
       // Club stats
       'club.avg_wait':    'Avg. Wait',
@@ -218,7 +269,28 @@
 
       // Misc
       'misc.back':    'Back',
+      'misc.artist':  'Artist',
+      'misc.time':    'Time',
+      'misc.no_info': 'No info yet',
+      'misc.until':   'until {time}',
       'misc.search_banner_no_events': ' - No upcoming events',
+      'past.your_night':       '// YOUR NIGHT',
+      'past.arrival':          'Arrival',
+      'past.entry':            'Entry',
+      'past.exit':             'Exit',
+      'past.in_club':          'In club',
+      'past.no_data':          'No data recorded.',
+      'past.edit_times':       'Edit times',
+      'past.edit_hint':        'Set date and time directly - no more automatic guessing.',
+      'past.no_votes':         'No votes yet',
+      'past.lineup_rating':    '// LINE-UP & RATING',
+      'past.completed':        'Completed',
+      'past.queue_timeline':   '// QUEUE TREND OF THE NIGHT',
+      'past.surprise_button':  'â˜… Surprise',
+      'past.surprise_hint':    'â˜… Surprise of the night can only be given once',
+      'past.event_not_found':  'Event not found.',
+      'past.load_error':       'Error while loading.',
+      'past.queue_chart_aria': 'Queue trend',
 
       // Badge descriptions
       'badge.queue_rat_desc':       'You know the queue. You love the queue. Total time in queues.',
@@ -249,6 +321,12 @@
       'footer.impressum': 'Impressum',
       'footer.privacy':   'Datenschutz',
       'footer.terms':     'Nutzungsbedingungen',
+      'common.close':     'Schliessen',
+      'common.previous':  'Vorherige',
+      'common.next':      'Naechste',
+      'common.saved':     'Gespeichert.',
+      'common.loading':   'Laedt...',
+      'common.not_found': 'Nicht gefunden',
 
       // Search
       'search.placeholder':       'SUCHEN...',
@@ -276,6 +354,9 @@
       'loading.stats':   'Lade Stats…',
 
       // Auth
+      'auth.title':            'Join the Radar',
+      'auth.account':          'Account',
+      'auth.mode_label':       'Auth Modus',
       'auth.google_continue': 'Mit Google fortfahren',
       'auth.google_login':    'Mit Google anmelden',
       'auth.google_signup':   'Mit Google registrieren',
@@ -287,7 +368,8 @@
       'auth.signup':          'Signup',
 
       // Rating modal
-      'rating.title':    '// BEWERTUNG',
+      'rating.title':       '// BEWERTUNG',
+      'rating.group_label': 'Bewertung',
       'rating.surprise': 'Überraschung des Abends',
       'rating.submit':   'Bewerten',
       'rating.saving':   'Wird gespeichert...',
@@ -326,6 +408,23 @@
       'profile.max_level':      'Max Level erreicht',
       'profile.max':            'Max',
       'profile.since':          'Seit',
+      'profile.recommendations_empty': 'Noch nicht genug Ratings fuer Empfehlungen - bewerte mehr Acts!',
+      'profile.rated_acts_label': 'Bewertete Acts',
+      'profile.all':               'Alle',
+      'profile.follow_artist':     'Artist folgen',
+      'profile.unfollow_artist':   'Artist entfolgen',
+      'profile.dismiss_recommendation': 'Empfehlung entfernen',
+      'profile.no_followed_acts':        'Noch keine Acts gefolgt.',
+      'profile.no_followed_acts_search': 'Keine Acts fuer diese Suche gefunden.',
+      'profile.no_followed_clubs':       'Noch keine Clubs gefolgt.',
+      'profile.no_followed_clubs_search':'Keine Clubs fuer diese Suche gefunden.',
+      'profile.no_visited_events':       'Noch keine besuchten Events.',
+      'profile.no_saved_events':         'Noch keine Events als Interessiert markiert.',
+      'profile.no_saved_events_search':  'Keine Events fuer diese Suche gefunden.',
+      'profile.summary_queue':           '{minutes} min Queue',
+      'profile.summary_in_club':         '{duration} im Club',
+      'profile.summary_exit':            'Exit {time}',
+      'profile.locked_badge':            'Noch nicht freigeschaltet',
 
       // Profile tabs
       'tabs.acts':   'Acts',
@@ -359,6 +458,13 @@
       'settings.email_saved':          'Bestätigungsmail gesendet.',
       'settings.password_saved':       'Passwort geändert.',
       'settings.lang_saved':           'Sprache gespeichert.',
+      'settings.deleting':             'Wird geloescht...',
+      'push.unsupported':       'Push-Benachrichtigungen werden von diesem Browser nicht unterstuetzt.',
+      'push.blocked':           'Benachrichtigungen blockiert. <br><span style="font-size:10px;color:var(--grey-lt)">Bitte in den Browser-Einstellungen freigeben.</span>',
+      'push.not_enabled':       'Nicht aktiviert',
+      'push.enabling':          'Wird aktiviert...',
+      'push.enabled':           'Aktiviert',
+      'push.permission_denied': 'Berechtigung verweigert.',
       'settings.delete_error':         'Fehler: ',
       'settings.unknown_error':        'Unbekannter Fehler',
 
@@ -411,6 +517,7 @@
       'spotlight.best':       'Bester Act',
       'spotlight.surprise':   'Überraschung',
       'spotlight.gem':        'Geheimtipp',
+      'spotlight.no_votes':   'Noch keine Votes',
 
       // User
       'user.guest':     'Gast',
@@ -448,7 +555,28 @@
 
       // Misc
       'misc.back': 'Zurück',
+      'misc.artist': 'Artist',
+      'misc.time':   'Zeit',
+      'misc.no_info': 'Noch keine Infos',
+      'misc.until':   'bis {time}',
       'misc.search_banner_no_events': ' - Keine kommenden Events',
+      'past.your_night':       '// DEINE NACHT',
+      'past.arrival':          'Ankunft',
+      'past.entry':            'Einlass',
+      'past.exit':             'Exit',
+      'past.in_club':          'Im Club',
+      'past.no_data':          'Keine Daten erfasst.',
+      'past.edit_times':       'Zeiten bearbeiten',
+      'past.edit_hint':        'Datum und Uhrzeit direkt setzen - kein automatisches Raten mehr.',
+      'past.no_votes':         'Noch keine Votes',
+      'past.lineup_rating':    '// LINE-UP & BEWERTUNG',
+      'past.completed':        'Abgeschlossen',
+      'past.queue_timeline':   '// WARTEZEIT-VERLAUF DER NACHT',
+      'past.surprise_button':  '★ Ueberraschung',
+      'past.surprise_hint':    '★ Ueberraschung des Abends kann nur einmal vergeben werden',
+      'past.event_not_found':  'Event nicht gefunden.',
+      'past.load_error':       'Fehler beim Laden.',
+      'past.queue_chart_aria': 'Queue-Verlauf',
 
       // Badge descriptions
       'badge.queue_rat_desc':       'Du kennst die Schlange. Du liebst die Schlange. Gesamtzeit in Warteschlangen.',

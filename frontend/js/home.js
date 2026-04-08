@@ -625,20 +625,20 @@ async function hydrateSession() {
     cleanupAuthReturnUrl();
   } else userProfile = null;
 }
-function ensureAuthenticated(label = 'Diese Aktion') {
+function ensureAuthenticated(label = 'This action') {
   if (sessionUser) return true;
-  openAuthModal(AUTH_MODES.LOGIN, `${label} braucht einen Login.`);
+  openAuthModal(AUTH_MODES.LOGIN, `${label} requires login.`);
   return false;
 }
 async function onAuthSubmit(event) {
   event.preventDefault();
-  if (!supabaseClient) { setAuthMessage('Supabase ist nicht verfuegbar.', 'error'); return; }
+  if (!supabaseClient) { setAuthMessage('Supabase is unavailable.', 'error'); return; }
   const email = document.getElementById('authEmail')?.value.trim();
   const password = document.getElementById('authPassword')?.value || '';
   const displayName = document.getElementById('authDisplayName')?.value.trim();
-  if (!email || !password) { setAuthMessage('E-Mail und Passwort sind Pflicht.', 'error'); return; }
+  if (!email || !password) { setAuthMessage('Email and password are required.', 'error'); return; }
   setAuthBusy(true);
-  setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Account wird erstellt...' : 'Login laeuft...');
+  setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Creating account...' : 'Logging in...');
   try {
     if (authMode === AUTH_MODES.SIGNUP) {
       const { data, error } = await supabaseClient.auth.signUp({
@@ -669,13 +669,13 @@ async function onAuthSubmit(event) {
       closeAuthModal();
     }
   } catch (err) {
-    setAuthMessage(err.message || 'Auth Fehler.', 'error');
+    setAuthMessage(err.message || 'Auth error.', 'error');
   } finally {
     setAuthBusy(false);
   }
 }
 async function onGoogleAuth() {
-  if (!supabaseClient) { setAuthMessage('Supabase ist nicht verfuegbar.', 'error'); return; }
+  if (!supabaseClient) { setAuthMessage('Supabase is unavailable.', 'error'); return; }
   setAuthBusy(true);
   setAuthMessage(authMode === AUTH_MODES.SIGNUP ? 'Google-Registrierung startet...' : 'Google-Login startet...');
   try {
@@ -692,7 +692,7 @@ async function onGoogleAuth() {
     if (error) throw error;
   } catch (err) {
     setAuthBusy(false);
-    setAuthMessage(err.message || 'Google Login fehlgeschlagen.', 'error');
+    setAuthMessage(err.message || 'Google login failed.', 'error');
   }
 }
 async function onNavAuthClick() {
@@ -940,13 +940,13 @@ function renderEventCard(ev, nextActKeys) {
     const eventHasStarted = (() => { const s = getEventStartDateTime(ev); return s ? new Date() >= s : ev.event_date <= getDateStr(0); })();
     const actRateBtn = actId && sessionUser && eventHasStarted
       ? existingEvRating
-        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Bewertung ändern">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
-        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Jetzt bewerten">☆☆☆☆☆</button>`
+        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${t('act.rate_change')}">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
+        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${t('act.rate')}">☆☆☆☆☆</button>`
       : '';
     const flairs = [
-      isBestAct    ? '<span class="act-flair act-flair--best">Bester Act</span>'    : '',
-      isSurprise   ? '<span class="act-flair act-flair--surprise">Überraschung</span>' : '',
-      isHiddenGem  ? '<span class="act-flair act-flair--gem">Geheimtipp</span>'     : '',
+      isBestAct    ? `<span class="act-flair act-flair--best">${t('act.best')}</span>` : '',
+      isSurprise   ? `<span class="act-flair act-flair--surprise">${t('act.surprise')}</span>` : '',
+      isHiddenGem  ? `<span class="act-flair act-flair--gem">${t('act.gem')}</span>` : '',
     ].filter(Boolean).join('');
     return `
       <div class="artist-row ${start ? 'has-time' : ''}${isActFavorite ? ' artist-row--followed' : ''}">
@@ -961,7 +961,7 @@ function renderEventCard(ev, nextActKeys) {
         <span class="artist-row-right">
           ${actRateBtn}
           ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
-          ${a.canceled ? `<span class="artist-time canceled">ABGESAGT</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">TBA</span>`}
+          ${a.canceled ? `<span class="artist-time canceled">${t('act.canceled')}</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">${t('live.tba')}</span>`}
         </span>
       </div>
     `;
@@ -984,12 +984,12 @@ function renderEventCard(ev, nextActKeys) {
       <div class="event-actions">
         <div class="event-actions-left">
           <button class="event-action-button hype-button${isHyped ? ' active' : ''}" type="button" data-action="toggle-hype" data-event-id="${ev.id}" aria-pressed="${isHyped}">
-            <span class="spark-icon">&#10022;</span><span>Interessiert</span><span class="hype-count">${hype.total_hype}</span>
+            <span class="spark-icon">&#10022;</span><span>${t('sort.interested')}</span><span class="hype-count">${hype.total_hype}</span>
           </button>
         </div>
         <div class="event-actions-right">${buildPresenceBtn(ev.id)}</div>
       </div>
-      <div class="artist-list">${artistRows ? '<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">Artist</span><span class="lineup-header-right"><span class="lh-label">Rate</span><span class="lh-label">Zeit</span></span></div>' : ''}${artistRows || '<span class="time-tba">Noch keine Infos</span>'}</div>
+      <div class="artist-list">${artistRows ? `<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">${t('misc.artist')}</span><span class="lineup-header-right"><span class="lh-label">${t('act.rate')}</span><span class="lh-label">${t('misc.time')}</span></span></div>` : ''}${artistRows || `<span class="time-tba">${t('misc.no_info')}</span>`}</div>
     </div>
   `;
 }
@@ -1234,7 +1234,7 @@ function renderSearchResults(label, grouped) {
 }
 async function toggleFavorite(type, id, { rerender = true, onChange = null } = {}) {
   const numericId = Number(id), set = favoriteSet(type);
-  if (!set || !Number.isFinite(numericId) || !ensureAuthenticated('Favoriten') || !supabaseClient) return false;
+  if (!set || !Number.isFinite(numericId) || !ensureAuthenticated('Favorites') || !supabaseClient) return false;
   const key = `favorite:${type}:${numericId}`;
   if (pendingActionKeys.has(key)) return false;
   const active = set.has(numericId);
@@ -1265,7 +1265,7 @@ async function toggleFavorite(type, id, { rerender = true, onChange = null } = {
 }
 async function toggleHype(id) {
   const eventId = Number(id);
-  if (!Number.isFinite(eventId) || !ensureAuthenticated('Interessiert') || !supabaseClient) return false;
+  if (!Number.isFinite(eventId) || !ensureAuthenticated('Interested') || !supabaseClient) return false;
   const key = `hype:${eventId}`;
   if (pendingActionKeys.has(key)) return false;
   const active = userHypedEventIds.has(eventId);
@@ -1301,8 +1301,8 @@ function syncActFavoriteButton(actId) {
   button.classList.toggle('active', active);
   button.setAttribute('aria-pressed', String(active));
   button.textContent = active ? '♥' : '♡';
-  button.setAttribute('aria-label', active ? 'Artist entfolgen' : 'Artist folgen');
-  button.setAttribute('title', active ? 'Artist entfolgen' : 'Artist folgen');
+  button.setAttribute('aria-label', active ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+  button.setAttribute('title', active ? t('profile.unfollow_artist') : t('profile.follow_artist'));
 }
 function syncHypeButton(eventId) {
   const isHyped = userHypedEventIds.has(Number(eventId));
@@ -1358,11 +1358,11 @@ function bindActionHandlers() {
     }
     if (target.dataset.action === 'score-info') {
       e.stopPropagation();
-      showQueueInfoToast('Bewerte mehr DJs um einen persönlichen Score zu sehen. Je mehr du und andere User bewerten, desto genauer wird die Vorhersage wie gut dir das Event gefallen wird.');
+      showQueueInfoToast(t('live.score_info'));
       return;
     }
     if (target.dataset.action === 'queue-locked-info') {
-      showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
+      showQueueInfoToast(t('live.queue_locked_info'));
       return;
     }
     if (target.dataset.action === 'set-presence') {
@@ -1478,7 +1478,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   if (!content) return;
   const numericActId = Number(actId), isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
+    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${escapeHtml(instaName)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${escapeHtml(instaName)}</a>`
@@ -1498,7 +1498,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
           <span class="modal-act-avg">${ratingStats.avg_rating}</span>
           <span class="modal-act-count">(${ratingStats.rating_count})</span>
         </div>
-        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">Überraschung des Abends ${ratingStats.surprise_pct}%</span></div>` : ''}
+        ${ratingStats.surprise_pct > 0 ? `<div class="modal-act-flags"><span class="modal-act-flag modal-act-flag--surprise">${t('rating.surprise')} ${ratingStats.surprise_pct}%</span></div>` : ''}
       </div>`;
   }
 
@@ -2212,7 +2212,7 @@ function renderQueueGraph() {
     <text x="${W - mr}" y="${H - 5}" text-anchor="end" fill="#444" font-size="7" font-family="monospace">${fmtAxis(eventEnd)}</text>`;
 
   el.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="Queue-Verlauf">
+    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="${t('live.queue_chart_aria')}">
       ${gridLines}
       ${fillPath}
       ${lineSegs}
@@ -2290,7 +2290,7 @@ function renderLivePanel() {
           <span class="live-panel-event-name">${gev.event_name}</span>
           <span class="live-panel-venue">${gev.clubs?.name ?? ''}</span>
         </div>
-        <button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>
+        <button class="live-close-btn" data-live-action="toggle-expand" aria-label="${t('common.close')}">×</button>
       </div>
       <div class="live-panel-body" style="display:block">
         <div class="live-section live-goodbye-section">
@@ -2426,7 +2426,7 @@ function renderLivePanel() {
         <span class="live-panel-venue">${ev.clubs?.name ?? ''}</span>
       </div>
       ${livePanelExpanded
-        ? `<button class="live-close-btn" data-live-action="toggle-expand" aria-label="Schließen">×</button>`
+        ? `<button class="live-close-btn" data-live-action="toggle-expand" aria-label="${t('common.close')}">×</button>`
         : `<div class="live-bar-cta">
              <span class="live-status-chip live-status-${status}">${statusLabel}</span>
              <span class="live-bar-open-hint">${t('live.open_hint')}</span>
@@ -2642,16 +2642,16 @@ function buildPresenceBtn(evId) {
     const eventStart = ev ? getEventStartDateTime(ev) : null;
     const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 10 * 60 * 60 * 1000) : null;
     if (queueOpenAt && new Date() < queueOpenAt) {
-      return `<button class="event-action-button presence-btn presence-locked" type="button" data-action="queue-locked-info" data-event-id="${eventId}">Warteschlange betreten</button>`;
+      return `<button class="event-action-button presence-btn presence-locked" type="button" data-action="queue-locked-info" data-event-id="${eventId}">${t('live.queue_locked')}</button>`;
     }
-    return `<button class="event-action-button presence-btn presence-cta" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="queue"><span class="live-btn-dot"></span>Warteschlange betreten</button>`;
+    return `<button class="event-action-button presence-btn presence-cta" type="button" data-action="set-presence" data-event-id="${eventId}" data-next-status="queue"><span class="live-btn-dot"></span>${t('live.join_queue')}</button>`;
   }
   if (pid === eventId) {
     if (userPresence?.status === 'queue') {
-      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot"></span>Warteschlange ▲</button>`;
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot"></span>${t('live.queue_open')}</button>`;
     }
     if (userPresence?.status === 'in_club') {
-      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot live-btn-dot--club"></span>Im Club ▲</button>`;
+      return `<button class="event-action-button presence-btn presence-live-open" type="button" data-action="open-live-panel"><span class="live-btn-dot live-btn-dot--club"></span>${t('live.in_club_open')}</button>`;
     }
   }
   return '';
@@ -2662,7 +2662,7 @@ function buildPresenceBtn(evId) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function openRatingModal({ actId, actName, eventId, eventName }) {
-  if (!ensureAuthenticated('Bewertungen')) return;
+  if (!ensureAuthenticated('Ratings')) return;
   ratingState = { actId, actName, eventId, eventName };
   selectedRating = 0;
 

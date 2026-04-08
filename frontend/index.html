@@ -65,7 +65,7 @@
     <div class="artist-overlay-bg" id="artistOverlayBg"></div>
     <div class="artist-modal" id="artistModal" role="dialog" aria-modal="true">
       <div class="modal-glitch-bar"></div>
-      <button class="modal-close" id="modalClose" aria-label="Schließen">
+      <button class="modal-close" id="modalClose" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -79,16 +79,16 @@
     <div class="auth-overlay-bg" id="authOverlayBg"></div>
     <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <div class="auth-modal-topline"></div>
-      <button class="auth-close" id="authModalClose" type="button" aria-label="Schließen">
+      <button class="auth-close" id="authModalClose" type="button" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
         </svg>
       </button>
       <div class="auth-content">
-        <div class="auth-eyebrow">Account</div>
-        <h2 class="auth-title" id="authTitle">Join the Radar</h2>
-        <div class="auth-switcher" role="tablist" aria-label="Auth Modus">
+        <div class="auth-eyebrow" data-i18n="auth.account">Account</div>
+        <h2 class="auth-title" id="authTitle" data-i18n="auth.title">Join the Radar</h2>
+        <div class="auth-switcher" role="tablist" data-i18n-aria-label="auth.mode_label" aria-label="Auth mode">
           <button class="auth-tab active" id="authModeLogin" type="button" data-auth-mode="login">Login</button>
           <button class="auth-tab" id="authModeSignup" type="button" data-auth-mode="signup">Signup</button>
         </div>
@@ -126,7 +126,7 @@
     <div class="rating-overlay-bg" id="ratingOverlayBg"></div>
     <div class="rating-modal" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
       <div class="rating-modal-topline"></div>
-      <button class="rating-close" id="ratingModalClose" type="button" aria-label="Schlie&szlig;en">
+      <button class="rating-close" id="ratingModalClose" type="button" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -136,7 +136,7 @@
         <div class="rating-eyebrow" data-i18n="rating.title">// RATING</div>
         <div class="rating-act-name" id="ratingActName">—</div>
         <div class="rating-event-name" id="ratingEventName">—</div>
-        <div class="rating-stars" id="ratingStars" role="group" aria-label="Bewertung">
+        <div class="rating-stars" id="ratingStars" role="group" data-i18n-aria-label="rating.group_label" aria-label="Rating">
           <button class="rating-star" data-star="1" type="button" aria-label="1 Stern">&#9733;</button>
           <button class="rating-star" data-star="2" type="button" aria-label="2 Sterne">&#9733;</button>
           <button class="rating-star" data-star="3" type="button" aria-label="3 Sterne">&#9733;</button>

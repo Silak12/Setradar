@@ -49,7 +49,7 @@
         <div class="profile-header-eyebrow" data-i18n="profile.eyebrow">// PROFILE</div>
         <div class="profile-name-row">
           <div class="profile-name" id="profileName">—</div>
-          <button class="profile-settings-btn" id="profileSettingsBtn" aria-label="Einstellungen">⚙</button>
+          <button class="profile-settings-btn" id="profileSettingsBtn" data-i18n-aria-label="settings.title" aria-label="Settings">⚙</button>
         </div>
         <div class="profile-since" id="profileSince">—</div>
       </div>
@@ -145,15 +145,15 @@
           Based on your ratings and users with similar taste.
         </div>
         <div id="recommendationsList">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
 
         <div class="profile-section-label rated-acts-section-label" style="margin-top:24px">
-          Bewertete Acts <span class="rated-acts-total" id="ratedActsTotal"></span>
+          <span data-i18n="profile.rated_acts_label">Rated Acts</span> <span class="rated-acts-total" id="ratedActsTotal"></span>
         </div>
         <div class="rated-acts-controls">
           <div class="rated-acts-filters" id="ratedActsFilters">
-            <button class="rated-filter-btn active" data-stars="0">Alle</button>
+            <button class="rated-filter-btn active" data-stars="0" data-i18n="profile.all">All</button>
             <button class="rated-filter-btn" data-stars="1">1★</button>
             <button class="rated-filter-btn" data-stars="2">2★</button>
             <button class="rated-filter-btn" data-stars="3">3★</button>
@@ -180,13 +180,13 @@
         </div>
         <div class="rated-acts-slider-wrap" id="ratedActsSlider">
           <div class="rated-acts-page" id="ratedActsPage">
-            <div class="profile-list-loading">Lädt...</div>
+            <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
           </div>
         </div>
         <div class="rated-acts-nav" id="ratedActsNav" style="display:none">
-          <button class="rated-acts-arrow" id="ratedActsPrev" aria-label="Vorherige">←</button>
+          <button class="rated-acts-arrow" id="ratedActsPrev" data-i18n-aria-label="common.previous" aria-label="Previous">←</button>
           <span class="rated-acts-counter" id="ratedActsCounter">1 / 1</span>
-          <button class="rated-acts-arrow" id="ratedActsNext" aria-label="Nächste">→</button>
+          <button class="rated-acts-arrow" id="ratedActsNext" data-i18n-aria-label="common.next" aria-label="Next">→</button>
         </div>
 
         <div class="profile-section-label" style="margin-top:24px"><span data-i18n="profile.followed_acts">Followed Acts</span> <span class="rated-acts-total" id="followedActsTotal"></span></div>
@@ -203,13 +203,13 @@
         </div>
         <div class="rated-acts-slider-wrap" id="followedActsSlider">
           <div class="rated-acts-page" id="followedActsPage">
-            <div class="profile-list-loading">Lädt...</div>
+            <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
           </div>
         </div>
         <div class="rated-acts-nav" id="followedActsNav" style="display:none">
-          <button class="rated-acts-arrow" id="followedActsPrev" aria-label="Vorherige">←</button>
+          <button class="rated-acts-arrow" id="followedActsPrev" data-i18n-aria-label="common.previous" aria-label="Previous">←</button>
           <span class="rated-acts-counter" id="followedActsCounter">—</span>
-          <button class="rated-acts-arrow" id="followedActsNext" aria-label="Nächste">→</button>
+          <button class="rated-acts-arrow" id="followedActsNext" data-i18n-aria-label="common.next" aria-label="Next">→</button>
         </div>
 
       </div>
@@ -229,7 +229,7 @@
           </div>
         </div>
         <div class="profile-list" id="clubsList">
-          <div class="profile-list-loading">Lädt...</div>
+            <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
@@ -237,7 +237,7 @@
       <div class="profile-tab-panel" id="tabDabei" role="tabpanel" hidden>
         <div class="profile-section-label" data-i18n="profile.visited_events">Visited Events</div>
         <div class="profile-list" id="dabeiList">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
@@ -256,7 +256,7 @@
           </div>
         </div>
         <div class="profile-list" id="hypesList">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
@@ -264,7 +264,7 @@
       <div class="profile-tab-panel" id="tabBadges" role="tabpanel" hidden>
         <div class="profile-section-label">Badges</div>
         <div class="profile-badges-grid" id="badgesGrid">
-          <div class="profile-list-loading">Lädt...</div>
+          <div class="profile-list-loading" data-i18n="loading.generic">Loading...</div>
         </div>
       </div>
 
@@ -278,7 +278,7 @@
     <div class="artist-overlay-bg" id="artistOverlayBg"></div>
     <div class="artist-modal" id="artistModal" role="dialog" aria-modal="true">
       <div class="modal-glitch-bar"></div>
-      <button class="modal-close" id="modalClose" aria-label="Schließen">
+      <button class="modal-close" id="modalClose" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -293,7 +293,7 @@
     <div class="rating-overlay-bg" id="ratingOverlayBg"></div>
     <div class="rating-modal" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
       <div class="rating-modal-topline"></div>
-      <button class="rating-close" id="ratingModalClose" type="button" aria-label="Schließen">
+      <button class="rating-close" id="ratingModalClose" type="button" data-i18n-aria-label="common.close" aria-label="Close">
         <span>ESC</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M18 6 6 18M6 6l12 12"/>
@@ -303,7 +303,7 @@
         <div class="rating-eyebrow" data-i18n="rating.title">// RATING</div>
         <div class="rating-act-name" id="ratingActName">—</div>
         <div class="rating-event-name" id="ratingEventName">—</div>
-        <div class="rating-stars" id="ratingStars" role="group" aria-label="Bewertung">
+        <div class="rating-stars" id="ratingStars" role="group" data-i18n-aria-label="rating.group_label" aria-label="Rating">
           <button class="rating-star" data-star="1" type="button" aria-label="1 Stern">&#9733;</button>
           <button class="rating-star" data-star="2" type="button" aria-label="2 Sterne">&#9733;</button>
           <button class="rating-star" data-star="3" type="button" aria-label="3 Sterne">&#9733;</button>
