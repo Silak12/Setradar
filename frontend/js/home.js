@@ -11,6 +11,19 @@ const DEMO_HYPE_TOTALS = {
 };
 function isPlaceholderValue(v) { return !v || /^DEIN(?:E)?_SUPABASE_/i.test(v); }
 function isLegacyJwtKey(v) { return typeof v === 'string' && v.startsWith('eyJ') && v.split('.').length === 3; }
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function safeUrl(url) {
+  if (!url) return '';
+  const s = String(url).trim();
+  return /^https?:\/\//i.test(s) ? escapeHtml(s) : '';
+}
 function formatLocalDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -313,7 +326,7 @@ function updateStatusBar() {
   const count = getEventsForDateBucket(getDateStr(0), visibleEvents).length;
   const time = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   bar.innerHTML = `
-    <div class="status-bar-left"><span class="status-live-dot"></span><span>${selectedCity} - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
+    <div class="status-bar-left"><span class="status-live-dot"></span><span>${escapeHtml(selectedCity)} - ${count} Event${count !== 1 ? 's' : ''} heute</span></div>
     <div class="status-bar-right">${time}</div>
   `;
 }
@@ -903,8 +916,8 @@ function renderEventCard(ev, nextActKeys) {
   const isOpen = expandedEventIds.has(Number(ev.id));
   const isClubFavorite = ev.clubs?.id ? favoriteClubIds.has(Number(ev.clubs.id)) : false;
   const venueHtml = ev.clubs?.id
-    ? `<span class="venue-name-group"><span class="venue-tag">${venue}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
-    : `<span class="venue-tag">${venue}</span>`;
+    ? `<span class="venue-name-group"><span class="venue-tag">${escapeHtml(venue)}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
+    : `<span class="venue-tag">${escapeHtml(venue)}</span>`;
   const hl = eventHighlights.get(Number(ev.id));
   const artistRows = acts.map(a => {
     const start = fmtTime(a.start_time), end = fmtTime(a.end_time), label = start && end ? `${start} - ${end}` : start ? `ab ${start}` : null;
@@ -924,8 +937,8 @@ function renderEventCard(ev, nextActKeys) {
     const eventHasStarted = (() => { const s = getEventStartDateTime(ev); return s ? new Date() >= s : ev.event_date <= getDateStr(0); })();
     const actRateBtn = actId && sessionUser && eventHasStarted
       ? existingEvRating
-        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
-        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${a.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
+        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Bewertung ändern">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
+        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Jetzt bewerten">☆☆☆☆☆</button>`
       : '';
     const flairs = [
       isBestAct    ? '<span class="act-flair act-flair--best">Bester Act</span>'    : '',
@@ -939,7 +952,7 @@ function renderEventCard(ev, nextActKeys) {
           ${actFollowBtn}
         </span>
         <span class="artist-name">
-          <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
+          <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${escapeHtml(a.acts?.name ?? '?')}">${escapeHtml(a.acts?.name ?? '?')}</span>
           ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
         </span>
         <span class="artist-row-right">
@@ -954,8 +967,8 @@ function renderEventCard(ev, nextActKeys) {
     <div class="event-card${isOpen ? ' open' : ''}" data-event-id="${ev.id}">
       <div class="card-header" data-action="toggle-timetable" data-event-id="${ev.id}">
         <div class="event-heading">
-          <div class="event-name">${ev.event_name}</div>
-          ${city ? `<div class="event-city-emphasis">${city}</div>` : ''}
+          <div class="event-name">${escapeHtml(ev.event_name)}</div>
+          ${city ? `<div class="event-city-emphasis">${escapeHtml(city)}</div>` : ''}
           ${buildEventScoreBadge(ev)}
         </div>
         <div class="event-meta">
@@ -1089,7 +1102,7 @@ function doSearch(q) {
   const artists = Object.values(actMap).filter(a => (searchFilter === 'all' || searchFilter === 'artist') && String(a.name || '').toLowerCase().includes(lower));
   const clubs = Object.values(clubMap).filter(c => (searchFilter === 'all' || searchFilter === 'club') && String(c.name || '').toLowerCase().includes(lower));
   if (!artists.length && !clubs.length) {
-    results.innerHTML = `<div class="search-no-results">Keine Ergebnisse fuer "${q}"</div>`;
+    results.innerHTML = `<div class="search-no-results">Keine Ergebnisse fuer "${escapeHtml(q)}"</div>`;
     results.classList.add('open');
     return;
   }
@@ -1098,14 +1111,14 @@ function doSearch(q) {
     html += `<div class="search-results-header">Artists (${artists.length})</div>`;
     artists.slice(0, 6).forEach(a => {
       const upcoming = countUpcomingEvents(a.id ?? a.name, 'artist');
-      html += `<div class="search-result-item" data-search-type="artist" data-id="${a.id ?? ''}" data-name="${a.name}"><span class="result-type-tag artist">DJ</span><span class="result-name">${highlight(a.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
+      html += `<div class="search-result-item" data-search-type="artist" data-id="${a.id ?? ''}" data-name="${escapeHtml(a.name)}"><span class="result-type-tag artist">DJ</span><span class="result-name">${highlight(a.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
     });
   }
   if (clubs.length) {
     html += `<div class="search-results-header">Clubs (${clubs.length})</div>`;
     clubs.slice(0, 4).forEach(c => {
       const upcoming = countUpcomingEvents(c.name, 'club');
-      html += `<div class="search-result-item" data-search-type="club" data-id="${c.id ?? ''}" data-name="${c.name}"><span class="result-type-tag club">CLUB</span><span class="result-name">${highlight(c.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
+      html += `<div class="search-result-item" data-search-type="club" data-id="${c.id ?? ''}" data-name="${escapeHtml(c.name)}"><span class="result-type-tag club">CLUB</span><span class="result-name">${highlight(c.name, q)}</span><span class="result-sub">${upcoming} Event${upcoming !== 1 ? 's' : ''}</span><span class="result-arrow">-></span></div>`;
     });
   }
   results.innerHTML = html;
@@ -1118,8 +1131,8 @@ function doSearch(q) {
 }
 function highlight(text, q) {
   const idx = text.toLowerCase().indexOf(q.toLowerCase());
-  if (idx < 0) return text;
-  return text.slice(0, idx) + `<mark style="background:rgba(255,32,32,0.3);color:var(--white)">${text.slice(idx, idx + q.length)}</mark>` + text.slice(idx + q.length);
+  if (idx < 0) return escapeHtml(text);
+  return escapeHtml(text.slice(0, idx)) + `<mark style="background:rgba(255,32,32,0.3);color:var(--white)">${escapeHtml(text.slice(idx, idx + q.length))}</mark>` + escapeHtml(text.slice(idx + q.length));
 }
 function countUpcomingEvents(idOrName, type) {
   const visibleEvents = getVisibleEvents();
@@ -1193,12 +1206,12 @@ function renderSearchResults(label, grouped) {
   updateStatusBar();
   if (!grouped.length) {
     const statsBlock = activeSearch?.type === 'club' ? `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">Lade Stats…</span></div>` : '';
-    main.innerHTML = `<div class="search-active-banner"><span><strong>${label}</strong> - Keine kommenden Events</span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>${statsBlock}<div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    main.innerHTML = `<div class="search-active-banner"><span><strong>${escapeHtml(label)}</strong> - Keine kommenden Events</span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>${statsBlock}<div class="empty-state"><span>Keine Events gefunden</span></div>`;
     setLastUpdated();
     return;
   }
   const isClub = activeSearch?.type === 'club';
-  let html = `<div class="search-active-banner"><span>Ergebnisse fuer <strong>${label}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>`;
+  let html = `<div class="search-active-banner"><span>Ergebnisse fuer <strong>${escapeHtml(label)}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>`;
   if (isClub) {
     html += `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">Lade Stats…</span></div>`;
   }
@@ -1396,7 +1409,7 @@ async function openArtistPopup(actId, actName) {
   const overlay = document.getElementById('artistOverlay'), content = document.getElementById('modalContent');
   if (!overlay || !content) return;
   const requestId = ++artistPopupRequestId;
-  content.innerHTML = `<div class="modal-artist-tag">// ARTIST</div><div class="modal-artist-name">${actName}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
+  content.innerHTML = `<div class="modal-artist-tag">// ARTIST</div><div class="modal-artist-name">${escapeHtml(actName)}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   syncBodyLock();
@@ -1465,10 +1478,10 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
     ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}" title="${isFavorite ? 'Artist entfolgen' : 'Artist folgen'}">${isFavorite ? '♥' : '♡'}</button>`
     : '';
   const igHtml = instaName
-    ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
+    ? `<a class="modal-ig-link" href="https://instagram.com/${escapeHtml(instaName)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${escapeHtml(instaName)}</a>`
     : `<span class="modal-ig-link modal-social-placeholder">Instagram</span>`;
   const scHtml = scUrl
-    ? `<a class="modal-sc-link" href="${scUrl}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1.175 12.225c-.041 0-.075.032-.079.074l-.55 4.754.55 4.757c.004.042.038.074.079.074.04 0 .074-.032.079-.074l.625-4.757-.625-4.754c-.005-.042-.039-.074-.079-.074zm1.558-.55c-.05 0-.09.037-.095.086l-.484 5.304.484 5.307c.005.05.045.086.095.086.05 0 .09-.036.095-.086l.549-5.307-.549-5.304c-.005-.05-.045-.086-.095-.086zm1.574-.31c-.058 0-.105.045-.11.103l-.418 5.614.418 5.617c.005.058.052.103.11.103.058 0 .106-.045.111-.103l.473-5.617-.473-5.614c-.005-.058-.053-.103-.111-.103zm1.59-.128c-.065 0-.118.052-.123.117l-.35 5.742.35 5.745c.005.065.058.117.123.117.065 0 .118-.052.123-.117l.397-5.745-.397-5.742c-.005-.065-.058-.117-.123-.117zm1.589-.077c-.073 0-.132.058-.137.13l-.283 5.819.283 5.822c.005.073.064.13.137.13.073 0 .132-.057.137-.13l.32-5.822-.32-5.819c-.005-.073-.064-.13-.137-.13zm1.591-.032c-.08 0-.145.063-.15.143l-.216 5.851.216 5.854c.005.08.07.143.15.143.08 0 .145-.063.15-.143l.244-5.854-.244-5.851c-.005-.08-.07-.143-.15-.143zm1.592-.014c-.087 0-.158.07-.163.156l-.149 5.865.149 5.868c.005.087.076.156.163.156.087 0 .158-.069.163-.156l.169-5.868-.169-5.865c-.005-.087-.076-.156-.163-.156zm1.59-.004c-.094 0-.171.076-.176.17l-.082 5.869.082 5.872c.005.094.082.17.176.17.094 0 .171-.076.176-.17l.093-5.872-.093-5.869c-.005-.094-.082-.17-.176-.17zm1.59.004c-.1 0-.181.08-.186.18l-.014 5.865.014 5.868c.005.1.086.18.186.18.1 0 .181-.08.186-.18l.016-5.868-.016-5.865c-.005-.1-.086-.18-.186-.18zm3.547-1.636C19.5 9.16 17.857 7.5 15.875 7.5c-.504 0-.983.101-1.418.283-.147-3.604-3.13-6.48-6.774-6.48-1.018 0-1.983.224-2.844.625-.31.14-.393.284-.396.41v13.31c.003.13.106.238.238.246h13.318C19.428 15.893 21 14.315 21 12.375c0-1.94-1.572-3.518-3.5-3.519z"/></svg>SoundCloud</a>`
+    ? `<a class="modal-sc-link" href="${safeUrl(scUrl)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1.175 12.225c-.041 0-.075.032-.079.074l-.55 4.754.55 4.757c.004.042.038.074.079.074.04 0 .074-.032.079-.074l.625-4.757-.625-4.754c-.005-.042-.039-.074-.079-.074zm1.558-.55c-.05 0-.09.037-.095.086l-.484 5.304.484 5.307c.005.05.045.086.095.086.05 0 .09-.036.095-.086l.549-5.307-.549-5.304c-.005-.05-.045-.086-.095-.086zm1.574-.31c-.058 0-.105.045-.11.103l-.418 5.614.418 5.617c.005.058.052.103.11.103.058 0 .106-.045.111-.103l.473-5.617-.473-5.614c-.005-.058-.053-.103-.111-.103zm1.59-.128c-.065 0-.118.052-.123.117l-.35 5.742.35 5.745c.005.065.058.117.123.117.065 0 .118-.052.123-.117l.397-5.745-.397-5.742c-.005-.065-.058-.117-.123-.117zm1.589-.077c-.073 0-.132.058-.137.13l-.283 5.819.283 5.822c.005.073.064.13.137.13.073 0 .132-.057.137-.13l.32-5.822-.32-5.819c-.005-.073-.064-.13-.137-.13zm1.591-.032c-.08 0-.145.063-.15.143l-.216 5.851.216 5.854c.005.08.07.143.15.143.08 0 .145-.063.15-.143l.244-5.854-.244-5.851c-.005-.08-.07-.143-.15-.143zm1.592-.014c-.087 0-.158.07-.163.156l-.149 5.865.149 5.868c.005.087.076.156.163.156.087 0 .158-.069.163-.156l.169-5.868-.169-5.865c-.005-.087-.076-.156-.163-.156zm1.59-.004c-.094 0-.171.076-.176.17l-.082 5.869.082 5.872c.005.094.082.17.176.17.094 0 .171-.076.176-.17l.093-5.872-.093-5.869c-.005-.094-.082-.17-.176-.17zm1.59.004c-.1 0-.181.08-.186.18l-.014 5.865.014 5.868c.005.1.086.18.186.18.1 0 .181-.08.186-.18l.016-5.868-.016-5.865c-.005-.1-.086-.18-.186-.18zm3.547-1.636C19.5 9.16 17.857 7.5 15.875 7.5c-.504 0-.983.101-1.418.283-.147-3.604-3.13-6.48-6.774-6.48-1.018 0-1.983.224-2.844.625-.31.14-.393.284-.396.41v13.31c.003.13.106.238.238.246h13.318C19.428 15.893 21 14.315 21 12.375c0-1.94-1.572-3.518-3.5-3.519z"/></svg>SoundCloud</a>`
     : `<span class="modal-sc-link modal-social-placeholder">SoundCloud</span>`;
 
   // Rating stats block
@@ -1494,11 +1507,11 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const rateBtn = sessionUser
         ? existingRating
           ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
-          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">★</button>`
+          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}">★</button>`
         : '';
       const city = ev.clubs?.cities?.name;
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
-        return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
+        return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div><div class="modal-event-venue">${escapeHtml(venue)}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
     }).join('')
     : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
 
@@ -1512,11 +1525,11 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const rateBtn = sessionUser
         ? existingRating
           ? `<span class="modal-rated-stars">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</span>`
-          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${name}" data-event-id="${ev.id}" data-event-name="${ev.event_name}">Bewerten</button>`
+          : `<button class="modal-rate-btn" type="button" data-action="open-rating" data-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}">Bewerten</button>`
         : '';
       const city = ev.clubs?.cities?.name;
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
-      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
+      return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div><div class="modal-event-venue">${escapeHtml(venue)}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
     pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
   }
@@ -1524,7 +1537,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   const socialRow = `<div class="modal-social-row">${igHtml}${scHtml}</div>`;
   content.innerHTML = `
     <div class="modal-artist-tag">// ARTIST</div>
-    <div class="artist-modal-header"><div class="modal-artist-name">${name}</div><div class="modal-head-actions">${favHtml}</div></div>
+    <div class="artist-modal-header"><div class="modal-artist-name">${escapeHtml(name)}</div><div class="modal-head-actions">${favHtml}</div></div>
     <div class="modal-divider"></div>
     ${socialRow}
     ${statsHtml}
@@ -2005,14 +2018,22 @@ async function setPresenceStatus(eventId, nextStatus) {
 
 async function handleDenied(eventId) {
   if (!ensureAuthenticated('Live Mode') || !supabaseClient) return;
-  try {
-    await supabaseClient.from('user_presence_log').insert({
-      user_id: sessionUser.id,
-      event_id: eventId,
-      status: 'denied',
-    });
-  } catch (err) {
-    console.warn('Denial log error:', err.message || err);
+  // Only count denial if user was in queue for at least 2 minutes.
+  // Prevents stat manipulation by quickly joining + denying + reloading.
+  const MIN_QUEUE_MS = 2 * 60 * 1000;
+  const queueSince = myQueueStartTime
+    || (userPresence?.updated_at ? new Date(userPresence.updated_at) : null);
+  const countDenial = queueSince && (Date.now() - queueSince.getTime() >= MIN_QUEUE_MS);
+  if (countDenial) {
+    try {
+      await supabaseClient.from('user_presence_log').insert({
+        user_id: sessionUser.id,
+        event_id: eventId,
+        status: 'denied',
+      });
+    } catch (err) {
+      console.warn('Denial log error:', err.message || err);
+    }
   }
   await setPresenceStatus(eventId, 'left');
 }
@@ -2367,8 +2388,8 @@ function renderLivePanel() {
       : '';
     const topAction = status === 'queue'
       ? `<div class="live-entry-actions">
-           <button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>
            <button class="event-action-button live-denied-btn" data-live-action="denied" data-event-id="${eventId}">Access Denied</button>
+           <button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>
          </div>`
       : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">Club verlassen</button>`;
     return `

@@ -1,4 +1,13 @@
 (function initSetradarEventCards() {
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function sortActs(acts) {
     function timeToMinutes(value) {
       if (!value) return Infinity;
@@ -30,8 +39,8 @@
       ? context.renderHeaderMeta(ev)
       : '';
     const venueHtml = ev.clubs?.id
-      ? `<span class="venue-name-group"><span class="venue-tag">${venue}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
-      : `<span class="venue-tag">${venue}</span>`;
+      ? `<span class="venue-name-group"><span class="venue-tag">${escapeHtml(venue)}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
+      : `<span class="venue-tag">${escapeHtml(venue)}</span>`;
     const highlight = context.eventHighlights.get(Number(ev.id));
     const artistRows = acts.map(act => {
       const start = context.fmtTime(act.start_time);
@@ -51,8 +60,8 @@
       const existingRating = actId && context.sessionUser ? context.userActRatings.get(`${actId}:${ev.id}`) : null;
       const actRateBtn = actId && context.sessionUser
         ? existingRating
-          ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${act.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Bewertung ändern">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</button>`
-          : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${act.acts?.name ?? '?'}" data-event-id="${ev.id}" data-event-name="${ev.event_name}" title="Jetzt bewerten">☆☆☆☆☆</button>`
+          ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(act.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Bewertung ändern">${'★'.repeat(existingRating.rating)}${'☆'.repeat(5 - existingRating.rating)}</button>`
+          : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(act.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="Jetzt bewerten">☆☆☆☆☆</button>`
         : '';
       const flairs = [
         isBestAct ? '<span class="act-flair act-flair--best">Bester Act</span>' : '',
@@ -66,7 +75,7 @@
             ${actFollowBtn}
           </span>
           <span class="artist-name">
-            <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${act.acts?.name ?? '?'}">${act.acts?.name ?? '?'}</span>
+            <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${escapeHtml(act.acts?.name ?? '?')}">${escapeHtml(act.acts?.name ?? '?')}</span>
             ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
           </span>
           <span class="artist-row-right">
@@ -82,7 +91,7 @@
       <div class="event-card${isOpen ? ' open' : ''}" data-event-id="${ev.id}">
         <div class="card-header" data-action="toggle-timetable" data-event-id="${ev.id}">
           <div class="event-heading">
-            <div class="event-name">${ev.event_name}</div>
+            <div class="event-name">${escapeHtml(ev.event_name)}</div>
             ${headerMeta}
           </div>
           <div class="event-meta">
