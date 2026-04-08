@@ -1182,6 +1182,57 @@ main {
 }
 
 .search-active-banner strong { color: var(--white); }
+
+/* ── Club Stats Bar ─────────────────────────────────────────────────────── */
+.club-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid #1a1a1a;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.club-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  align-items: center;
+}
+
+.club-stat-val {
+  font-family: var(--display);
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  line-height: 1;
+}
+
+.club-stat-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+
+.club-stat-divider {
+  width: 1px;
+  height: 32px;
+  background: #222;
+  flex-shrink: 0;
+  margin: 0 8px;
+}
+
+.club-stat-empty {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--grey);
+  letter-spacing: 0.06em;
+}
 .search-banner-close {
   background: none;
   border: none;
@@ -2853,6 +2904,12 @@ body.live-mode-active main {
   flex-wrap: wrap;
 }
 
+.live-entry-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .live-next-btn {
   color: var(--green);
   border-color: var(--green-dim);
@@ -2861,6 +2918,17 @@ body.live-mode-active main {
 .live-next-btn:hover {
   background: rgba(61, 220, 132, 0.06);
   border-color: var(--green);
+}
+
+.live-denied-btn {
+  color: var(--red);
+  border-color: var(--red-dim);
+  letter-spacing: 0.06em;
+}
+
+.live-denied-btn:hover {
+  background: rgba(255, 32, 32, 0.06);
+  border-color: var(--red);
 }
 
 .live-leave-btn {

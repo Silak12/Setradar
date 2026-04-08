@@ -1953,6 +1953,17 @@ async function loadProfile() {
     }
     presenceLogRows = logRows || [];
     presenceStats = computePresenceStats(presenceLogRows, clubByEventId);
+
+    // Einlassquote: in_club / (in_club + denied)
+    const inClubCount  = presenceLogRows.filter(r => r.status === 'in_club').length;
+    const deniedCount  = presenceLogRows.filter(r => r.status === 'denied').length;
+    const totalAttempts = inClubCount + deniedCount;
+    const entryRateEl = document.getElementById('detailEntryRate');
+    if (entryRateEl) {
+      entryRateEl.textContent = totalAttempts
+        ? `${Math.round((inClubCount / totalAttempts) * 100)}% (${inClubCount}/${totalAttempts})`
+        : '—';
+    }
   } catch (err) {
     console.warn('Presence log fetch error (table may not exist yet):', err.message || err);
   }

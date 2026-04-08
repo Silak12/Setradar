@@ -77,6 +77,7 @@ let favoriteClubIds = new Set();
 let favoriteActIds = new Set();
 let userActAvgRatings = new Map();  // actId → avg rating across all events (1–5)
 let collabRecsMap     = new Map();  // actId → collab confidence (0–100)
+const clubStatsCache  = new Map();  // clubName → { waitMin, entryRate, fetched }
 let popularEvents = [];
 let pendingActionKeys = new Set();
 let activeSearch = null;
@@ -1125,10 +1126,54 @@ function countUpcomingEvents(idOrName, type) {
   if (type === 'artist') return allEvents.filter(ev => isUpcomingOrRunningEvent(ev) && (ev.event_acts || []).some(a => a.acts && (a.acts.id == idOrName || a.acts.name === idOrName))).length;
   return visibleEvents.filter(ev => isUpcomingOrRunningEvent(ev) && ev.clubs?.name === idOrName).length;
 }
+async function fetchClubStats(clubName) {
+  // Calls a SECURITY DEFINER RPC — returns aggregated data across all users,
+  // bypasses RLS safely (no individual rows exposed). Works for anon too.
+  const client = supabaseAnonClient || supabaseClient;
+  if (!client) return null;
+  if (clubStatsCache.has(clubName)) return clubStatsCache.get(clubName);
+
+  const clubEventIds = allEvents
+    .filter(ev => ev.clubs?.name === clubName)
+    .map(ev => Number(ev.id));
+  if (!clubEventIds.length) { clubStatsCache.set(clubName, null); return null; }
+
+  try {
+    const { data, error } = await client.rpc('get_club_stats', { p_event_ids: clubEventIds });
+    if (error || !data?.[0]) { clubStatsCache.set(clubName, null); return null; }
+    const row = data[0];
+    const stats = {
+      avgWait:    row.avg_wait_minutes != null ? Number(row.avg_wait_minutes) : null,
+      entryRate:  row.entry_rate      != null ? Number(row.entry_rate)       : null,
+      inClub:     Number(row.in_club_count  || 0),
+      denied:     Number(row.denied_count   || 0),
+      total:      Number(row.total_attempts || 0),
+    };
+    clubStatsCache.set(clubName, stats);
+    return stats;
+  } catch { clubStatsCache.set(clubName, null); return null; }
+}
+
 function showClubSearch(clubName) {
   activeSearch = { type: 'club', name: clubName, label: `Club: ${clubName}` };
   searchMode = true;
   renderSearchResults(activeSearch.label, groupByDate(getVisibleEvents().filter(ev => ev.clubs?.name === clubName && isUpcomingOrRunningEvent(ev))));
+  // Fetch and inject stats asynchronously — doesn't block render
+  fetchClubStats(clubName).then(stats => {
+    const bar = document.getElementById('clubStatsBar');
+    if (!bar) return;
+    if (!stats) {
+      bar.innerHTML = `<span class="club-stat-empty">Noch keine persönlichen Daten für diesen Club.</span>`;
+      return;
+    }
+    const waitStr  = stats.avgWait != null ? (stats.avgWait < 60 ? `${stats.avgWait} min` : `${Math.floor(stats.avgWait/60)}h ${stats.avgWait%60}min`) : '—';
+    const rateStr  = stats.entryRate != null ? `${stats.entryRate}% (${stats.inClub}/${stats.inClub + stats.denied})` : '—';
+    bar.innerHTML = `
+      <div class="club-stat"><span class="club-stat-val">${waitStr}</span><span class="club-stat-label">Ø Wartezeit</span></div>
+      <div class="club-stat-divider"></div>
+      <div class="club-stat"><span class="club-stat-val">${rateStr}</span><span class="club-stat-label">Einlassquote</span></div>
+    `;
+  });
 }
 function showArtistSearch(actId, actName) {
   activeSearch = { type: 'artist', id: actId, name: actName, label: `Artist: ${actName}` };
@@ -1147,11 +1192,16 @@ function renderSearchResults(label, grouped) {
   renderPopularEvents();
   updateStatusBar();
   if (!grouped.length) {
-    main.innerHTML = `<div class="search-active-banner"><span><strong>${label}</strong> - Keine kommenden Events</span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div><div class="empty-state"><span>Keine Events gefunden</span></div>`;
+    const statsBlock = activeSearch?.type === 'club' ? `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">Lade Stats…</span></div>` : '';
+    main.innerHTML = `<div class="search-active-banner"><span><strong>${label}</strong> - Keine kommenden Events</span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>${statsBlock}<div class="empty-state"><span>Keine Events gefunden</span></div>`;
     setLastUpdated();
     return;
   }
+  const isClub = activeSearch?.type === 'club';
   let html = `<div class="search-active-banner"><span>Ergebnisse fuer <strong>${label}</strong></span><button class="search-banner-close" type="button" onclick="clearSearch()">Zurueck</button></div>`;
+  if (isClub) {
+    html += `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">Lade Stats…</span></div>`;
+  }
   grouped.forEach(([dateStr, rawEvents]) => {
     const d = formatDateLabel(dateStr), events = sortForDay(rawEvents);
     html += `
@@ -1909,7 +1959,7 @@ async function setPresenceStatus(eventId, nextStatus) {
   if (nextStatus === 'queue') {
     const ev = allEvents.find(e => Number(e.id) === Number(eventId));
     const eventStart = ev ? getEventStartDateTime(ev) : null;
-    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 60 * 60 * 1000) : null;
+    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 10 * 60 * 60 * 1000) : null;
     if (queueOpenAt && new Date() < queueOpenAt) {
       showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
       return;
@@ -1951,6 +2001,20 @@ async function setPresenceStatus(eventId, nextStatus) {
   rerenderView({ preserveDateNavScroll: true });
 
   if (!livePollingId) startLivePolling(eventId);
+}
+
+async function handleDenied(eventId) {
+  if (!ensureAuthenticated('Live Mode') || !supabaseClient) return;
+  try {
+    await supabaseClient.from('user_presence_log').insert({
+      user_id: sessionUser.id,
+      event_id: eventId,
+      status: 'denied',
+    });
+  } catch (err) {
+    console.warn('Denial log error:', err.message || err);
+  }
+  await setPresenceStatus(eventId, 'left');
 }
 
 async function submitQueueReport(eventId, level) {
@@ -2302,7 +2366,10 @@ function renderLivePanel() {
       ? `<div class="live-wait-result"><span class="live-wait-label">In der Schlange seit</span><strong>${fmtWaitTime(myQueueStartTime, null)}</strong></div>`
       : '';
     const topAction = status === 'queue'
-      ? `<button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>`
+      ? `<div class="live-entry-actions">
+           <button class="event-action-button live-next-btn" data-live-action="next-status" data-event-id="${eventId}">Club betreten</button>
+           <button class="event-action-button live-denied-btn" data-live-action="denied" data-event-id="${eventId}">Access Denied</button>
+         </div>`
       : `<button class="event-action-button live-leave-btn live-leave-btn--top" data-live-action="leave" data-event-id="${eventId}">Club verlassen</button>`;
     return `
       <div class="live-section live-section--personal">
@@ -2514,6 +2581,7 @@ function initLivePanel() {
     }
     if (action === 'queue-report') { await submitQueueReport(eventId, target.dataset.level); return; }
     if (action === 'hype')         { await toggleHype(eventId); renderLivePanel();           return; }
+    if (action === 'denied')       { await handleDenied(eventId); return; }
     if (action === 'next-status') {
       const next = userPresence?.status === 'queue' ? 'in_club' : null;
       if (next) await setPresenceStatus(eventId, next);
@@ -2548,7 +2616,7 @@ function buildPresenceBtn(evId) {
     }
     const ev = allEvents.find(e => Number(e.id) === eventId);
     const eventStart = ev ? getEventStartDateTime(ev) : null;
-    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 60 * 60 * 1000) : null;
+    const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 10 * 60 * 60 * 1000) : null;
     if (queueOpenAt && new Date() < queueOpenAt) {
       return `<button class="event-action-button presence-btn presence-locked" type="button" data-action="queue-locked-info" data-event-id="${eventId}">Warteschlange betreten</button>`;
     }
