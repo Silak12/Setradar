@@ -620,10 +620,45 @@ window.PastEventModal = (() => {
       </div>`;
     overlay.querySelector('.past-event-bg').addEventListener('click', close);
     document.addEventListener('keydown', _keyClose);
+    const sheet = overlay.querySelector('.past-event-sheet');
+    _addDragToDismiss(overlay, sheet, close);
     return overlay;
   }
 
   function _keyClose(e) { if (e.key === 'Escape') close(); }
+
+  function _addDragToDismiss(overlay, sheet, onClose) {
+    // Attach to overlay (persistent), not to topline (gets replaced by _render)
+    let startY = 0, dragging = false;
+    const THRESHOLD = 120;
+
+    overlay.addEventListener('touchstart', e => {
+      if (!e.target.closest('.past-event-topline')) return;
+      startY = e.touches[0].clientY;
+      dragging = true;
+      sheet.style.transition = 'none';
+    }, { passive: true });
+
+    overlay.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const delta = Math.max(0, e.touches[0].clientY - startY);
+      sheet.style.transform = `translateY(${delta}px)`;
+    }, { passive: true });
+
+    const finish = e => {
+      if (!dragging) return;
+      dragging = false;
+      const delta = Math.max(0, (e.changedTouches?.[0]?.clientY ?? startY) - startY);
+      sheet.style.transition = '';
+      if (delta > THRESHOLD) {
+        onClose();
+      } else {
+        sheet.style.transform = '';
+      }
+    };
+    overlay.addEventListener('touchend', finish);
+    overlay.addEventListener('touchcancel', finish);
+  }
 
   // ── Public API ────────────────────────────────────────────────────────────────
 
