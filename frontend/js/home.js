@@ -88,9 +88,10 @@ let userHypedEventIds = new Set();
 let favoriteEventIds = new Set();
 let favoriteClubIds = new Set();
 let favoriteActIds = new Set();
-let userActAvgRatings = new Map();  // actId → avg rating across all events (1–5)
-let collabRecsMap     = new Map();  // actId → collab confidence (0–100)
-const clubStatsCache  = new Map();  // clubName → { waitMin, entryRate, fetched }
+let userActAvgRatings  = new Map();  // actId → avg rating across all events (1–5)
+let collabRecsMap      = new Map();  // actId → collab confidence (0–100)
+const clubStatsCache   = new Map();  // clubName → { waitMin, entryRate, fetched }
+let queueTimelineByEventId = new Map(); // eventId → [{ ts, avgWait, count }, ...]
 let popularEvents = [];
 let pendingActionKeys = new Set();
 let activeSearch = null;
@@ -102,7 +103,7 @@ let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
 let eventSortMode = localStorage.getItem('setradar_event_sort') || 'interested';
 // ── Phase 2: Live Mode state ─────────────────────────────────────────────
 let userPresence = null;          // { user_id, event_id, status } | null
-let liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
+let liveEventData = { queueTimeline: [], mood: null, presenceRows: [], allRatings: [] };
 let livePollingId = null;
 let livePanelExpanded = false;
 let liveGoodbyeEvent = null;   // event after "Club verlassen" — persists until new queue join
@@ -507,11 +508,18 @@ function updateGoogleButtonLabel() {
   if (!label) return;
   label.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.google_signup') : t('auth.google_login');
 }
+function updateAppleButtonLabel() {
+  const label = document.getElementById('authAppleBtnLabel');
+  if (!label) return;
+  label.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.apple_signup') : t('auth.apple_login');
+}
 function setAuthBusy(isBusy) {
   const submitBtn = document.getElementById('authSubmit');
   const googleBtn = document.getElementById('authGoogleBtn');
+  const appleBtn = document.getElementById('authAppleBtn');
   if (submitBtn) submitBtn.disabled = isBusy;
   if (googleBtn) googleBtn.disabled = isBusy;
+  if (appleBtn) appleBtn.disabled = isBusy;
 }
 async function ensureUserProfile() {
   if (!supabaseClient || !sessionUser) return null;
@@ -559,6 +567,7 @@ function setAuthMode(mode) {
   const submit = document.getElementById('authSubmit');
   if (submit) submit.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.signup') : t('auth.login');
   updateGoogleButtonLabel();
+  updateAppleButtonLabel();
   setAuthMessage('');
 }
 function openAuthModal(mode = AUTH_MODES.LOGIN, msg = '') {
@@ -695,6 +704,23 @@ async function onGoogleAuth() {
     setAuthMessage(err.message || 'Google login failed.', 'error');
   }
 }
+async function onAppleAuth() {
+  if (!supabaseClient) { setAuthMessage('Supabase is unavailable.', 'error'); return; }
+  setAuthBusy(true);
+  setAuthMessage(authMode === AUTH_MODES.SIGNUP ? t('auth.apple_signup') + '...' : t('auth.apple_login') + '...');
+  try {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'apple',
+      options: {
+        redirectTo: getAuthRedirectUrl(),
+      },
+    });
+    if (error) throw error;
+  } catch (err) {
+    setAuthBusy(false);
+    setAuthMessage(err.message || 'Apple login failed.', 'error');
+  }
+}
 async function onNavAuthClick() {
   if (!sessionUser) { openAuthModal(AUTH_MODES.LOGIN); return; }
   if (!supabaseClient) return;
@@ -703,7 +729,7 @@ async function onNavAuthClick() {
   clearUserCollections();
   stopLivePolling();
   hideLivePanel();
-  liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
+  liveEventData = { queueStats: null, mood: null, presenceRows: [], allRatings: [] };
   livePanelExpanded = false;
   rerenderView({ preserveDateNavScroll: true });
   supabaseClient.auth.signOut().catch(err => console.warn('Logout error:', err.message || err));
@@ -715,6 +741,7 @@ function initAuthUi() {
   document.getElementById('authModeSignup')?.addEventListener('click', () => setAuthMode(AUTH_MODES.SIGNUP));
   document.getElementById('authForm')?.addEventListener('submit', onAuthSubmit);
   document.getElementById('authGoogleBtn')?.addEventListener('click', onGoogleAuth);
+  document.getElementById('authAppleBtn')?.addEventListener('click', onAppleAuth);
   document.getElementById('navAuthButton')?.addEventListener('click', onNavAuthClick);
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
@@ -738,7 +765,7 @@ function subscribeAuthState() {
       clearUserCollections();
       stopLivePolling();
       hideLivePanel();
-      liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
+      liveEventData = { queueStats: null, mood: null, presenceRows: [], allRatings: [] };
       livePanelExpanded = false;
     }
     if (!_dataLoaded) return;
@@ -923,7 +950,7 @@ function renderEventCard(ev, nextActKeys) {
     : `<span class="venue-tag">${escapeHtml(venue)}</span>`;
   const hl = eventHighlights.get(Number(ev.id));
   const artistRows = acts.map(a => {
-    const start = fmtTime(a.start_time), end = fmtTime(a.end_time), label = start && end ? `${start} - ${end}` : start ? `ab ${start}` : null;
+    const start = fmtTime(a.start_time), end = fmtTime(a.end_time), label = start && end ? `${start} - ${end}` : start ? t('act.from', { time: start }) : null;
     const actKey = `${ev.id}_${a.sort_order}`;
     const mins = nextActKeys.includes(actKey) ? getMinutesUntil(start, ev.event_date) : null;
     const countdown = mins !== null ? fmtCountdown(mins) : null;
@@ -977,7 +1004,7 @@ function renderEventCard(ev, nextActKeys) {
         <div class="event-meta">
           ${venueHtml}
           ${doors ? `<span class="doors-time">↳ ${doors}${close ? ' - ' + close : ''}</span>` : ''}
-          <span class="status-badge ${hasTime ? 'confirmed' : 'pending'}"><span class="status-dot"></span>${hasTime ? 'Timetable' : 'Lineup'}</span>
+          <span class="status-badge ${hasTime ? 'confirmed' : 'pending'}"><span class="status-dot"></span>${hasTime ? t('status.timetable') : t('status.lineup')}</span>
           <span class="card-chevron">${isOpen ? '▾' : '▸'}</span>
         </div>
       </div>
@@ -989,7 +1016,7 @@ function renderEventCard(ev, nextActKeys) {
         </div>
         <div class="event-actions-right">${buildPresenceBtn(ev.id)}</div>
       </div>
-      <div class="artist-list">${artistRows ? `<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">${t('misc.artist')}</span><span class="lineup-header-right"><span class="lh-label">${t('act.rate')}</span><span class="lh-label">${t('misc.time')}</span></span></div>` : ''}${artistRows || `<span class="time-tba">${t('misc.no_info')}</span>`}</div>
+      <div class="artist-list">${artistRows ? `<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">${t('misc.artist')}</span><span class="lineup-header-right"><span class="lh-label">${t('act.rate')}</span><span class="lh-label">${t('misc.time')}</span></span></div>` : ''}${artistRows || `<span class="time-tba">${t('misc.no_info')}</span>`}${buildQueueChartRow(ev.id)}</div>
     </div>
   `;
 }
@@ -1016,7 +1043,7 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
     <div class="day-section">
       <div class="day-label"><div><div class="weekday">${d.weekday}</div>${d.day}.${d.month}</div></div>
       <div class="day-divider"></div>
-      ${events.length ? events.map(ev => renderEventCard(ev, nextActKeys)).join('') : '<div class="no-events">Keine Events an diesem Tag</div>'}
+      ${events.length ? events.map(ev => renderEventCard(ev, nextActKeys)).join('') : `<div class="no-events">${t('empty.no_events_day')}</div>`}
     </div>
   `;
   window.scrollTo(0, scrollY);
@@ -1344,6 +1371,7 @@ function bindActionHandlers() {
       card?.classList.toggle('open', expandedEventIds.has(evId));
       const chevron = card?.querySelector('.card-chevron');
       if (chevron) chevron.textContent = expandedEventIds.has(evId) ? '▾' : '▸';
+      if (expandedEventIds.has(evId)) renderCardQueueChart(evId);
       return;
     }
     if (target.dataset.action === 'toggle-hype') await toggleHype(target.dataset.eventId);
@@ -1504,7 +1532,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
 
   const rows = upcomingEvents.length
     ? upcomingEvents.map(ea => {
-      const ev = ea.events ?? ea, d = formatDateLabel(ev.event_date), start = fmtTime(ea.start_time), end = fmtTime(ea.end_time), slot = start && end ? `${start}-${end}` : start ? `ab ${start}` : null;
+      const ev = ea.events ?? ea, d = formatDateLabel(ev.event_date), start = fmtTime(ea.start_time), end = fmtTime(ea.end_time), slot = start && end ? `${start}-${end}` : start ? t('act.from', { time: start }) : null;
       const ratingKey = `${numericActId}:${ev.id}`;
       const existingRating = userActRatings.get(ratingKey);
       const rateBtn = sessionUser
@@ -1679,6 +1707,34 @@ async function loadPublicHypes(events = allEvents) {
   }
   hypeTotalsByEventId = nextMap;
 }
+async function loadQueueTimeline(events = allEvents) {
+  if (demoMode) return;
+  const client = supabaseAnonClient || supabaseClient;
+  if (!client) return;
+  const ids = visibleEventIds(events);
+  if (!ids.length) return;
+  try {
+    const { data } = await client
+      .from('event_queue_timeline')
+      .select('event_id, bucket_start, avg_wait_minutes, sample_count')
+      .in('event_id', ids)
+      .order('bucket_start');
+    const grouped = new Map();
+    (data || []).forEach(row => {
+      const eid = Number(row.event_id);
+      if (!grouped.has(eid)) grouped.set(eid, []);
+      grouped.get(eid).push({
+        ts:      new Date(row.bucket_start).getTime(),
+        avgWait: Number(row.avg_wait_minutes),
+        count:   Number(row.sample_count || 1),
+      });
+    });
+    grouped.forEach((pts, eid) => queueTimelineByEventId.set(eid, pts));
+  } catch (err) {
+    console.warn('Queue timeline fetch error:', err.message || err);
+  }
+}
+
 async function loadEventHighlights(events = allEvents) {
   const ids = visibleEventIds(events);
   const pubClient = supabaseAnonClient || supabaseClient;
@@ -1866,7 +1922,7 @@ async function refreshEventData({ preserveDateNavScroll = false, flashEventId = 
     syncCitySelectorUi();
   }
   if (demoMode) loadDemoHypes();
-  else { await loadPublicHypes(allEvents); await loadEventHighlights(allEvents); await loadActSpotlight(); }
+  else { await loadPublicHypes(allEvents); await loadEventHighlights(allEvents); await loadActSpotlight(); await loadQueueTimeline(allEvents); }
   await loadUserCollections(allEvents);
   rerenderView({ preserveDateNavScroll });
   _dataLoaded = true;
@@ -1977,7 +2033,7 @@ async function setPresenceStatus(eventId, nextStatus) {
     const eventStart = ev ? getEventStartDateTime(ev) : null;
     const queueOpenAt = eventStart ? new Date(eventStart.getTime() - 10 * 60 * 60 * 1000) : null;
     if (queueOpenAt && new Date() < queueOpenAt) {
-      showQueueInfoToast('Du kannst dich fruehestens 1 Stunde vor Eventstart in die Warteschlange eintragen.');
+      showQueueInfoToast(t('live.queue_locked_info'));
       return;
     }
   }
@@ -1986,7 +2042,7 @@ async function setPresenceStatus(eventId, nextStatus) {
     stopLivePolling();
     const leftEv = allEvents.find(e => Number(e.id) === Number(eventId)) || null;
     userPresence = null;
-    liveEventData = { queue: null, buckets: [], mood: null, presenceRows: [] };
+    liveEventData = { queueStats: null, mood: null, presenceRows: [], allRatings: [] };
     // Preserve myQueueStartTime / myClubEntryTime so "Deine Nacht" stays readable
     // Set goodbye state BEFORE rerenderView so event card shows "Live ▲"
     liveGoodbyeEvent = leftEv || null;
@@ -2066,9 +2122,11 @@ async function submitMoodVote(eventId, mood) {
 async function fetchLiveData(eventId) {
   if (!supabaseClient || !eventId) return;
   try {
-    const [qRes, bRes, mRes, pRes, rRes] = await Promise.all([
-      supabaseClient.from('event_queue_current').select('*').eq('event_id', eventId).maybeSingle(),
-      supabaseClient.from('event_queue_buckets').select('*').eq('event_id', eventId).order('bucket_start'),
+    const pubClient = supabaseAnonClient || supabaseClient;
+    const [tlRes, mRes, pRes, rRes] = await Promise.all([
+      pubClient.from('event_queue_timeline')
+        .select('bucket_start, avg_wait_minutes, sample_count')
+        .eq('event_id', eventId).order('bucket_start'),
       supabaseClient.from('event_mood_current').select('*').eq('event_id', eventId).maybeSingle(),
       sessionUser
         ? supabaseClient.from('user_presence_log')
@@ -2077,25 +2135,23 @@ async function fetchLiveData(eventId) {
             .eq('user_id', sessionUser.id)
             .order('created_at')
         : Promise.resolve({ data: [] }),
-      (supabaseAnonClient || supabaseClient)
-        .from('act_ratings')
-        .select('act_id, rating, was_surprise')
-        .eq('event_id', eventId),
+      pubClient.from('act_ratings').select('act_id, rating, was_surprise').eq('event_id', eventId),
     ]);
     const presenceRows = pRes.data || [];
     const queueRows = presenceRows.filter(r => r.status === 'queue');
-    const clubRows = presenceRows.filter(r => r.status === 'in_club');
+    const clubRows  = presenceRows.filter(r => r.status === 'in_club');
     const lastQueue = queueRows.length ? queueRows[queueRows.length - 1] : null;
-    const lastClub = clubRows.length ? clubRows[clubRows.length - 1] : null;
+    const lastClub  = clubRows.length  ? clubRows[clubRows.length - 1]   : null;
     if (lastQueue?.created_at) myQueueStartTime = new Date(lastQueue.created_at);
-    if (lastClub?.created_at) myClubEntryTime = new Date(lastClub.created_at);
-    liveEventData = {
-      queue: qRes.data || null,
-      buckets: bRes.data || [],
-      mood: mRes.data || null,
-      presenceRows,
-      allRatings: rRes.data || [],
-    };
+    if (lastClub?.created_at)  myClubEntryTime  = new Date(lastClub.created_at);
+    // Parse timeline and keep card map in sync
+    const queueTimeline = (tlRes.data || []).map(r => ({
+      ts:      new Date(r.bucket_start).getTime(),
+      avgWait: Number(r.avg_wait_minutes),
+      count:   Number(r.sample_count || 1),
+    }));
+    queueTimelineByEventId.set(Number(eventId), queueTimeline);
+    liveEventData = { queueTimeline, mood: mRes.data || null, presenceRows, allRatings: rRes.data || [] };
   } catch (err) {
     console.warn('Live data fetch error:', err.message || err);
   }
@@ -2110,115 +2166,122 @@ function startLivePolling(eventId) {
     if (!currentEvent || !userPresence) return;
     const sig = buildLivePanelSignature(currentEvent, userPresence.status, getHype(currentEvent.id).total_hype);
     if (sig === livePanelRenderSignature) {
-      renderQueueGraph();
+      renderLiveQueueChart();
       updateLiveSpotlights();
       return;
     }
     renderLivePanel();
-  }, 15 * 1000);
+  }, 3 * 60 * 1000);
 }
 
-function getLiveQueuePoints() {
-  const LEVEL_MINS = { green: 15, yellow: 40, red: 80, hell: 150 };
-  const points = (liveEventData.buckets || []).map(r => ({
-    ts: new Date(r.bucket_start).getTime(),
-    value: LEVEL_MINS[r.bucket_level] ?? 15,
-    count: r.reports_count ?? 1,
-  })).filter(p => Number.isFinite(p.ts));
-
-  if (myQueueStartTime) {
-    const end = myClubEntryTime || new Date();
-    const waitMinutes = Math.max(0, Math.round((end - myQueueStartTime) / 60000));
-    const ts = end.getTime();
-    if (Number.isFinite(ts)) points.push({ ts, value: waitMinutes, count: 1 });
-  }
-
-  return points.sort((a, b) => a.ts - b.ts);
-}
-
-function renderQueueGraph() {
-  const el = document.getElementById('liveQueueGraph');
+/**
+ * Renders a queue wait-time line chart into `el`.
+ * `points` = [{ ts, avgWait, count }] — already sorted ascending.
+ * `ev`     = event object (for start/end boundaries).
+ * `mini`   = true → compact height for event cards.
+ */
+/**
+ * Pure renderer — draws whatever points it receives. No personal-data injection here.
+ */
+function renderQueueChart(points, ev, el, { mini = false } = {}) {
   if (!el) return;
-  const eventId = getPresenceEventId();
-  const ev = allEvents.find(e => Number(e.id) === Number(eventId));
-
-  const points = getLiveQueuePoints();
   if (!points.length) {
-    el.innerHTML = `<div class="pem-q-empty">${t('live.no_queue_reports')}</div>`;
+    el.innerHTML = `<div class="pem-q-empty">${t('queue.nobody_yet')}</div>`;
     return;
   }
-
-  const W = 280, H = 84;
-  const ml = 34, mr = 10, mt = 10, mb = 22;
-  const cw = W - ml - mr;
-  const ch = H - mt - mb;
-  const maxPoint = Math.max(...points.map(p => p.value), 0);
-  const MAX_VAL = Math.max(150, Math.ceil(maxPoint / 30) * 30 || 150);
-  const GRID_VALS = [0, MAX_VAL * 0.2, MAX_VAL * 0.4, MAX_VAL * 0.6, MAX_VAL * 0.8, MAX_VAL]
-    .map(v => Math.round(v / 10) * 10);
-
+  const W = mini ? 280 : 280;
+  const H = mini ? 48  : 84;
+  const ml = mini ? 28  : 34, mr = 8, mt = mini ? 6 : 10, mb = mini ? 14 : 22;
+  const cw = W - ml - mr, ch = H - mt - mb;
+  const maxWait = Math.max(...points.map(p => p.avgWait), 0);
+  const MAX_VAL = Math.max(60, Math.ceil(maxWait / 30) * 30 || 60);
+  const colorFor = v => v < 30 ? '#22c55e' : v < 60 ? '#f59e0b' : v < 90 ? '#f97316' : '#ef4444';
   const eventStart = getEventStartDateTime(ev) || new Date(points[0].ts);
-  const eventEnd = getEventEndDateTime(ev) || new Date(points[points.length - 1].ts);
+  const eventEnd   = getEventEndDateTime(ev)   || new Date(points[points.length - 1].ts);
   const t0 = eventStart.getTime();
   const t1 = Math.max(t0 + 1, eventEnd.getTime());
   const toX = ts => ml + ((Math.min(Math.max(ts, t0), t1) - t0) / (t1 - t0)) * cw;
-  const toY = v => mt + ch - Math.min(v / MAX_VAL, 1) * ch;
-  const colorFor = v => {
-    if (v < 30) return '#22c55e';
-    if (v < 60) return '#f59e0b';
-    if (v < 90) return '#f97316';
-    if (v < 120) return '#ef4444';
-    return '#dc2626';
-  };
-
-  const gridLines = GRID_VALS.map(v => {
+  const toY = v  => mt + ch - Math.min(v / MAX_VAL, 1) * ch;
+  const fmtAxis = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  // Y grid lines (only in full mode)
+  const gridVals = mini ? [] : [0, MAX_VAL * 0.5, MAX_VAL].map(v => Math.round(v / 10) * 10);
+  const gridLines = gridVals.map(v => {
     const y = toY(v).toFixed(1);
-    const label = v === 0 ? '0' : `${v}m`;
-    return `<line x1="${ml}" y1="${y}" x2="${W - mr}" y2="${y}" stroke="#1e1e1e" stroke-width="1"/>
-            <text x="${ml - 4}" y="${(+y + 3.5).toFixed(1)}" text-anchor="end" fill="#444" font-size="7" font-family="monospace">${label}</text>`;
+    return `<line x1="${ml}" y1="${y}" x2="${W - mr}" y2="${y}" stroke="#1a1a1a" stroke-width="1"/>
+            <text x="${ml - 3}" y="${(+y + 3).toFixed(1)}" text-anchor="end" fill="#333" font-size="6.5" font-family="monospace">${v}m</text>`;
   }).join('');
-
+  // Fill area
   let fillPath = '';
   if (points.length > 1) {
-    const ptStr = points.map(p => `${toX(p.ts).toFixed(1)},${toY(p.value).toFixed(1)}`).join(' ');
-    const bottom = toY(0).toFixed(1);
-    const firstX = toX(points[0].ts).toFixed(1);
-    const lastX = toX(points[points.length - 1].ts).toFixed(1);
+    const ptStr   = points.map(p => `${toX(p.ts).toFixed(1)},${toY(p.avgWait).toFixed(1)}`).join(' ');
+    const bottom  = toY(0).toFixed(1);
+    const firstX  = toX(points[0].ts).toFixed(1);
+    const lastX   = toX(points[points.length - 1].ts).toFixed(1);
     fillPath = `<polygon points="${ptStr} ${lastX},${bottom} ${firstX},${bottom}" fill="rgba(255,32,32,0.06)" stroke="none"/>`;
   }
-
+  // Line segments coloured by avg wait
   let lineSegs = '';
   for (let i = 0; i < points.length - 1; i++) {
     const p1 = points[i], p2 = points[i + 1];
-    const avg = (p1.value + p2.value) / 2;
-    lineSegs += `<line x1="${toX(p1.ts).toFixed(1)}" y1="${toY(p1.value).toFixed(1)}"
-                       x2="${toX(p2.ts).toFixed(1)}" y2="${toY(p2.value).toFixed(1)}"
-                       stroke="${colorFor(avg)}" stroke-width="2.5" stroke-linecap="round"/>`;
+    lineSegs += `<line x1="${toX(p1.ts).toFixed(1)}" y1="${toY(p1.avgWait).toFixed(1)}"
+                       x2="${toX(p2.ts).toFixed(1)}" y2="${toY(p2.avgWait).toFixed(1)}"
+                       stroke="${colorFor((p1.avgWait + p2.avgWait) / 2)}" stroke-width="2" stroke-linecap="round"/>`;
   }
-
+  // Dots
   const dots = points.map(p => {
     const d = new Date(p.ts);
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `<circle cx="${toX(p.ts).toFixed(1)}" cy="${toY(p.value).toFixed(1)}" r="3.5"
-              fill="${colorFor(p.value)}" stroke="#111" stroke-width="1.5">
-            <title>${hh}:${mm} — ca. ${Math.round(p.value)} min (${p.count} Meldungen)</title>
-            </circle>`;
+    return `<circle cx="${toX(p.ts).toFixed(1)}" cy="${toY(p.avgWait).toFixed(1)}" r="${mini ? 2.5 : 3}"
+              fill="${colorFor(p.avgWait)}" stroke="#111" stroke-width="1.2">
+            <title>${fmtAxis(d)} — ${Math.round(p.avgWait)} min (n=${p.count})</title></circle>`;
   }).join('');
-
-  const fmtAxis = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  // X axis labels
   const xLabels = `
-    <text x="${ml}" y="${H - 5}" text-anchor="start" fill="#444" font-size="7" font-family="monospace">${fmtAxis(eventStart)}</text>
-    <text x="${W - mr}" y="${H - 5}" text-anchor="end" fill="#444" font-size="7" font-family="monospace">${fmtAxis(eventEnd)}</text>`;
+    <text x="${ml}" y="${H - 2}" text-anchor="start" fill="#333" font-size="6.5" font-family="monospace">${fmtAxis(eventStart)}</text>
+    <text x="${W - mr}" y="${H - 2}" text-anchor="end" fill="#333" font-size="6.5" font-family="monospace">${fmtAxis(eventEnd)}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="${t('live.queue_chart_aria')}">
+    ${gridLines}${fillPath}${lineSegs}${dots}${xLabels}
+  </svg>`;
+}
 
-  el.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" class="pem-q-svg" aria-label="${t('live.queue_chart_aria')}">
-      ${gridLines}
-      ${fillPath}
-      ${lineSegs}
-      ${dots}
-      ${xLabels}
-    </svg>`;
+/** Merges server timeline with the current user's personal data point. */
+function withPersonalPoint(serverPoints, eventId) {
+  if (!myQueueStartTime) return [...serverPoints];
+  // Only include personal data for the event the user actually joined
+  if (!userPresence || Number(userPresence.event_id) !== Number(eventId)) return [...serverPoints];
+  const end = myClubEntryTime || new Date();
+  const waitMinutes = Math.max(1, Math.round((end - myQueueStartTime) / 60000));
+  const ts = myQueueStartTime.getTime();
+  // Remove any server bucket that overlaps with our exact personal point, then add ours
+  const filtered = serverPoints.filter(p => Math.abs(p.ts - ts) >= 15 * 60000);
+  return [...filtered, { ts, avgWait: waitMinutes, count: 1 }].sort((a, b) => a.ts - b.ts);
+}
+
+function renderLiveQueueChart() {
+  const el = document.getElementById('liveQueueChart');
+  if (!el) return;
+  const eventId = getPresenceEventId();
+  const ev = allEvents.find(e => Number(e.id) === Number(eventId));
+  const points = withPersonalPoint(liveEventData.queueTimeline || [], eventId);
+  renderQueueChart(points, ev, el);
+}
+
+function renderCardQueueChart(evId) {
+  const el = document.querySelector(`.event-card[data-event-id="${evId}"] .event-queue-chart`);
+  if (!el) return;
+  const server = queueTimelineByEventId.get(Number(evId)) || [];
+  const points = withPersonalPoint(server, evId);
+  const ev = allEvents.find(e => Number(e.id) === Number(evId));
+  renderQueueChart(points, ev, el, { mini: true });
+}
+
+function buildQueueChartRow(evId) {
+  const server = queueTimelineByEventId.get(Number(evId)) || [];
+  const points = withPersonalPoint(server, evId);
+  const empty  = !points.length;
+  return `<div class="event-queue-row">
+    <span class="eqs-label">${t('queue.label')}</span>
+    <div class="event-queue-chart${empty ? ' event-queue-chart--empty' : ''}">${empty ? `<span class="eqs-empty">${t('queue.nobody_yet')} — ${t('queue.join_hint')}</span>` : ''}</div>
+  </div>`;
 }
 
 function buildMergedRatingsForEvent(eventId) {
@@ -2437,12 +2500,7 @@ function renderLivePanel() {
       ${personalHtml}
       <div class="live-section">
         <div class="live-section-label">${t('live.section_queue')}</div>
-        <div class="pem-q-chart-wrap live-queue-chart" id="liveQueueGraph"></div>
-        <div class="pem-q-legend">
-          <span><span class="pem-q-dot" style="background:#22c55e"></span>${t('live.queue_legend_green')}</span>
-          <span><span class="pem-q-dot" style="background:#f59e0b"></span>${t('live.queue_legend_yellow')}</span>
-          <span><span class="pem-q-dot" style="background:#ef4444"></span>${t('live.queue_legend_red')}</span>
-        </div>
+        <div class="pem-q-chart-wrap" id="liveQueueChart"></div>
       </div>
       <div class="live-section">
         <div class="live-section-label">${t('live.section_spotlights')}</div>
@@ -2464,6 +2522,7 @@ function renderLivePanel() {
     if (body) body.scrollTop = previousScrollTop;
   }
   livePanelRenderSignature = signature;
+  renderLiveQueueChart();
   panel.setAttribute('aria-hidden', 'false');
   panel.classList.add('open');
   panel.classList.toggle('fullscreen', livePanelExpanded);
