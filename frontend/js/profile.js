@@ -1776,8 +1776,8 @@ function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } =
   }
 
   const today = getTodayLocalDateStr();
-  const upcoming = profileHypedRows.filter(h => h.events?.event_date >= today);
-  const past     = profileHypedRows.filter(h => h.events?.event_date < today);
+  const upcoming = profileHypedRows.filter(h => h.events?.event_date >= today).sort((a, b) => a.events.event_date.localeCompare(b.events.event_date));
+  const past     = profileHypedRows.filter(h => h.events?.event_date < today).sort((a, b) => b.events.event_date.localeCompare(a.events.event_date));
   const renderCards = rows => {
     const events = rows.map(row => row.events).filter(Boolean);
     const context = getProfileEventCardContext(events);

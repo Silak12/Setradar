@@ -753,6 +753,7 @@ function initAuthUi() {
 function subscribeAuthState() {
   if (!supabaseClient) return;
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    if (_event === 'INITIAL_SESSION') return;
     sessionUser = session?.user || null;
     if (sessionUser) {
       await fetchUserProfile();
