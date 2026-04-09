@@ -98,6 +98,7 @@ let activeSearch = null;
 let authMode = AUTH_MODES.LOGIN;
 let demoMode = false;
 let _dataLoaded = false;
+let _sessionReady = false;
 let availableCities = [];
 let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
 let eventSortMode = localStorage.getItem('setradar_event_sort') || 'interested';
@@ -514,12 +515,10 @@ function updateAppleButtonLabel() {
   label.textContent = authMode === AUTH_MODES.SIGNUP ? t('auth.apple_signup') : t('auth.apple_login');
 }
 function setAuthBusy(isBusy) {
-  const submitBtn = document.getElementById('authSubmit');
-  const googleBtn = document.getElementById('authGoogleBtn');
-  const appleBtn = document.getElementById('authAppleBtn');
-  if (submitBtn) submitBtn.disabled = isBusy;
-  if (googleBtn) googleBtn.disabled = isBusy;
-  if (appleBtn) appleBtn.disabled = isBusy;
+  ['authSubmit', 'authGoogleBtn', 'authAppleBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = isBusy;
+  });
 }
 async function ensureUserProfile() {
   if (!supabaseClient || !sessionUser) return null;
@@ -590,7 +589,6 @@ function closeAuthModal() {
 }
 function updateAuthUi() {
   const user = document.getElementById('navUserState');
-  const button = document.getElementById('navAuthButton');
   if (user) {
     user.textContent = userLabel();
     if (sessionUser) {
@@ -599,11 +597,10 @@ function updateAuthUi() {
       user.title = t('profile.eyebrow').replace('//', '').trim();
     } else {
       user.removeAttribute('href');
-      user.style.cursor = 'default';
-      user.removeAttribute('title');
+      user.style.cursor = 'pointer';
+      user.title = t('nav.login');
     }
   }
-  if (button) button.textContent = sessionUser ? t('nav.logout') : t('nav.login');
 }
 async function fetchUserProfile() {
   if (!supabaseClient || !sessionUser) { userProfile = null; return null; }
@@ -636,12 +633,14 @@ async function hydrateSession() {
   revealNavbar();
 }
 function revealNavbar() {
+  _sessionReady = true;
   const el = document.getElementById('navbarRight');
   if (el) el.style.visibility = '';
   updateAuthUi();
 }
 function ensureAuthenticated(label = 'This action') {
   if (sessionUser) return true;
+  if (!_sessionReady) return false;
   openAuthModal(AUTH_MODES.LOGIN, `${label} requires login.`);
   return false;
 }
@@ -751,7 +750,9 @@ function initAuthUi() {
   document.getElementById('authForm')?.addEventListener('submit', onAuthSubmit);
   document.getElementById('authGoogleBtn')?.addEventListener('click', onGoogleAuth);
   document.getElementById('authAppleBtn')?.addEventListener('click', onAppleAuth);
-  document.getElementById('navAuthButton')?.addEventListener('click', onNavAuthClick);
+  document.getElementById('navUserState')?.addEventListener('click', e => {
+    if (!sessionUser) { e.preventDefault(); openAuthModal(AUTH_MODES.LOGIN); }
+  });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (document.getElementById('authOverlay')?.classList.contains('open')) closeAuthModal();
