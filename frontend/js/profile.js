@@ -888,7 +888,7 @@ function renderRatedActsPage(animDir = 0) {
 
   const doRender = () => {
     if (!acts.length) {
-      page.innerHTML = `<div class="profile-empty">${ratedActsSearchQuery ? 'Keine bewerteten Acts fuer diese Suche gefunden.' : 'Keine Acts mit dieser Bewertung.'}</div>`;
+      page.innerHTML = `<div class="profile-empty">${ratedActsSearchQuery ? t('profile.no_rated_acts_search') : t('profile.no_rated_acts_filter')}</div>`;
       return;
     }
     page.innerHTML = slice.map((a, i) => {
@@ -1038,8 +1038,8 @@ function formatDateLabel(dateStr) {
   return {
     day: String(d.getDate()).padStart(2, '0'),
     month: String(d.getMonth() + 1).padStart(2, '0'),
-    monthShort: ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()],
-    weekday: ['SO', 'MO', 'DI', 'MI', 'DO', 'FR', 'SA'][d.getDay()],
+    monthShort: t('date.months_short')[d.getMonth()],
+    weekday: t('date.weekdays_short')[d.getDay()].toUpperCase(),
   };
 }
 function getDateStr(daysOffset = 0) {
@@ -1161,7 +1161,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
         const ev = ea.events ?? ea;
         const d = formatDateLabel(ev.event_date);
         const start = fmtTime(ea.start_time), end = fmtTime(ea.end_time);
-        const slot = start && end ? `${start}–${end}` : start ? `ab ${start}` : null;
+        const slot = start && end ? `${start}–${end}` : start ? t('act.from', { time: start }) : null;
         const ratingKey = `${numericActId}:${ev.id}`;
         const existingRating = userActRatings.get(ratingKey);
         const rateBtn = sessionUser
@@ -1173,7 +1173,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
         const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
         return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}${slot ? `<div class="modal-event-time">${slot}</div>` : ''}<span class="modal-event-goto">-></span></div></div>`;
       }).join('')
-    : `<div class="modal-no-events">Keine kommenden Events gefunden</div>`;
+    : `<div class="modal-no-events">${t('empty.no_upcoming')}</div>`;
 
   let pastHtml = '';
   if (pastEvents.length) {
@@ -1190,7 +1190,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
       return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
-    pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
+    pastHtml = `<div class="modal-events-label modal-events-label--past">${t('profile.past_events')} (${pastEvents.length})</div>${pastRows}`;
   }
 
   const socialRow = `<div class="modal-social-row">${igHtml}${scHtml}</div>`;
@@ -1201,7 +1201,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
     <div class="modal-divider"></div>
     ${socialRow}
     ${statsHtml}
-    <div class="modal-events-label">Kommende Events (${upcomingEvents.length})</div>
+    <div class="modal-events-label">${t('profile.upcoming_events')} (${upcomingEvents.length})</div>
     ${rows}
     ${pastHtml}
     <div class="modal-scanner"></div>
@@ -1787,12 +1787,12 @@ function renderHypesList(hyped = allProfileHypedRows, { updateSource = false } =
   let html = '';
 
   if (upcoming.length) {
-    html += `<div class="profile-section-sublabel">Kommende Events</div>`;
+    html += `<div class="profile-section-sublabel">${t('profile.upcoming_events')}</div>`;
     html += `<div class="profile-event-cards">${renderCards(upcoming)}</div>`;
   }
 
   if (past.length) {
-    html += `<div class="profile-section-sublabel${upcoming.length ? ' profile-section-sublabel--mt' : ''}">Vergangene Events</div>`;
+    html += `<div class="profile-section-sublabel${upcoming.length ? ' profile-section-sublabel--mt' : ''}">${t('profile.past_events')}</div>`;
     html += `<div class="profile-event-cards">${renderCards(past)}</div>`;
   }
 

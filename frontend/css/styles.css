@@ -144,11 +144,32 @@ body::before {
   font-family: var(--display);
   font-size: 28px;
   letter-spacing: 0.04em;
+  cursor: pointer;
   color: var(--white);
   line-height: 1;
 }
 
 .logo span { color: var(--red); }
+
+.logo:hover { opacity: 0.75; }
+
+.nav-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--grey-lt);
+  border: 1px solid var(--grey);
+  padding: 5px 8px;
+  text-decoration: none;
+  line-height: 1;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-home-btn:hover {
+  color: var(--white);
+  border-color: var(--grey-lt);
+}
 
 .navbar-right { display: flex; align-items: center; gap: 10px; }
 
@@ -1592,12 +1613,12 @@ main {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .user-pill {
-  font-size: 9px;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--grey-lt);
-  border: 1px solid var(--grey);
-  padding: 5px 8px;
+  color: var(--white);
+  border: 1px solid var(--grey-lt);
+  padding: 5px 10px;
   max-width: 132px;
   white-space: nowrap;
   overflow: hidden;
@@ -2255,6 +2276,14 @@ button.venue-tag.active {
 .auth-social-btn:disabled {
   opacity: 0.65;
   cursor: default;
+}
+
+.auth-social-btn + .auth-social-btn {
+  margin-top: 8px;
+}
+
+.auth-social-btn--apple .auth-social-icon {
+  font-size: 18px;
 }
 
 .auth-social-icon {
@@ -4053,6 +4082,35 @@ a.profile-list-meta:hover { color: var(--white); }
   color: var(--grey);
   padding: 12px 0;
   opacity: 0.6;
+}
+
+/* ── Event card queue chart row ──────────────────────────────────────────────── */
+.event-queue-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0 2px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.eqs-label {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+.event-queue-chart {
+  width: 100%;
+  overflow: hidden;
+}
+.event-queue-chart--empty {
+  padding: 4px 0 2px;
+}
+.eqs-empty {
+  font-size: 9px;
+  color: var(--grey);
+  opacity: 0.55;
+  letter-spacing: 0.04em;
 }
 
 /* ── Dabei-Tab ───────────────────────────────────────────────────────────────── */

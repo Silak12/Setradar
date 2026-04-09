@@ -97,19 +97,19 @@
           <div class="event-meta">
             ${venueHtml}
             ${doors ? `<span class="doors-time">↳ ${doors}${close ? ' - ' + close : ''}</span>` : ''}
-            <span class="status-badge ${hasTime ? 'confirmed' : 'pending'}"><span class="status-dot"></span>${hasTime ? 'Timetable' : 'Lineup'}</span>
+            <span class="status-badge ${hasTime ? 'confirmed' : 'pending'}"><span class="status-dot"></span>${hasTime ? window.t('status.timetable') : window.t('status.lineup')}</span>
             <span class="card-chevron">${isOpen ? '▾' : '▸'}</span>
           </div>
         </div>
         <div class="event-actions">
           <div class="event-actions-left">
             <button class="event-action-button hype-button${isHyped ? ' active' : ''}" type="button" data-action="toggle-hype" data-event-id="${ev.id}" aria-pressed="${isHyped}">
-              <span class="spark-icon">&#10022;</span><span>Interessiert</span><span class="hype-count">${hype.total_hype}</span>
+              <span class="spark-icon">&#10022;</span><span>${window.t('sort.interested')}</span><span class="hype-count">${hype.total_hype}</span>
             </button>
           </div>
           <div class="event-actions-right">${context.buildPresenceBtn(ev.id)}</div>
         </div>
-        <div class="artist-list">${artistRows ? '<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">Artist</span><span class="lineup-header-right"><span class="lh-label">Rate</span><span class="lh-label">Zeit</span></span></div>' : ''}${artistRows || '<span class="time-tba">Noch keine Infos</span>'}</div>
+        <div class="artist-list">${artistRows ? `<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">${window.t('misc.artist')}</span><span class="lineup-header-right"><span class="lh-label">${window.t('act.rate')}</span><span class="lh-label">${window.t('misc.time')}</span></span></div>` : ''}${artistRows || `<span class="time-tba">${window.t('misc.no_info')}</span>`}</div>
       </div>
     `;
   }
