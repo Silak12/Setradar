@@ -619,7 +619,7 @@ async function fetchUserProfile() {
   }
 }
 async function hydrateSession() {
-  if (!supabaseClient) { sessionUser = null; userProfile = null; return; }
+  if (!supabaseClient) { sessionUser = null; userProfile = null; revealNavbar(); return; }
   try {
     const { data, error } = await supabaseClient.auth.getSession();
     if (error) throw error;
@@ -633,6 +633,12 @@ async function hydrateSession() {
     await ensureUserProfile();
     cleanupAuthReturnUrl();
   } else userProfile = null;
+  revealNavbar();
+}
+function revealNavbar() {
+  const el = document.getElementById('navbarRight');
+  if (el) el.style.visibility = '';
+  updateAuthUi();
 }
 function ensureAuthenticated(label = 'This action') {
   if (sessionUser) return true;
@@ -735,6 +741,9 @@ async function onNavAuthClick() {
   supabaseClient.auth.signOut().catch(err => console.warn('Logout error:', err.message || err));
 }
 function initAuthUi() {
+  window.addEventListener('pageshow', e => {
+    if (e.persisted) setAuthBusy(false);
+  });
   document.getElementById('authOverlayBg')?.addEventListener('click', closeAuthModal);
   document.getElementById('authModalClose')?.addEventListener('click', closeAuthModal);
   document.getElementById('authModeLogin')?.addEventListener('click', () => setAuthMode(AUTH_MODES.LOGIN));
