@@ -4353,6 +4353,28 @@ a.profile-list-meta:hover { color: var(--white); }
   color: var(--grey-lt);
 }
 
+/* ── Profile Header Top ─────────────────────────────────────────────────────── */
+.profile-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.profile-back-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.profile-back-btn:hover {
+  color: var(--white);
+}
+
 /* ── Profile Name Row + Settings Button ────────────────────────────────────── */
 .profile-name-row {
   display: flex;
@@ -4378,7 +4400,6 @@ a.profile-list-meta:hover { color: var(--white); }
   font-size: 16px;
   cursor: pointer;
   transition: border-color 0.18s, color 0.18s;
-  margin-bottom: 6px;
 }
 
 .profile-settings-btn:hover {

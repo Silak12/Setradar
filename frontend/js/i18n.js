@@ -83,6 +83,7 @@
       'status.updated': 'Updated:',
 
       // Profile page
+      'profile.back':           '← Back to Events',
       'profile.eyebrow':        '// PROFILE',
       'profile.not_logged_in':  'Not logged in',
       'profile.login_required': 'Login required to view your profile.',
@@ -393,6 +394,7 @@
       'status.updated': 'Stand:',
 
       // Profile page
+      'profile.back':           '← Zurück zu den Events',
       'profile.eyebrow':        '// PROFIL',
       'profile.not_logged_in':  'Nicht eingeloggt',
       'profile.login_required': 'Login erforderlich um dein Profil zu sehen.',
