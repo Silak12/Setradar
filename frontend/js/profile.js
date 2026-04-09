@@ -2610,6 +2610,8 @@ async function init() {
   if (!supabaseClient) {
     document.getElementById('profileLoading').style.display = 'none';
     document.getElementById('profileNotLoggedIn').style.display = '';
+    const nr = document.getElementById('navbarRight');
+    if (nr) nr.style.visibility = '';
     return;
   }
 
@@ -2621,6 +2623,11 @@ async function init() {
   } catch {
     sessionUser = null;
   }
+
+  // Reveal navbar only after session is known (prevents Guest flash)
+  const navbarRight = document.getElementById('navbarRight');
+  if (navbarRight) navbarRight.style.visibility = '';
+  updateNavbar(sessionUser ? (sessionUser.user_metadata?.display_name || sessionUser.email) : null);
 
   const loading = document.getElementById('profileLoading');
   const notLoggedIn = document.getElementById('profileNotLoggedIn');
