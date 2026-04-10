@@ -24,6 +24,9 @@ from bot.human import HumanBehavior
 from bot.vision import StoryVision
 from bot.stories import StoryCapture
 
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+
 
 def setup_logging(cfg):
     Path("logs").mkdir(exist_ok=True)
@@ -37,8 +40,8 @@ def setup_logging(cfg):
 
 
 def load_config():
-    load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
-    with open("config.yaml", "r") as f:
+    load_dotenv(dotenv_path=ROOT_DIR / ".env")
+    with (BASE_DIR / "config.yaml").open("r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     return cfg
 

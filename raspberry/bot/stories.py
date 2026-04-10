@@ -43,6 +43,14 @@ class StoryCapture:
         log.info(f"Screenshot: {filename}")
         return str(filepath)
 
+    def _save_frame(self, img, label="story"):
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        filename = f"{label}_{ts}.png"
+        filepath = self.output_dir / filename
+        cv2.imwrite(str(filepath), img)
+        log.info(f"Screenshot: {filename}")
+        return str(filepath)
+
     def _is_story_open(self):
         """Erkennt ob gerade eine Story angezeigt wird (weiße Progress-Bar oben)."""
         img = self.v.screenshot_to_numpy(self.d)
@@ -54,6 +62,33 @@ class StoryCapture:
         white_pixels = cv2.countNonZero(white_mask)
         log.debug(f"Story Progress-Bar weiße Pixel: {white_pixels}")
         return white_pixels > 100
+
+    def _wait_for_story_advance(self, previous_img, timeout=2.5):
+        """
+        Wartet nach einem Weiterklick, bis sich die Story sichtbar geändert hat.
+        So vermeiden wir Übergangsframes und übersprungene Stories.
+        """
+        deadline = time.time() + timeout
+        latest_img = None
+
+        while time.time() < deadline:
+            if not self._is_story_open():
+                return None
+
+            img = self.v.screenshot_to_numpy(self.d)
+            if img is None:
+                self.h.delay(0.1, 0.2)
+                continue
+
+            latest_img = img
+            diff = cv2.absdiff(img, previous_img)
+            if diff.mean() / 255.0 >= 0.03:
+                self.h.delay(0.15, 0.3)
+                return img
+
+            self.h.delay(0.1, 0.2)
+
+        return latest_img
 
     def run_mini_session(self, uploader=None, max_shots=7):
         """
@@ -76,6 +111,7 @@ class StoryCapture:
         total = 0
         last_img = None
         stuck_count = 0
+        current_img = None
 
         for i in range(max_shots):
             if not self._is_story_open():
@@ -83,7 +119,16 @@ class StoryCapture:
                 break
 
             try:
-                img = self.v.screenshot_to_numpy(self.d)
+                if current_img is None:
+                    self.h.delay(0.25, 0.6)
+                    img = self.v.screenshot_to_numpy(self.d)
+                else:
+                    img = current_img
+                    current_img = None
+
+                if img is None:
+                    log.warning("Konnte Story-Screenshot nicht lesen")
+                    break
 
                 # Stuck-Erkennung (Suggestion-Screen, eingefroren)
                 if last_img is not None:
@@ -106,14 +151,14 @@ class StoryCapture:
                 # Warten bis Text-Overlays / Einblend-Animationen fertig sind
                 self.h.delay(0.5, 1.3)
 
-                filepath = self._save_screenshot("story")
+                filepath = self._save_frame(img, "story")
                 total += 1
 
                 if uploader:
                     uploader.upload_async(filepath, "stories")
 
                 self.d.click(*_next_story_tap())
-                self.h.delay(0.5, 2.0)
+                current_img = self._wait_for_story_advance(img)
 
             except Exception as e:
                 log.warning(f"Fehler bei Shot {i}: {e}")
@@ -165,6 +210,7 @@ class StoryCapture:
         stuck_count = 0
         seen_hashes = []
         max_stories = 200
+        current_img = None
 
         for i in range(max_stories):
             if not self._is_story_open():
@@ -172,7 +218,16 @@ class StoryCapture:
                 break
 
             try:
-                img = self.v.screenshot_to_numpy(self.d)
+                if current_img is None:
+                    self.h.delay(0.25, 0.6)
+                    img = self.v.screenshot_to_numpy(self.d)
+                else:
+                    img = current_img
+                    current_img = None
+
+                if img is None:
+                    log.warning("Konnte Story-Screenshot nicht lesen")
+                    break
 
                 # ── Stuck-Erkennung ───────────────────────────────────────────
                 if last_img is not None:
@@ -203,18 +258,18 @@ class StoryCapture:
                     skipped += 1
                     log.info(f"Duplikat übersprungen ({skipped} gesamt)")
                     self.d.click(0.85, 0.5)
-                    self.h.delay(0.3, 1.0)
+                    current_img = self._wait_for_story_advance(img)
                     continue
                 seen_hashes.append(phash)
 
-                filepath = self._save_screenshot("story")
+                filepath = self._save_frame(img, "story")
                 total += 1
 
                 if uploader:
                     uploader.upload_async(filepath, "stories")
 
                 self.d.click(0.85, 0.5)
-                self.h.delay(0.3, 1.5)
+                current_img = self._wait_for_story_advance(img)
 
             except Exception as e:
                 log.warning(f"Fehler bei Story {i}: {e}")
