@@ -202,6 +202,7 @@
       'sitex.archive_label':      '// Archive',
       'sitex.archive_empty':      'No past editions yet.',
       'sitex.no_edition':         'No edition available yet. Come back soon.',
+      'sitex.back_events':        '← Back to events',
 
       // Dates
       'date.today':          'Today',
@@ -530,6 +531,7 @@
       'sitex.archive_label':      '// Archiv',
       'sitex.archive_empty':      'Noch keine vergangenen Editionen.',
       'sitex.no_edition':         'Noch keine Edition verfügbar. Komm bald wieder.',
+      'sitex.back_events':        '← Zurück zu den Events',
 
       // Dates
       'date.today':          'Heute',

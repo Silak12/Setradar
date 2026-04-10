@@ -171,10 +171,17 @@ body::before {
   border-color: var(--grey-lt);
 }
 
-.navbar-right { display: flex; align-items: center; gap: 10px; }
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
 
 .city-selector {
   position: relative;
+  min-width: 0;
 }
 
 .city-badge {
@@ -1614,6 +1621,7 @@ main {
 .nav-sitex-link {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -1640,6 +1648,9 @@ main {
 
 /* Truncation: verhindert dass langer Username/Stadtname die Navbar sprengt */
 .user-pill {
+  display: inline-block;
+  min-width: 0;
+  flex-shrink: 1;
   max-width: 90px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1647,7 +1658,9 @@ main {
 }
 
 .city-badge-button {
-  max-width: 72px;
+  display: inline-block;
+  min-width: 0;
+  max-width: 96px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2053,7 +2066,7 @@ a.sitex-platform-badge:hover,
   color: var(--white);
   border: 1px solid var(--grey-lt);
   padding: 5px 10px;
-  max-width: 132px;
+  max-width: 128px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5679,4 +5692,14 @@ a.profile-list-meta:hover { color: var(--white); }
     border: 1px solid #2a2a2a;
     animation: fadeIn 0.22s ease;
   }
+}
+.sitex-back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--grey-lt);
+  border-bottom-color: #3a3a3a;
+}
+
+.sitex-back-link:hover {
+  color: var(--white);
 }

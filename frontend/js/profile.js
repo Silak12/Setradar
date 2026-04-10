@@ -485,7 +485,7 @@ function initNavbarAuth() {
 function updateNavbar(displayName) {
   const pill = document.getElementById('navUserState');
   const btn = document.getElementById('navAuthButton');
-  if (pill) pill.textContent = displayName || 'Angemeldet';
+  if (pill) pill.textContent = displayName || t('nav.guest');
   if (btn) btn.textContent = 'Logout';
 }
 
