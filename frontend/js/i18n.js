@@ -186,6 +186,23 @@
       'notif.reminder_label':          'Event Reminder',
       'notif.reminder_desc':           'Morning reminder on the day of an event you follow',
 
+      // Site X
+      'sitex.eyebrow':            '// COMMUNITY CANVAS',
+      'sitex.desc':               'This page belongs to you.\nComment on Instagram or TikTok — the comment with the most likes gets built.\nA message to the scene. A marriage proposal. Your master\'s thesis survey. Anything is possible.',
+      'sitex.loading':            'Loading edition...',
+      'sitex.next_drop':          '// Next Drop',
+      'sitex.status_voting':      'Voting',
+      'sitex.status_building':    'Building',
+      'sitex.status_live':        'Live',
+      'sitex.or':                 'or',
+      'sitex.bip_voting_text':    'Comment what should happen on this page.\nThe comment with the most likes wins.',
+      'sitex.bip_building_text':  'The winning comment is being built right now.\nCome back soon.',
+      'sitex.voting_banner_title':'Voting is live on Instagram & TikTok',
+      'sitex.voting_banner_text': 'Comment what should happen on this page. Most likes wins.',
+      'sitex.archive_label':      '// Archive',
+      'sitex.archive_empty':      'No past editions yet.',
+      'sitex.no_edition':         'No edition available yet. Come back soon.',
+
       // Dates
       'date.today':          'Today',
       'date.yesterday':      'Yesterday',
@@ -496,6 +513,23 @@
       'notif.new_event_club_desc':     'Wenn ein Club dem du folgst ein neues Event ankündigt',
       'notif.reminder_label':          'Event-Erinnerung',
       'notif.reminder_desc':           'Erinnerung morgens am Tag eines Events dem du folgst',
+
+      // Site X
+      'sitex.eyebrow':            '// COMMUNITY CANVAS',
+      'sitex.desc':               'Diese Seite gehört euch.\nKommentiert auf Instagram oder TikTok — der Kommentar mit den meisten Likes wird umgesetzt.\nEine Nachricht an die Szene. Ein Heiratsantrag. Die Umfrage für deine Masterarbeit. Alles ist möglich.',
+      'sitex.loading':            'Lade Edition...',
+      'sitex.next_drop':          '// Next Drop',
+      'sitex.status_voting':      'Voting läuft',
+      'sitex.status_building':    'Wird gebaut',
+      'sitex.status_live':        'Live',
+      'sitex.or':                 'oder',
+      'sitex.bip_voting_text':    'Kommentiere was auf dieser Seite passieren soll.\nDer Kommentar mit den meisten Likes gewinnt.',
+      'sitex.bip_building_text':  'Der Gewinner-Kommentar wird gerade umgesetzt.\nKomm bald wieder.',
+      'sitex.voting_banner_title':'Voting läuft auf Instagram & TikTok',
+      'sitex.voting_banner_text': 'Schreib in die Kommentare was auf dieser Seite passieren soll. Meiste Likes gewinnt.',
+      'sitex.archive_label':      '// Archiv',
+      'sitex.archive_empty':      'Noch keine vergangenen Editionen.',
+      'sitex.no_edition':         'Noch keine Edition verfügbar. Komm bald wieder.',
 
       // Dates
       'date.today':          'Heute',

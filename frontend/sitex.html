@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SITE X — SETRADAR</title>
+  <meta name="description" content="Jede Woche entscheidet die Community was auf dieser Seite passiert." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#080808" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body>
+  <header class="navbar">
+    <a href="./index.html" class="logo" title="Home">SET<span>R</span>ADAR</a>
+    <div class="navbar-right" id="navbarRight">
+      <a href="./sitex.html" class="nav-sitex-link active">SITE<span>X</span></a>
+      <div class="city-selector" id="citySelector">
+        <button class="city-badge city-badge-button" id="cityBadgeButton" type="button" aria-expanded="false" aria-controls="citySelectorPanel">Berlin</button>
+        <div class="city-selector-panel" id="citySelectorPanel" hidden>
+          <div class="city-selector-label" data-i18n="nav.city_select">Select city</div>
+          <input class="city-selector-input" id="citySelectorInput" type="text" data-i18n-placeholder="nav.search_city" placeholder="Search city" autocomplete="off" spellcheck="false" />
+          <div class="city-selector-list" id="citySelectorList"></div>
+        </div>
+      </div>
+      <a class="user-pill" id="navUserState" href="#" data-i18n="nav.guest">Guest</a>
+      <div class="pulse-dot"></div>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-bar-left">
+      <span>// SITE X</span>
+    </div>
+    <div class="status-bar-right" id="statusBarRight">—</div>
+  </div>
+
+  <main id="mainContent">
+
+    <div class="sitex-header">
+      <div class="sitex-eyebrow" data-i18n="sitex.eyebrow">// COMMUNITY CANVAS</div>
+      <div class="sitex-title">SITE<span style="color:var(--red)">X</span></div>
+      <p class="sitex-desc" data-i18n="sitex.desc">
+        Diese Seite gehört euch.<br>
+        Kommentiert auf Instagram oder TikTok — <strong>der Kommentar mit den meisten Likes wird umgesetzt.</strong><br>
+        Eine Nachricht an die Szene. Ein Heiratsantrag. Die Umfrage für deine Masterarbeit. Alles ist möglich.
+      </p>
+    </div>
+
+    <div class="sitex-divider"></div>
+
+    <div id="sitexContent">
+      <div class="loading-screen">
+        <div class="loading-bar"></div>
+        <span data-i18n="sitex.loading">Lade Edition...</span>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="footer"></div>
+
+  <!-- Auth Modal -->
+  <div class="auth-overlay" id="authOverlay" aria-hidden="true">
+    <div class="auth-overlay-bg" id="authOverlayBg"></div>
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="auth-modal-topline"></div>
+      <button class="auth-close" id="authModalClose" type="button" aria-label="Close">
+        <span>ESC</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="auth-content">
+        <div class="auth-eyebrow" data-i18n="auth.account">Account</div>
+        <h2 class="auth-title" id="authTitle" data-i18n="auth.title">Join the Radar</h2>
+        <div class="auth-switcher" role="tablist" aria-label="Auth mode">
+          <button class="auth-tab active" id="authModeLogin" type="button" data-auth-mode="login">Login</button>
+          <button class="auth-tab" id="authModeSignup" type="button" data-auth-mode="signup">Signup</button>
+        </div>
+        <div class="auth-social">
+          <button class="auth-social-btn" id="authGoogleBtn" type="button">
+            <span class="auth-social-icon" aria-hidden="true">G</span>
+            <span id="authGoogleBtnLabel" data-i18n="auth.google_continue">Continue with Google</span>
+          </button>
+          <button class="auth-social-btn auth-social-btn--apple" id="authAppleBtn" type="button">
+            <span class="auth-social-icon" aria-hidden="true">&#63743;</span>
+            <span id="authAppleBtnLabel" data-i18n="auth.apple_continue">Continue with Apple</span>
+          </button>
+        </div>
+        <div class="auth-divider" aria-hidden="true">
+          <span data-i18n="auth.or_email">or with email</span>
+        </div>
+        <form class="auth-form" id="authForm">
+          <label class="auth-field">
+            <span data-i18n="auth.email">Email</span>
+            <input id="authEmail" name="email" type="email" autocomplete="email" required />
+          </label>
+          <label class="auth-field auth-field-optional" id="authDisplayNameRow" style="display:none">
+            <span data-i18n="auth.name">Name</span>
+            <input id="authDisplayName" name="display_name" type="text" autocomplete="nickname" />
+          </label>
+          <label class="auth-field">
+            <span data-i18n="auth.password">Password</span>
+            <input id="authPassword" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <div class="auth-message" id="authMessage" aria-live="polite"></div>
+          <button class="auth-submit" id="authSubmit" type="submit" data-i18n="auth.login">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/cookies.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/legal.js"></script>
+  <script src="js/auth-nav.js"></script>
+  <script>
+    const STATUS_LABELS = {
+      voting:   () => t('sitex.status_voting'),
+      building: () => t('sitex.status_building'),
+      live:     () => t('sitex.status_live'),
+    };
+    function statusLabel(s) { return (STATUS_LABELS[s] || (() => s))(); }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return `${String(d).padStart(2,'0')}.${String(m).padStart(2,'0')}.${y}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function renderBIP(meta) {
+      const isVoting = meta.status === 'voting';
+      return `
+        <div class="sitex-bip">
+          <div class="sitex-bip-label">${isVoting ? t('sitex.status_voting') : t('sitex.status_building')}</div>
+          <div class="sitex-bip-title">BUILD IN<br><span>PROGRESS</span></div>
+          <div class="sitex-bip-cursor"></div>
+          ${isVoting ? `
+            <div class="sitex-bip-platforms">
+              ${meta.instagram_url
+                ? `<a class="sitex-bip-platform-badge" href="${escapeHtml(meta.instagram_url)}" target="_blank" rel="noopener">Instagram →</a>`
+                : `<span class="sitex-bip-platform-badge">Instagram</span>`}
+              <span class="sitex-bip-platform-or">${t('sitex.or')}</span>
+              ${meta.tiktok_url
+                ? `<a class="sitex-bip-platform-badge" href="${escapeHtml(meta.tiktok_url)}" target="_blank" rel="noopener">TikTok →</a>`
+                : `<span class="sitex-bip-platform-badge">TikTok</span>`}
+            </div>
+            <div class="sitex-bip-status">${t('sitex.bip_voting_text')}</div>
+          ` : `
+            <div class="sitex-bip-status">${t('sitex.bip_building_text')}</div>
+          `}
+        </div>
+      `;
+    }
+
+    function renderCurrentEdition(meta, editionKey) {
+      const isLive    = meta.status === 'live';
+      const isVoting  = meta.status === 'voting';
+
+      const votingBanner = isVoting ? `
+        <div class="sitex-voting-banner">
+          <strong>${t('sitex.voting_banner_title')}</strong><br>
+          ${t('sitex.voting_banner_text')}
+        </div>
+      ` : '';
+
+      const commentBlock = (isLive || meta.status === 'building') && meta.comment ? `
+        <div class="sitex-comment-block">${escapeHtml(meta.comment)}</div>
+        ${meta.author ? `<div class="sitex-comment-author">${escapeHtml(meta.author)}</div>` : ''}
+        ${meta.votes  ? `<div class="sitex-comment-votes">${Number(meta.votes).toLocaleString('de')} Likes</div>` : ''}
+      ` : '';
+
+      const canvasInner = isLive
+        ? `<iframe class="sitex-canvas-iframe" src="sitex/${editionKey}/canvas.html" title="Site X Edition ${meta.edition}" loading="lazy" sandbox="allow-scripts allow-same-origin"></iframe>`
+        : renderBIP(meta);
+
+      return `
+        <div class="sitex-edition-meta">
+          <div class="sitex-meta-row">
+            <div class="sitex-meta-left">
+              <div class="sitex-edition-row">
+                <span class="sitex-edition-number">Edition #${String(meta.edition).padStart(3,'0')}</span>
+                <span class="sitex-edition-date">${formatDate(meta.date)}</span>
+                ${meta.instagram_url
+                  ? `<a class="sitex-platform-badge sitex-platform-badge--link" href="${escapeHtml(meta.instagram_url)}" target="_blank" rel="noopener">Instagram</a>`
+                  : `<span class="sitex-platform-badge">Instagram</span>`}
+                ${meta.tiktok_url
+                  ? `<a class="sitex-platform-badge sitex-platform-badge--link" href="${escapeHtml(meta.tiktok_url)}" target="_blank" rel="noopener">TikTok</a>`
+                  : `<span class="sitex-platform-badge">TikTok</span>`}
+                <span class="sitex-platform-badge">${statusLabel(meta.status)}</span>
+              </div>
+              ${votingBanner}
+              ${commentBlock}
+            </div>
+            <div class="sitex-countdown">
+              <div class="sitex-countdown-label">${t('sitex.next_drop')}</div>
+              <div class="sitex-countdown-value" id="sitexCountdownValue">—</div>
+              <div class="sitex-countdown-sub" id="sitexCountdownSub"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sitex-canvas-outer">
+          <div class="sitex-canvas-wrap">
+            ${canvasInner}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderArchive(editions, currentKey) {
+      const past = editions
+        .filter(e => e.key !== currentKey && e.status === 'live')
+        .sort((a, b) => b.edition - a.edition);
+
+      const items = past.length
+        ? past.map(e => `
+            <a class="sitex-archive-item" href="sitex/${e.key}/canvas.html">
+              <span class="sitex-archive-item-num">#${String(e.edition).padStart(3,'0')}</span>
+              <span class="sitex-archive-item-body">
+                <span class="sitex-archive-item-comment">${escapeHtml(e.comment || '—')}</span>
+                <span class="sitex-archive-item-date">${formatDate(e.date)}</span>
+              </span>
+              <span class="sitex-archive-item-arrow">→</span>
+            </a>
+          `).join('')
+        : `<div class="sitex-archive-empty">${t('sitex.archive_empty')}</div>`;
+
+      return `
+        <div class="sitex-divider"></div>
+        <div class="sitex-archive">
+          <div class="sitex-archive-label">${t('sitex.archive_label')}</div>
+          <div class="sitex-archive-list">${items}</div>
+        </div>
+      `;
+    }
+
+    async function initSiteX() {
+      const container = document.getElementById('sitexContent');
+      try {
+        const res = await fetch('sitex/editions.json');
+        if (!res.ok) throw new Error('editions.json not found');
+        const data = await res.json();
+
+        const currentKey   = data.current;
+        const currentEntry = data.editions.find(e => e.key === currentKey);
+        if (!currentEntry) throw new Error('Current edition not found');
+
+        const metaRes = await fetch(`sitex/${currentKey}/meta.json`);
+        if (!metaRes.ok) throw new Error('meta.json not found');
+        const meta = await metaRes.json();
+
+        const sbr = document.getElementById('statusBarRight');
+        if (sbr) sbr.textContent = `#${String(meta.edition).padStart(3,'0')} — ${statusLabel(meta.status)}`;
+
+        document.querySelectorAll('.nav-sitex-link').forEach(el => el.classList.add('active'));
+
+        container.innerHTML =
+          renderCurrentEdition(meta, currentKey) +
+          renderArchive(data.editions, currentKey);
+
+      } catch (err) {
+        console.error('[sitex]', err);
+        container.innerHTML = `
+          <div style="padding:32px 16px; color:var(--grey-lt); font-size:12px; letter-spacing:0.08em;">
+            ${t('sitex.no_edition')}
+          </div>
+        `;
+      }
+    }
+
+    // ── Countdown ─────────────────────────────────────────────────────────────
+    const SITEX_START = new Date('2026-04-10T14:00:00');
+    const SITEX_CYCLE = 7 * 24 * 60 * 60 * 1000;
+
+    function getNextDrop() {
+      const now     = Date.now();
+      const elapsed = now - SITEX_START.getTime();
+      if (elapsed < 0) return SITEX_START;
+      const cycle = Math.floor(elapsed / SITEX_CYCLE) + 1;
+      return new Date(SITEX_START.getTime() + cycle * SITEX_CYCLE);
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function tickCountdown() {
+      const el = document.getElementById('sitexCountdownValue');
+      if (!el) return;
+      const diff = getNextDrop() - Date.now();
+      if (diff <= 0) { el.textContent = '00:00:00:00'; return; }
+      const days  = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const mins  = Math.floor((diff % 3600000)  / 60000);
+      const secs  = Math.floor((diff % 60000)    / 1000);
+      el.textContent = `${pad(days)}:${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+    }
+
+    window.componentsReady.then(async () => {
+      await initSiteX();
+      tickCountdown();
+      setInterval(tickCountdown, 1000);
+    });
+  </script>
+</body>
+</html>

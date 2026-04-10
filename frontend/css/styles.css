@@ -1608,6 +1608,440 @@ main {
   100% { transform: translateY(0); opacity: 1; }
 }
 
+/* ── Navbar Center / SITE X Link ─────────────────────────────────────────── */
+.navbar-center { display: none; }
+
+.nav-sitex-link {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grey-lt);
+  text-decoration: none;
+  border: 1px solid var(--grey);
+  padding: 5px 8px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-sitex-link span { color: var(--red); }
+
+.nav-sitex-link:hover {
+  color: var(--white);
+  border-color: var(--grey-lt);
+}
+
+.nav-sitex-link.active {
+  color: var(--white);
+  border-color: var(--grey-lt);
+}
+
+/* Truncation: verhindert dass langer Username/Stadtname die Navbar sprengt */
+.user-pill {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-badge-button {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SITE X PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.sitex-header {
+  padding: 28px 16px 0;
+  max-width: 700px;
+}
+
+.sitex-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--red);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.sitex-title {
+  font-family: var(--display);
+  font-size: 42px;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.sitex-desc {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--grey-lt);
+  max-width: 560px;
+}
+
+.sitex-desc strong {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.sitex-divider {
+  height: 1px;
+  background: var(--grey);
+  margin: 24px 16px;
+}
+
+/* Current Edition Meta */
+.sitex-edition-meta {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sitex-edition-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sitex-edition-number {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--red);
+  text-transform: uppercase;
+}
+
+.sitex-edition-date {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--grey-lt);
+}
+
+.sitex-platform-badge {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--grey);
+  padding: 2px 7px;
+  color: var(--grey-lt);
+}
+
+.sitex-comment-block {
+  font-size: 13px;
+  color: var(--white);
+  line-height: 1.5;
+  border-left: 2px solid var(--red);
+  padding-left: 12px;
+  margin-top: 4px;
+}
+
+.sitex-comment-author {
+  font-size: 10px;
+  color: var(--grey-lt);
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+}
+
+.sitex-comment-votes {
+  font-size: 10px;
+  color: var(--grey-lt);
+  margin-top: 2px;
+  letter-spacing: 0.06em;
+}
+
+/* Edition Meta Row — zwei Spalten */
+.sitex-meta-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sitex-meta-left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Countdown */
+.sitex-countdown {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.sitex-countdown-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.sitex-countdown-value {
+  font-family: var(--display);
+  font-size: 30px;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sitex-countdown-sub { display: none; }
+
+@media (max-width: 480px) {
+  .sitex-meta-row {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+  .sitex-countdown {
+    text-align: left;
+    width: 100%;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--grey);
+  }
+  .sitex-countdown-sub { text-align: left; }
+  .sitex-countdown-value { font-size: 26px; }
+}
+
+/* Canvas Wrapper */
+.sitex-canvas-outer {
+  padding: 0 16px 32px;
+}
+
+.sitex-canvas-wrap {
+  width: 100%;
+  position: relative;
+  background: #000;
+  border: 1px solid var(--grey);
+  overflow: hidden;
+  height: calc(100svh - var(--navbar-height) - 260px);
+  min-height: 320px;
+  max-height: 680px;
+}
+
+.sitex-canvas-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* BUILD IN PROGRESS Overlay */
+.sitex-bip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  gap: 16px;
+  padding: 24px;
+}
+
+.sitex-bip-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+}
+
+.sitex-bip-title {
+  font-family: var(--display);
+  font-size: 32px;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  text-align: center;
+}
+
+.sitex-bip-title span { color: var(--red); }
+
+.sitex-bip-cursor {
+  width: 2px;
+  height: 28px;
+  background: var(--red);
+  animation: sitex-blink 1s step-end infinite;
+}
+
+@keyframes sitex-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.sitex-bip-platforms {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sitex-bip-platform-badge {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--grey-lt);
+  color: var(--white);
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+a.sitex-bip-platform-badge:hover {
+  border-color: var(--white);
+  background: rgba(255,255,255,0.05);
+}
+
+.sitex-bip-platform-or {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+}
+
+.sitex-bip-status {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.sitex-bip-status em {
+  font-style: normal;
+  color: var(--white);
+}
+
+/* Archive Section */
+.sitex-archive {
+  padding: 0 16px 48px;
+}
+
+.sitex-archive-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--grey-lt);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.sitex-archive-empty {
+  font-size: 12px;
+  color: var(--grey);
+  padding: 24px 0;
+}
+
+.sitex-archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sitex-archive-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--grey);
+  text-decoration: none;
+  transition: background 0.1s;
+}
+
+.sitex-archive-item:last-child {
+  border-bottom: 1px solid var(--grey);
+}
+
+.sitex-archive-item:hover .sitex-archive-item-comment {
+  color: var(--white);
+}
+
+.sitex-archive-item-num {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--red);
+  min-width: 36px;
+  padding-top: 2px;
+}
+
+.sitex-archive-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.sitex-archive-item-comment {
+  font-size: 12px;
+  color: var(--grey-lt);
+  line-height: 1.5;
+  transition: color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sitex-archive-item-date {
+  font-size: 10px;
+  color: var(--grey);
+  margin-top: 3px;
+  letter-spacing: 0.06em;
+}
+
+.sitex-archive-item-arrow {
+  font-size: 12px;
+  color: var(--grey);
+  padding-top: 2px;
+  transition: color 0.15s;
+}
+
+.sitex-archive-item:hover .sitex-archive-item-arrow {
+  color: var(--grey-lt);
+}
+
+/* Voting state */
+a.sitex-platform-badge,
+.sitex-platform-badge--link {
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+a.sitex-platform-badge:hover,
+.sitex-platform-badge--link:hover {
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.sitex-voting-banner {
+  background: rgba(255, 32, 32, 0.06);
+  border: 1px solid rgba(255, 32, 32, 0.25);
+  padding: 10px 14px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--grey-lt);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.sitex-voting-banner strong {
+  color: var(--white);
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .sitex-title { font-size: 32px; }
+  .sitex-canvas-wrap {
+    height: calc(100svh - var(--navbar-height) - 220px);
+    min-height: 280px;
+  }
+  .sitex-bip-title { font-size: 24px; }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    PHASE 1: ACCOUNT + HYPE + FAVORITES
    ═══════════════════════════════════════════════════════════════════════════ */
