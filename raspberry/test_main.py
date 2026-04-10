@@ -19,14 +19,17 @@ from bot.vision import StoryVision
 from bot.stories import StoryCapture
 from main import start_instagram_fresh, check_stories_with_retry
 
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 log = logging.getLogger("test_main")
 
-load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
-with open("config.yaml") as f:
+load_dotenv(dotenv_path=ROOT_DIR / ".env")
+with (BASE_DIR / "config.yaml").open("r", encoding="utf-8") as f:
     cfg = yaml.safe_load(f)
 cfg["DRIVE_FOLDER_ID"] = os.getenv("DRIVE_FOLDER_ID", "")
 
