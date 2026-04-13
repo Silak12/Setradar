@@ -119,11 +119,14 @@ class StoryCapture:
                 break
 
             try:
+                # Nach Weiterklick / beim ersten Shot: warten bis Einblend-
+                # Animationen (z.B. Timetable-Overlay) fertig sind
                 if current_img is None:
-                    self.h.delay(0.25, 0.6)
+                    self.h.delay(2.0, 2.5)
                     img = self.v.screenshot_to_numpy(self.d)
                 else:
-                    img = current_img
+                    self.h.delay(2.0, 2.5)
+                    img = self.v.screenshot_to_numpy(self.d)
                     current_img = None
 
                 if img is None:
@@ -147,9 +150,6 @@ class StoryCapture:
                     else:
                         stuck_count = 0
                 last_img = img
-
-                # Warten bis Text-Overlays / Einblend-Animationen fertig sind
-                self.h.delay(0.5, 1.3)
 
                 filepath = self._save_frame(img, "story")
                 total += 1
