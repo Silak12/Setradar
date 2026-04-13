@@ -18,6 +18,7 @@ Usage:
 """
 
 import os
+import re
 import json
 import time
 import base64
@@ -26,6 +27,8 @@ import difflib
 from datetime import date, datetime
 from pathlib import Path
 
+import numpy as np
+from PIL import Image
 from dotenv import load_dotenv
 from openai import OpenAI
 from supabase import create_client, Client
@@ -43,6 +46,59 @@ PROCESSED_LOG           = Path(__file__).parent / "logs" / "processed_files.json
 OUTPUT_FILE             = Path(__file__).parent / "logs" / "timetable_results.json"
 POLL_INTERVAL           = 300
 DELETE_AFTER_PROCESSING = True
+
+# ── OCR Pre-Filter ────────────────────────────────────────────────────────────
+# Nur Bilder mit Uhrzeiten oder Cancel-Keywords an OpenAI schicken
+
+_TIME_RE      = re.compile(r"\b\d{1,2}:\d{2}\b")
+_CANCEL_KW    = ["cancel", "cancelled", "canceled", "sick", "ill", "leider",
+                 "absagt", "abgesagt", "fällt aus", "not perform"]
+_CROP_TOP_PX  = 80    # Statusbar oben abschneiden
+_EXCLUDE_ZONE = {"x1": 900, "y1": 0, "x2": 1080, "y2": 400}  # Video-Timer oben rechts
+
+_ocr_reader = None
+
+def _get_ocr_reader():
+    global _ocr_reader
+    if _ocr_reader is None:
+        import easyocr
+        _ocr_reader = easyocr.Reader(["en", "de"], gpu=False, verbose=False)
+    return _ocr_reader
+
+
+def ocr_prefilter(img_path: Path) -> bool:
+    """
+    Gibt True zurück wenn das Bild Zeiten (21:00) oder Cancel-Keywords enthält
+    und damit an OpenAI geschickt werden soll.
+    False = irrelevant, überspringen.
+    """
+    try:
+        img    = Image.open(img_path)
+        w, h   = img.size
+        crop   = int(_CROP_TOP_PX * h / 2340)
+        arr    = np.array(img.crop((0, crop, w, h)))
+        results = _get_ocr_reader().readtext(arr, detail=1, paragraph=False)
+
+        time_texts = []
+        full_text  = []
+        for (bbox, text, _) in results:
+            pts = np.array(bbox, dtype=np.int32)
+            pts[:, 1] += crop
+            x1, y1 = int(pts[0][0]), int(pts[0][1])
+            x2, y2 = int(pts[2][0]), int(pts[2][1])
+            excluded = (x1 >= _EXCLUDE_ZONE["x1"] and y1 >= _EXCLUDE_ZONE["y1"]
+                        and x2 <= _EXCLUDE_ZONE["x2"] and y2 <= _EXCLUDE_ZONE["y2"])
+            if not excluded:
+                time_texts.append(text)
+            full_text.append(text)
+
+        has_time   = bool(_TIME_RE.search(" ".join(time_texts)))
+        has_cancel = any(kw in " ".join(full_text).lower() for kw in _CANCEL_KW)
+        return has_time or has_cancel
+
+    except Exception as e:
+        print(f"  [OCR] Fehler: {e} – sende sicherheitshalber an OpenAI")
+        return True
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
@@ -445,6 +501,15 @@ def process_new_images(verbose: bool = True) -> int:
     for img_path in new_images:
         print(f"\n── {img_path.name} ──")
         try:
+            # OCR Pre-Filter: nur Bilder mit Zeiten/Cancel-Keywords an OpenAI
+            if not ocr_prefilter(img_path):
+                print(f"  [OCR] Kein Timetable-Inhalt – überspringe OpenAI")
+                processed.add(img_path.name)
+                save_processed(processed)
+                if DELETE_AFTER_PROCESSING:
+                    img_path.unlink()
+                continue
+
             extracted = analyze_image(openai_client, img_path)
             story_type = extracted.get("type", "irrelevant")
             sets       = extracted.get("sets", [])

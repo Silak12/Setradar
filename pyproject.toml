@@ -19,6 +19,8 @@ dependencies = [
     "numpy>=1.24",
     "pydrive2>=1.6",
     "PyYAML>=6.0",
+    "easyocr>=1.7",
+    "Pillow>=10.0",
 ]
 
 [project.optional-dependencies]
