@@ -143,13 +143,11 @@ def main():
         return
 
     # ── Setup ─────────────────────────────────────────────────────────────────
-    scrape_duration   = b.get("scrape_duration_min", 25) * 60
-    shots_min         = b.get("mini_session_shots_min", 5)
-    shots_max         = b.get("mini_session_shots_max", 10)
-    pause_min         = b.get("mini_session_pause_min", 20)
-    pause_max         = b.get("mini_session_pause_max", 60)
-    no_story_wait     = b.get("no_story_wait_min", 3) * 60
-    restart_every     = b.get("restart_every_sessions", 4)
+    scrape_duration = b.get("scrape_duration_min", 25) * 60
+    shots_min       = b.get("mini_session_shots_min", 15)
+    shots_max       = b.get("mini_session_shots_max", 20)
+    pause_min       = b.get("mini_session_pause_min", 10)
+    pause_max       = b.get("mini_session_pause_max", 30)
 
     log.info(f"=== Scraping startet ({scrape_duration//60} Min) ===")
 
@@ -164,10 +162,9 @@ def main():
     if not start_instagram_fresh(device, log):
         return
 
-    session_start    = time.time()
-    total_captured   = 0
-    mini_sessions    = 0
-    need_scroll_up   = False  # True nachdem wir den Feed runtergeschrollt haben
+    session_start  = time.time()
+    total_captured = 0
+    mini_sessions  = 0
 
     while time.time() - session_start < scrape_duration:
         elapsed   = (time.time() - session_start) / 60
@@ -180,23 +177,30 @@ def main():
                 log.info("Schlafzeit während Session – beende")
                 break
 
-            # Nur hochscrollen wenn wir vorher den Feed runtergescrollt haben
-            if need_scroll_up:
-                human.scroll_to_top_and_refresh()
-                need_scroll_up = False
-            else:
-                human.pull_to_refresh()
-
             img = vision.screenshot_to_numpy(device)
             if img is None or not vision.has_unseen_stories(img):
                 if not check_stories_with_retry(device, vision, human, log):
                     device.app_stop("com.instagram.android")
                     break
-                # Nach erfolgreichem Retry: Bild neu holen
                 img = vision.screenshot_to_numpy(device)
 
-            shots = random.randint(shots_min, shots_max)
-            log.info(f"Mini-Session #{mini_sessions + 1}: max {shots} Shots")
+            # Stories klassifizieren: followed vs suggested
+            followed, suggested, total = vision.count_story_avatars(img)
+
+            if total == 0 or (suggested == total and total > 0):
+                log.info(f"Nur noch suggested Stories ({suggested}/{total}) – beende Session")
+                device.app_stop("com.instagram.android")
+                break
+
+            # Wenige followed Stories übrig → kürzere Session
+            if followed <= 2:
+                shots = random.randint(8, 10)
+                log.info(f"Nur noch {followed} followed – reduziere auf {shots} Shots")
+            else:
+                shots = random.randint(shots_min, shots_max)
+
+            log.info(f"Mini-Session #{mini_sessions + 1}: max {shots} Shots "
+                     f"({followed} followed, {suggested} suggested)")
 
             count = stories.run_mini_session(max_shots=shots)
             total_captured += count
@@ -204,15 +208,13 @@ def main():
             log.info(f"Mini-Session #{mini_sessions}: {count} Shots "
                      f"(gesamt {total_captured})")
 
-            if random.random() < 0.75:
+            # Optional: Feed scrollen (menschliches Verhalten, 50% Chance)
+            if random.random() < 0.5:
+                log.info("Feed-Scroll zwischen Sessions...")
                 human.scroll_feed_light()
-                need_scroll_up = True
 
-            # Periodischer Sicherheits-Neustart damit wir nicht iwo falsch abbiegen
-            if mini_sessions % restart_every == 0:
-                log.info(f"Periodischer Neustart nach {mini_sessions} Mini-Sessions")
-                start_instagram_fresh(device, log)
-                need_scroll_up = False
+            # Vor jeder neuen Mini-Session Instagram neu starten → safe auf Home Feed
+            start_instagram_fresh(device, log)
 
             pause = random.uniform(pause_min, pause_max)
             log.info(f"Pause {pause:.0f}s...")
@@ -230,7 +232,6 @@ def main():
 
     log.info(f"=== Session beendet: {total_captured} Shots, "
              f"{mini_sessions} Mini-Sessions ===")
-    device.screen_off()
 
     # ── Post-Processing: dedup + Drive-Upload ────────────────────────────────
     # Immer aufrufen – auch wenn 0 neue Shots (könnten noch alte Dateien liegen)
