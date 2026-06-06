@@ -1305,7 +1305,9 @@ function initArtistPopup() {
 
     const item = e.target.closest('.profile-act-link, .profile-list-item--rec');
     if (!item) return;
-    if (e.target.closest('a')) return;
+    const clickedLink = e.target.closest('a');
+    if (clickedLink && !item.classList.contains('profile-list-item--rec')) return;
+    if (clickedLink) e.preventDefault();
     const actId = item.dataset.actId;
     const actName = item.dataset.actName;
     if (actId && actName) openArtistPopup(actId, actName);
