@@ -4,20 +4,44 @@
     "area_id": 34,
     "clubs": [
       {
-        "club": "Lokschuppen",
-        "venue_id": 17071
+        "club": "ÆDEN",
+        "venue_id": 187744
       },
       {
-        "club": "RSO",
-        "venue_id": 185172
+        "club": "Berghain",
+        "venue_id": 5031
+      },
+      {
+        "club": "Der weiße Hase",
+        "venue_id": 107593
+      },
+      {
+        "club": "KitKat",
+        "venue_id": 10546
+      },
+      {
+        "club": "Lokschuppen",
+        "venue_id": 17071
       },
       {
         "club": "OST",
         "venue_id": 141987
       },
       {
+        "club": "Renate",
+        "venue_id": 8556
+      },
+      {
         "club": "Ritter Butzke",
         "venue_id": 6950
+      },
+      {
+        "club": "RSO",
+        "venue_id": 185172
+      },
+      {
+        "club": "Tresor",
+        "venue_id": 5494
       }
     ]
   },

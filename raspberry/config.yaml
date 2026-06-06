@@ -22,8 +22,8 @@ behavior:
   scrape_duration_min: 45
 
   # Mini-Session: zufällige Anzahl Screenshots pro Durchgang
-  mini_session_shots_min: 8
-  mini_session_shots_max: 15
+  mini_session_shots_min: 15
+  mini_session_shots_max: 20
 
   # Pause zwischen Mini-Sessions (Sekunden)
   mini_session_pause_min: 10

@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ from postgrest.exceptions import APIError
 from supabase import Client, create_client
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+FRONTEND_CONFIG_FILE = Path(__file__).resolve().parents[2] / "frontend" / "js" / "config.js"
 DEFAULT_INPUT = Path(__file__).with_name("lineup_seed_example.json")
 DEFAULT_SCHEMA_SQL = Path(__file__).with_name("lineup_init.sql")
 
@@ -22,12 +24,77 @@ def _required_env(name: str) -> str:
     return value
 
 
+def _first_env(*names: str) -> str | None:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return None
+
+
+def _extract_js_config_value(source: str, key: str) -> str | None:
+    pattern = rf"{re.escape(key)}\s*:\s*['\"]([^'\"]+)['\"]"
+    match = re.search(pattern, source)
+    if not match:
+        return None
+    value = match.group(1).strip()
+    return value or None
+
+
+def _frontend_supabase_config() -> tuple[str | None, str | None]:
+    if not FRONTEND_CONFIG_FILE.exists():
+        return None, None
+    try:
+        source = FRONTEND_CONFIG_FILE.read_text(encoding="utf-8")
+    except OSError:
+        return None, None
+
+    supabase_url = _extract_js_config_value(source, "SUPABASE_URL")
+    supabase_key = _extract_js_config_value(source, "SUPABASE_PUBLISHABLE_KEY")
+    if not supabase_key:
+        supabase_key = _extract_js_config_value(source, "SUPABASE_ANON")
+    return supabase_url, supabase_key
+
+
 def _supabase_client() -> Client:
-    supabase_url = _required_env("SUPABASE_URL")
-    # Prefer service role for backend writes, fall back to anon key.
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or _required_env(
-        "SUPABASE_ANON_KEY"
+    supabase_url = _first_env(
+        "SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "VITE_SUPABASE_URL",
     )
+
+    # Prefer service role for backend writes, then fall back to publishable/anon key.
+    supabase_key = _first_env(
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_SERVICE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "VITE_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_ANON_KEY",
+    )
+
+    frontend_url, frontend_key = _frontend_supabase_config()
+    if not supabase_url and frontend_url:
+        supabase_url = frontend_url
+        print(f"[INFO] Using SUPABASE_URL from {FRONTEND_CONFIG_FILE}")
+    if not supabase_key and frontend_key:
+        supabase_key = frontend_key
+        print(f"[INFO] Using SUPABASE key from {FRONTEND_CONFIG_FILE}")
+
+    if not supabase_url:
+        raise ValueError(
+            "Missing required environment variable: one of "
+            "SUPABASE_URL, NEXT_PUBLIC_SUPABASE_URL, VITE_SUPABASE_URL"
+        )
+    if not supabase_key:
+        raise ValueError(
+            "Missing required environment variable: one of "
+            "SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY, SUPABASE_SECRET_KEY, "
+            "SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, "
+            "VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_ANON_KEY"
+        )
+
     return create_client(supabase_url, supabase_key)
 
 

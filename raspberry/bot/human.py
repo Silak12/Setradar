@@ -70,6 +70,33 @@ class HumanBehavior:
             return start <= now_min < end
         return now_min >= start or now_min < end
 
+    # ── Zurück zum Home Feed ─────────────────────────────────────
+    def back_to_feed(self):
+        """
+        Stellt sicher dass Instagram im Vordergrund ist und drückt max 1x Back
+        um aus Story-Viewer oder Overlays zu entkommen.
+        Wenn Instagram nicht mehr aktiv ist → neu starten.
+        """
+        cur = self.d.app_current()
+        if "instagram" not in cur.get("package", "").lower():
+            log.info("back_to_feed: Instagram nicht aktiv – starte neu")
+            self.d.app_start("com.instagram.android")
+            time.sleep(5)
+            return
+
+        # Einmal Back drücken reicht um aus Story-Viewer/Overlay zu entkommen
+        self.d.press("back")
+        time.sleep(1.0)
+
+        # Prüfen ob Instagram noch da ist (Back könnte App minimiert haben)
+        cur = self.d.app_current()
+        if "instagram" not in cur.get("package", "").lower():
+            log.info("back_to_feed: nach Back nicht mehr aktiv – starte neu")
+            self.d.app_start("com.instagram.android")
+            time.sleep(5)
+        else:
+            log.debug("back_to_feed abgeschlossen")
+
     # ── Zum Feed-Anfang scrollen ──────────────────────────────────
     def scroll_to_top(self):
         """Scrollt nach oben mit großen, schnellen Swipes.
@@ -91,7 +118,8 @@ class HumanBehavior:
                     log.debug("Oben angekommen (kein Scroll-Effekt mehr)")
                     break
             last = img
-        time.sleep(0.3)
+        # Warten bis Story-Bar vollständig geladen ist
+        time.sleep(random.uniform(2.0, 3.0))
 
     # ── Pull-to-Refresh ───────────────────────────────────────────
     def pull_to_refresh(self):

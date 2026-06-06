@@ -1,5 +1,35 @@
 # Lineup-Berlin
 
+## Artist Spotlight manuell anpassen
+
+Der Artist Spotlight auf der Startseite waehlt automatisch 3 Acts aus den Bewertungen der letzten 2 Tage. Falls du die Auswahl manuell ueberschreiben willst, kannst du in `frontend/js/home.js` direkt nach der Funktion `loadActSpotlight()` einen Override eintragen:
+
+```js
+// MANUELLER SPOTLIGHT-OVERRIDE (temporaer)
+// Einfach spotlightActs direkt setzen, bevor die Funktion endet:
+spotlightActs = [
+  {
+    actId: 42,           // act.id aus der acts-Tabelle
+    actName: 'ARTIST NAME',
+    clubName: 'Berghain',
+    avg_rating: 4.8,
+    rating_count: 23,
+    surprise_pct: 0.6,
+    label: 'ÜBERRASCHUNG', // oder 'BESTER ACT' oder 'GEHEIMTIPP'
+  },
+  // weitere Acts...
+];
+return; // danach return, damit die DB-Logik nicht mehr laeuft
+```
+
+Die act_id findest du z.B. mit folgendem SQL im Supabase SQL Editor:
+
+```sql
+SELECT id, name FROM acts ORDER BY name;
+```
+
+---
+
 
 
 Um aktuellen DB Stand zu bekommen führe folgenden SQL Befehl aus und kopiere den Output in CLaude
