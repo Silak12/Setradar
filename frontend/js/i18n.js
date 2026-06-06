@@ -334,6 +334,23 @@
       'badge.survivor_desc':        '2+ hours waited and still got in. Respect.',
       'badge.closer_desc':          'You leave when the lights come on. 12+ hours straight in the club.',
       'badge.explorer_desc':        'Berlin has many clubs. You know them all. Different clubs visited.',
+
+      // Help panel
+      'help.eyebrow':          '// HOW IT WORKS',
+      'help.title':            'SETRADAR',
+      'help.subtitle':         'Your radar for the Berlin techno scene.',
+      'help.rate.title':       'RATE ACTS',
+      'help.rate.text':        'After every event you can rate acts with stars and mark the surprise of the night. Your ratings stay on your profile forever.',
+      'help.reco.title':       'ARTIST RECOMMENDATIONS',
+      'help.reco.text':        'Our algorithm compares your ratings with other users. People who liked the same acts as you may have also liked acts you haven\'t heard yet — those get suggested to you.',
+      'help.hype.title':       'HYPE',
+      'help.hype.text':        'Hype events you want to attend. The hype counter shows the community which events are hot right now — and shows your upcoming dates on your profile.',
+      'help.queue.title':      'LIVE QUEUE',
+      'help.queue.text':       'Standing in front of the club? Report the current wait time. The community sees real-time data on when the best moment is to head out — and you help others do the same.',
+      'help.dabei.title':      'ATTENDANCE TRACKING',
+      'help.dabei.text':       'Track your night in real time: Queue → Inside → Left. Your profile then shows stats: nights out, hours in the club, and average wait times.',
+      'help.fav.title':        'FAVOURITES',
+      'help.fav.text':         'Save artists and clubs to your profile. Keep everything in one place and never miss a show from acts you love.',
     },
 
     de: {
@@ -662,6 +679,23 @@
       'badge.survivor_desc':        '2+ Stunden gewartet und trotzdem reingekommen. Respect.',
       'badge.closer_desc':          'Du gehst wenn das Licht angeht. 12+ Stunden am Stück im Club.',
       'badge.explorer_desc':        'Berlin hat viele Clubs. Du kennst sie alle. Verschiedene Clubs besucht.',
+
+      // Help panel
+      'help.eyebrow':          '// SO FUNKTIONIERTS',
+      'help.title':            'SETRADAR',
+      'help.subtitle':         'Dein Radar für die Berliner Techno-Szene.',
+      'help.rate.title':       'ACTS BEWERTEN',
+      'help.rate.text':        'Nach jedem Event kannst du Acts mit Sternen bewerten und den Überraschungs-Act des Abends markieren. Deine Ratings bleiben für immer auf deinem Profil.',
+      'help.reco.title':       'ARTIST-EMPFEHLUNGEN',
+      'help.reco.text':        'Unser Algorithmus vergleicht deine Ratings mit anderen Nutzern. Wer ähnliche Acts mochte wie du, hat vielleicht auch Acts gehört, die du noch nicht kennst — die bekommst du dann vorgeschlagen.',
+      'help.hype.title':       'HYPE',
+      'help.hype.text':        'Hype Events die du feiern willst. Der Hype-Counter zeigt der Community welche Events gerade heiss sind — und dir im Profil deine upcoming Dates.',
+      'help.queue.title':      'LIVE-WARTESCHLANGE',
+      'help.queue.text':       'Stehst du vor dem Club? Melde die aktuelle Wartezeit. Die Community sieht in Echtzeit wann der beste Moment ist loszufahren — und du hilfst gleichzeitig anderen.',
+      'help.dabei.title':      'DABEI-TRACKING',
+      'help.dabei.text':       'Tracke deinen Abend in Echtzeit: Queue → Drin → Gegangen. Dein Profil zeigt danach wie viele Nächte du out warst, Stunden im Club und durchschnittliche Wartezeiten.',
+      'help.fav.title':        'FAVORITEN',
+      'help.fav.text':         'Speichere Artists und Clubs auf deinem Profil. So hast du alles auf einem Blick und verpasst keine Show von Acts die du liebst.',
     },
   };
 

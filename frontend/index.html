@@ -162,6 +162,125 @@
   <!-- Live Mode Panel (Phase 2) -->
   <div id="livePanel" class="live-panel" aria-hidden="true" aria-label="Live Mode"></div>
 
+  <!-- Help Overlay -->
+  <div class="help-overlay" id="helpOverlay" aria-hidden="true" inert>
+    <div class="help-bg" id="helpBg"></div>
+    <div class="help-sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <div class="help-topline"></div>
+      <button class="help-close" id="helpClose" type="button" aria-label="Close">
+        <span>ESC</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+      <div class="help-scroll">
+        <div class="help-header">
+          <div class="help-eyebrow" data-i18n="help.eyebrow">// HOW IT WORKS</div>
+          <div class="help-title" id="helpTitle" data-i18n="help.title">SETRADAR</div>
+          <div class="help-subtitle" data-i18n="help.subtitle">Your radar for the Berlin techno scene.</div>
+        </div>
+
+        <div class="help-cards">
+
+          <div class="help-card" style="--i:0">
+            <div class="help-card-icon help-icon--stars">
+              <span class="hstar" style="--d:0ms">★</span>
+              <span class="hstar" style="--d:120ms">★</span>
+              <span class="hstar" style="--d:240ms">★</span>
+              <span class="hstar" style="--d:360ms">★</span>
+              <span class="hstar" style="--d:480ms">★</span>
+            </div>
+            <div class="help-card-body">
+              <div class="help-card-title" data-i18n="help.rate.title">RATE ACTS</div>
+              <div class="help-card-text" data-i18n="help.rate.text">After every event you can rate acts with stars and mark the surprise of the night.</div>
+            </div>
+          </div>
+
+          <div class="help-card" style="--i:1">
+            <div class="help-card-icon help-icon--network">
+              <svg class="help-network-svg" viewBox="0 0 48 36" fill="none">
+                <circle class="hnode hnode--you" cx="8" cy="18" r="4" fill="var(--red)"/>
+                <circle class="hnode hnode--a" cx="28" cy="6" r="3" fill="#444"/>
+                <circle class="hnode hnode--b" cx="28" cy="18" r="3" fill="#444"/>
+                <circle class="hnode hnode--c" cx="28" cy="30" r="3" fill="#444"/>
+                <circle class="hnode hnode--act" cx="44" cy="12" r="4" fill="#ff7a20"/>
+                <line class="hedge hedge--a" x1="12" y1="17" x2="25" y2="7" stroke="#333" stroke-width="1.5"/>
+                <line class="hedge hedge--b" x1="12" y1="18" x2="25" y2="18" stroke="#333" stroke-width="1.5"/>
+                <line class="hedge hedge--c" x1="12" y1="19" x2="25" y2="29" stroke="#333" stroke-width="1.5"/>
+                <line class="hedge hedge--act1" x1="31" y1="5" x2="40" y2="12" stroke="#333" stroke-width="1.5"/>
+                <line class="hedge hedge--act2" x1="31" y1="17" x2="40" y2="13" stroke="#333" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="help-card-body">
+              <div class="help-card-title" data-i18n="help.reco.title">ARTIST RECOMMENDATIONS</div>
+              <div class="help-card-text" data-i18n="help.reco.text">Our algorithm compares your ratings with other users.</div>
+            </div>
+          </div>
+
+          <div class="help-card" style="--i:2">
+            <div class="help-card-icon help-icon--hype">
+              <span class="help-hype-bolt">⚡</span>
+              <div class="help-hype-rings">
+                <span class="help-hype-ring" style="--rd:0ms"></span>
+                <span class="help-hype-ring" style="--rd:300ms"></span>
+                <span class="help-hype-ring" style="--rd:600ms"></span>
+              </div>
+            </div>
+            <div class="help-card-body">
+              <div class="help-card-title" data-i18n="help.hype.title">HYPE</div>
+              <div class="help-card-text" data-i18n="help.hype.text">Hype events you want to attend.</div>
+            </div>
+          </div>
+
+          <div class="help-card" style="--i:3">
+            <div class="help-card-icon help-icon--queue">
+              <div class="help-queue-bars">
+                <span class="hqbar" style="--h:30%;--qd:0ms"></span>
+                <span class="hqbar" style="--h:60%;--qd:150ms"></span>
+                <span class="hqbar" style="--h:90%;--qd:300ms"></span>
+                <span class="hqbar" style="--h:50%;--qd:450ms"></span>
+                <span class="hqbar" style="--h:20%;--qd:600ms"></span>
+              </div>
+            </div>
+            <div class="help-card-body">
+              <div class="help-card-title" data-i18n="help.queue.title">LIVE QUEUE</div>
+              <div class="help-card-text" data-i18n="help.queue.text">Standing in front of the club? Report the current wait time.</div>
+            </div>
+          </div>
+
+          <div class="help-card" style="--i:4">
+            <div class="help-card-icon help-icon--dabei">
+              <div class="help-dabei-timeline">
+                <span class="hdot hdot--queue" style="--td:0ms"></span>
+                <span class="hdash"></span>
+                <span class="hdot hdot--in" style="--td:300ms"></span>
+                <span class="hdash"></span>
+                <span class="hdot hdot--out" style="--td:600ms"></span>
+              </div>
+            </div>
+            <div class="help-card-body">
+              <div class="help-card-title" data-i18n="help.dabei.title">ATTENDANCE TRACKING</div>
+              <div class="help-card-text" data-i18n="help.dabei.text">Track your night in real time: Queue → Inside → Left.</div>
+            </div>
+          </div>
+
+          <div class="help-card" style="--i:5">
+            <div class="help-card-icon help-icon--fav">
+              <svg class="help-fav-heart" viewBox="0 0 24 24" fill="none">
+                <path class="hfav-path" d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z" stroke="var(--red)" stroke-width="1.5" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="help-card-body">
+              <div class="help-card-title" data-i18n="help.fav.title">FAVOURITES</div>
+              <div class="help-card-text" data-i18n="help.fav.text">Save artists and clubs to your profile.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/i18n.js"></script>
   <script src="js/cookies.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -170,5 +289,6 @@
   <script src="js/legal.js"></script>
   <script src="js/event-cards.js"></script>
   <script src="js/home.js"></script>
+  <script src="js/help.js"></script>
 </body>
 </html>
