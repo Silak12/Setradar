@@ -1,0 +1,61 @@
+name: RA Scraper
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      weeks:
+        description: "How many weeks ahead to fetch"
+        required: false
+        default: "8"
+        type: string
+      dry_run:
+        description: "Skip Supabase seeding and only write the JSON output"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Run scraper
+        env:
+          WEEKS: ${{ github.event_name == 'workflow_dispatch' && inputs.weeks || '8' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'true' }}
+        run: |
+          set -euo pipefail
+          OUTPUT="backend/fetcher/lineup_seed_example.generated.json"
+          ARGS=(--weeks "$WEEKS" --output "$OUTPUT")
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          python backend/fetcher/ra_scraper.py "${ARGS[@]}"
+
+      - name: Upload generated JSON
+        if: ${{ always() && hashFiles('backend/fetcher/lineup_seed_example.generated.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ra-scraper-output
+          path: backend/fetcher/lineup_seed_example.generated.json
