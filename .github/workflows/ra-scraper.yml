@@ -8,12 +8,12 @@ on:
       weeks:
         description: "How many weeks ahead to fetch"
         required: false
-        default: "8"
+        default: "10"
         type: string
       dry_run:
         description: "Skip Supabase seeding and only write the JSON output"
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions:
@@ -23,6 +23,11 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: production
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
@@ -42,8 +47,8 @@ jobs:
 
       - name: Run scraper
         env:
-          WEEKS: ${{ github.event_name == 'workflow_dispatch' && inputs.weeks || '8' }}
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'true' }}
+          WEEKS: ${{ github.event_name == 'workflow_dispatch' && inputs.weeks || '10' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
         run: |
           set -euo pipefail
           OUTPUT="backend/fetcher/lineup_seed_example.generated.json"
