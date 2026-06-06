@@ -574,6 +574,7 @@ function openAuthModal(mode = AUTH_MODES.LOGIN, msg = '') {
   if (msg) setAuthMessage(msg);
   const overlay = document.getElementById('authOverlay');
   if (!overlay) return;
+  overlay.removeAttribute('inert');
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
   syncBodyLock();
@@ -584,6 +585,7 @@ function closeAuthModal() {
   if (!overlay) return;
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
+  overlay.setAttribute('inert', '');
   setAuthMessage('');
   syncBodyLock();
 }
@@ -1459,9 +1461,23 @@ async function openArtistPopup(actId, actName) {
   if (supabaseClient && actId) {
     const pubClient = supabaseAnonClient || supabaseClient;
     try {
-      const { data: act } = await pubClient.from('acts').select('id, name, insta_name, soundcloud_url').eq('id', actId).maybeSingle();
-      if (act) { instaName = act.insta_name; scUrl = act.soundcloud_url; }
-      const { data: eventActRows } = await pubClient.from('event_acts').select('id, start_time, end_time, event_id').eq('act_id', actId);
+      const [actRes, eventActRes, statsRes, ownRatingsRes] = await Promise.all([
+        pubClient.from('acts').select('id, name, insta_name, soundcloud_url').eq('id', actId).maybeSingle(),
+        pubClient.from('event_acts').select('id, start_time, end_time, event_id').eq('act_id', actId),
+        pubClient.from('act_rating_stats').select('rating_count, avg_rating, best_act_pct, surprise_pct').eq('act_id', actId).maybeSingle(),
+        sessionUser && supabaseClient
+          ? supabaseClient.from('act_ratings').select('act_id, event_id, rating, was_best_act, was_surprise').eq('user_id', sessionUser.id).eq('act_id', actId)
+          : Promise.resolve({ data: null }),
+      ]);
+      if (actRes.data) { instaName = actRes.data.insta_name; scUrl = actRes.data.soundcloud_url; }
+      ratingStats = statsRes.data || null;
+      if (ownRatingsRes.data) {
+        ownRatingsRes.data.forEach(r => {
+          const key = `${r.act_id}:${r.event_id ?? 'null'}`;
+          userActRatings.set(key, r);
+        });
+      }
+      const eventActRows = eventActRes.data;
       if (eventActRows?.length) {
         const eventIds = eventActRows.map(r => r.event_id);
         const [upRes, pastRes] = await Promise.all([
@@ -1485,19 +1501,6 @@ async function openArtistPopup(actId, actName) {
             .filter(ea => ea.events && !isUpcomingOrRunningEvent(ea.events))
             .sort((a, b) => b.events.event_date.localeCompare(a.events.event_date))
             .slice(0, 8);
-        }
-      }
-      // Fetch public rating stats
-      const { data: stats } = await pubClient.from('act_rating_stats').select('rating_count, avg_rating, best_act_pct, surprise_pct').eq('act_id', actId).maybeSingle();
-      ratingStats = stats || null;
-      // Fetch user's own ratings for this act
-      if (sessionUser && supabaseClient) {
-        const { data: ownRatings } = await supabaseClient.from('act_ratings').select('act_id, event_id, rating, was_best_act, was_surprise').eq('user_id', sessionUser.id).eq('act_id', actId);
-        if (ownRatings) {
-          ownRatings.forEach(r => {
-            const key = `${r.act_id}:${r.event_id ?? 'null'}`;
-            userActRatings.set(key, r);
-          });
         }
       }
     } catch (err) {
@@ -2539,7 +2542,7 @@ function renderLivePanel() {
   panel.classList.toggle('fullscreen', livePanelExpanded);
   document.body.classList.add('live-mode-active');
 
-  if (livePanelExpanded) setTimeout(renderQueueGraph, 10);
+  if (livePanelExpanded) setTimeout(renderLiveQueueChart, 10);
 }
 
 function initLivePanel() {

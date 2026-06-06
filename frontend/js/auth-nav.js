@@ -121,6 +121,7 @@
     setAuthMode(mode);
     const overlay = document.getElementById('authOverlay');
     if (!overlay) return;
+    overlay.removeAttribute('inert');
     overlay.classList.add('open');
     overlay.setAttribute('aria-hidden', 'false');
     syncBodyLock();
@@ -132,6 +133,7 @@
     if (!overlay) return;
     overlay.classList.remove('open');
     overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('inert', '');
     setAuthMessage('');
     syncBodyLock();
   }

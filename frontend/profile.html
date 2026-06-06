@@ -360,10 +360,10 @@
         <!-- Passwort -->
         <div class="settings-section">
           <div class="settings-section-label" data-i18n="settings.password">Password</div>
-          <div class="settings-input-row">
+          <form class="settings-input-row" id="settingsPasswordForm" autocomplete="off" onsubmit="return false">
             <input class="settings-input" id="settingsPasswordInput" type="password" data-i18n-placeholder="settings.password_placeholder" placeholder="New password (min. 6 chars)" autocomplete="new-password" />
-            <button class="settings-save-btn" id="settingsPasswordSave" data-i18n="settings.save">Save</button>
-          </div>
+            <button class="settings-save-btn" id="settingsPasswordSave" type="button" data-i18n="settings.save">Save</button>
+          </form>
           <div class="settings-feedback" id="settingsPasswordFeedback"></div>
         </div>
 
