@@ -11,7 +11,7 @@ from supabase import Client, create_client
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 FRONTEND_CONFIG_FILE = Path(__file__).resolve().parents[2] / "frontend" / "js" / "config.js"
-DEFAULT_INPUT = Path(__file__).with_name("lineup_seed_example.json")
+DEFAULT_INPUT = Path(__file__).resolve().parents[1] / "fetcher" / "lineup_seed_example.json"
 DEFAULT_SCHEMA_SQL = Path(__file__).with_name("lineup_init.sql")
 
 load_dotenv(ROOT_ENV_FILE)
@@ -99,11 +99,25 @@ def _supabase_client() -> Client:
 
 
 def _load_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        raise ValueError(f"Input JSON not found: {path}")
     with path.open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
     if not isinstance(payload, dict) or not isinstance(payload.get("cities"), list):
         raise ValueError("Input JSON must contain key 'cities' with a list value.")
     return payload
+
+
+def _payload_interested_stats(payload: dict[str, Any]) -> tuple[int, int]:
+    total_events = 0
+    events_with_interested_key = 0
+    for city in payload.get("cities", []):
+        for club in city.get("clubs", []):
+            for event in club.get("events", []):
+                total_events += 1
+                if isinstance(event, dict) and "interested_count" in event:
+                    events_with_interested_key += 1
+    return total_events, events_with_interested_key
 
 
 def _api_error(prefix: str, exc: APIError) -> RuntimeError:
@@ -408,6 +422,20 @@ def _upsert_event_act(
 def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = True) -> None:
     supports_interested_count = _has_column(supabase, "events", "interested_count")
     supports_soundcloud_url = _has_column(supabase, "acts", "soundcloud_url")
+    total_events, events_with_interested_key = _payload_interested_stats(payload)
+
+    if verbose and total_events > 0:
+        if not supports_interested_count:
+            print(
+                "[WARN] DB column events.interested_count not available (or not accessible). "
+                "Interest values from JSON will not be written."
+            )
+        if events_with_interested_key == 0:
+            print(
+                "[WARN] Input JSON has no interested_count fields. "
+                "Use scraper output from backend/fetcher/lineup_seed_example.json."
+            )
+
     counters = {
         "cities": 0,
         "clubs": 0,

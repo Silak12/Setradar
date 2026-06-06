@@ -159,7 +159,7 @@ python backend/database/create_schema_from_json.py --input backend/database/line
 6. Daten neu seeden
 
 ```powershell
-.\.venv\Scripts\python.exe backend/database/supabase_seed_lineup.py --input backend/database/lineup_seed_example.json
+.\.venv\Scripts\python.exe backend/database/supabase_seed_lineup.py --input backend/fetcher/lineup_seed_example.json
 ```
 
 7. Ergebnis pruefen (optional)
