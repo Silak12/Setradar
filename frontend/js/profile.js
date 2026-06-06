@@ -1303,7 +1303,7 @@ function initArtistPopup() {
       return;
     }
 
-    const item = e.target.closest('.profile-act-link');
+    const item = e.target.closest('.profile-act-link, .profile-list-item--rec');
     if (!item) return;
     if (e.target.closest('a')) return;
     const actId = item.dataset.actId;
@@ -1644,7 +1644,7 @@ function renderRecommendations() {
     const conf = a.confidence ?? 50;
     const isFollowed = favoriteActIds.has(Number(a.id));
     return `
-      <div class="profile-list-item profile-list-item--rec" data-rec-act-id="${a.id}">
+      <div class="profile-list-item profile-list-item--rec" data-rec-act-id="${a.id}" data-act-id="${a.id}" data-act-name="${escapeHtml(a.name)}">
         <div class="rec-confidence-bar"><div class="rec-confidence-fill" style="width:${conf}%"></div></div>
         <div class="rec-main">
           <span class="profile-list-name">${escapeHtml(a.name)}</span>
