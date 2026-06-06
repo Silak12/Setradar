@@ -22,16 +22,19 @@ create table if not exists events (
     event_name text not null default '',
     time_start time null,
     time_end time null,
+    interested_count integer null,
     unique (club_id, event_date, event_name)
 );
 
 alter table events add column if not exists time_start time null;
 alter table events add column if not exists time_end time null;
+alter table events add column if not exists interested_count integer null;
 
 create table if not exists acts (
     id bigserial primary key,
     name text not null unique,
-    insta_name text null
+    insta_name text null,
+    soundcloud_url text null
 );
 
 create table if not exists event_acts (
@@ -84,6 +87,7 @@ $$;
 alter table event_acts add column if not exists start_time time null;
 alter table event_acts add column if not exists end_time time null;
 alter table acts add column if not exists insta_name text null;
+alter table acts add column if not exists soundcloud_url text null;
 
 -- Grants for anon role
 grant usage on schema public to anon;
