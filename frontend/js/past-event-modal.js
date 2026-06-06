@@ -255,15 +255,15 @@ window.PastEventModal = (() => {
             ${!canceled ? `
             <div class="pem-act-rating-col">
               <div class="pem-stars" data-act-id="${a.act_id}">${stars}</div>
-              ${isOpen ? `<button class="pem-surprise-btn${isSurp ? ' active' : ''}" data-act-id="${a.act_id}" type="button" title="${t('rating.surprise')}">${t('past.surprise_button')}</button>` : ''}
+              <button class="pem-surprise-btn${isSurp ? ' active' : ''}" data-act-id="${a.act_id}" type="button" title="${t('rating.surprise')}">${t('past.surprise_button')}</button>
             </div>` : ''}
           </div>`;
       }).join('');
 
     return `
       <div class="pem-section">
-        <div class="pem-section-label">${t('past.lineup_rating')}${!isOpen ? ` <span class="pem-label-note">· ${t('past.completed')}</span>` : ''}</div>
-        ${isOpen ? `<div class="pem-rating-hint">${t('past.surprise_hint')}</div>` : ''}
+        <div class="pem-section-label">${t('past.lineup_rating')}</div>
+        <div class="pem-rating-hint">${t('past.surprise_hint')}</div>
         <div class="pem-act-list">${ratingRows}</div>
       </div>`;
   }
@@ -421,7 +421,7 @@ window.PastEventModal = (() => {
     if (canEdit) {
       _bindPresenceEdits(sheet, myPresence, ev.id, ev.event_date);
     }
-    if (isOpen && _user && _sc) {
+    if (_user && _sc) {
       _bindRatings(sheet, ev.id, myRatings);
     }
   }
