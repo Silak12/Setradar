@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import hashlib
+import argparse
 import os
 from collections import Counter
 from datetime import date, timedelta
@@ -11,7 +11,8 @@ from postgrest.exceptions import APIError
 from supabase import Client, create_client
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
-SEED_SOURCE = "interested_jitter_v1"
+SEED_SOURCE = "ra_interested_v1"
+DEFAULT_DAYS_AHEAD = 28
 
 load_dotenv(ROOT_ENV_FILE)
 
@@ -37,9 +38,12 @@ def _api_error(prefix: str, exc: APIError) -> RuntimeError:
     return RuntimeError(f"{prefix} (code: {code}): {message}")
 
 
-def _load_upcoming_events(supabase: Client) -> list[dict]:
+def _load_upcoming_events(
+    supabase: Client,
+    days_ahead: int = DEFAULT_DAYS_AHEAD,
+) -> list[dict]:
     today = date.today()
-    max_date = today + timedelta(days=60)
+    max_date = today + timedelta(days=days_ahead)
     try:
         response = (
             supabase.table("events")
@@ -87,24 +91,6 @@ def _clamp(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
 
 
-def _stable_unit_interval(key: str) -> float:
-    digest = hashlib.sha256(key.encode("utf-8")).digest()
-    raw = int.from_bytes(digest[:8], "big")
-    return raw / float((1 << 64) - 1)
-
-
-def _jittered_interested_seed(event_id: int, event_date: date, interested_count: int) -> int:
-    ratio = _stable_unit_interval(
-        f"{SEED_SOURCE}:{event_id}:{event_date.isoformat()}:{interested_count}"
-    )
-    centered = (ratio * 2.0) - 1.0
-    if interested_count <= 20:
-        spread = max(1, min(3, round(interested_count * 0.15)))
-        return max(0, interested_count + round(centered * spread))
-    factor = 1.0 + (centered * 0.15)
-    return max(0, round(interested_count * factor))
-
-
 def _build_seed_rows(events: list[dict], act_counts: Counter[int]) -> list[dict]:
     today = date.today()
     rows: list[dict] = []
@@ -117,11 +103,9 @@ def _build_seed_rows(events: list[dict], act_counts: Counter[int]) -> list[dict]
         interested_count = event.get("interested_count")
 
         if interested_count is not None:
-            seed_count = _jittered_interested_seed(
-                event_id,
-                event_date,
-                max(0, int(interested_count)),
-            )
+            # Keep the public RA value exact. Setradar users are added separately
+            # by the event_hype_totals view as real_hype.
+            seed_count = max(0, int(interested_count))
         else:
             seed_count = _clamp(
                 _base_seed(days_until) + min(act_count, 8) * 4 + (event_id % 11),
@@ -142,7 +126,7 @@ def _build_seed_rows(events: list[dict], act_counts: Counter[int]) -> list[dict]
 
 def _upsert_seed_rows(supabase: Client, rows: list[dict]) -> None:
     if not rows:
-        print("No upcoming events found in the next 60 days.")
+        print("No upcoming events found in the selected date range.")
         return
 
     try:
@@ -157,14 +141,36 @@ def _upsert_seed_rows(supabase: Client, rows: list[dict]) -> None:
     print(f"Upserted {len(rows)} event_hype_seed row(s) with source='{SEED_SOURCE}'.")
 
 
+def seed_upcoming_hype(
+    supabase: Client,
+    days_ahead: int = DEFAULT_DAYS_AHEAD,
+) -> int:
+    events = _load_upcoming_events(supabase, days_ahead)
+    event_ids = [int(event["id"]) for event in events if event.get("id") is not None]
+    act_counts = _load_event_act_counts(supabase, event_ids)
+    rows = _build_seed_rows(events, act_counts)
+    _upsert_seed_rows(supabase, rows)
+    return len(rows)
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Write RA interested counts to the public event hype totals."
+    )
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=DEFAULT_DAYS_AHEAD,
+        help=f"How many days ahead to update (default: {DEFAULT_DAYS_AHEAD})",
+    )
+    args = parser.parse_args()
+
+    if args.days < 0:
+        parser.error("--days must be zero or greater")
+
     try:
         supabase = _supabase_client()
-        events = _load_upcoming_events(supabase)
-        event_ids = [int(event["id"]) for event in events if event.get("id") is not None]
-        act_counts = _load_event_act_counts(supabase, event_ids)
-        rows = _build_seed_rows(events, act_counts)
-        _upsert_seed_rows(supabase, rows)
+        seed_upcoming_hype(supabase, args.days)
     except (RuntimeError, ValueError) as exc:
         print(f"[ERROR] {exc}")
         raise SystemExit(1) from exc

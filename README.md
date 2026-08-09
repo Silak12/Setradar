@@ -162,6 +162,18 @@ python backend/database/create_schema_from_json.py --input backend/database/line
 .\.venv\Scripts\python.exe backend/database/supabase_seed_lineup.py --input backend/fetcher/lineup_seed_example.json
 ```
 
+Der Wert `interestedCount` (auf der deutschen RA-Seite „Interessiert“) wird
+getrennt vom Lineup aktualisiert. Der Workflow `RA Interested Scraper` läuft
+täglich um 11:00 und 20:00 Uhr in der Zeitzone `Europe/Berlin` und verarbeitet
+ausschließlich Events von heute bis einschließlich 28 Tage im Voraus. Er kann
+außerdem über `workflow_dispatch` manuell gestartet werden.
+
+Manueller lokaler Lauf:
+
+```powershell
+.\.venv\Scripts\python.exe backend/fetcher/ra_interested_scraper.py
+```
+
 7. Ergebnis pruefen (optional)
 
 ```powershell

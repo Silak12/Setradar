@@ -55,7 +55,6 @@ query GET_VENUE_EVENTS($id: ID!, $limit: Int) {
       date
       startTime
       endTime
-      interestedCount
       lineup
       artists {
         id
@@ -77,7 +76,6 @@ query GET_EVENT_DETAIL($id: ID!) {
     date
     startTime
     endTime
-    interestedCount
     lineup
     artists {
       id
@@ -241,13 +239,24 @@ def main():
 
     if not args.dry_run:
         import subprocess
-        seed = Path(__file__).parent.parent / "database" / "supabase_seed_lineup.py"
-        if seed.exists():
-            LOGGER.info("[->] Starte supabase_seed_lineup.py...")
-            subprocess.run([sys.executable, str(seed), "--input", str(args.output)])
-        else:
-            LOGGER.warning("[!] supabase_seed_lineup.py nicht gefunden.")
-            LOGGER.info("    Manuell: python supabase_seed_lineup.py --input %s", args.output)
+        database_dir = Path(__file__).parent.parent / "database"
+        lineup_seed = database_dir / "supabase_seed_lineup.py"
+        if not lineup_seed.exists():
+            LOGGER.error("[!] DB-Script nicht gefunden: %s", lineup_seed)
+            sys.exit(1)
+
+        LOGGER.info("[->] Starte supabase_seed_lineup.py...")
+        try:
+            subprocess.run(
+                [sys.executable, str(lineup_seed), "--input", str(args.output)],
+                check=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            LOGGER.error(
+                "[!] supabase_seed_lineup.py fehlgeschlagen (Exit-Code %s).",
+                exc.returncode,
+            )
+            sys.exit(exc.returncode or 1)
     else:
         LOGGER.info("[dry-run] Manuell seeden:")
         LOGGER.info("  python supabase_seed_lineup.py --input %s", args.output)
