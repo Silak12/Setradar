@@ -68,23 +68,53 @@ def dedup(files):
     return kept
 
 
+# ── Lock ──────────────────────────────────────────────────────────────────────
+
+def _acquire_lock():
+    """
+    Non-blocking Lock – verhindert dass der Fallback-Cron und der Aufruf aus
+    main.py gleichzeitig über dieselben Bilder laufen (doppelte OpenAI-Calls,
+    Races auf processed_files.json).
+    """
+    lock_path = Path(__file__).parent / "logs" / "post_process.lock"
+    lock_path.parent.mkdir(exist_ok=True)
+    f = open(lock_path, "w")
+    try:
+        import fcntl
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except ImportError:
+        pass  # Windows/Dev: kein flock verfügbar
+    except OSError:
+        f.close()
+        return None
+    return f
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    files = sorted(FOLDER.glob("story_*.png"))
-    if not files:
-        log.info(f"Keine neuen Bilder in {FOLDER}")
+    lock = _acquire_lock()
+    if lock is None:
+        log.info("post_process läuft bereits in anderer Instanz – überspringe")
         return
 
-    log.info(f"=== Post-Processing: {len(files)} Bilder ===")
+    try:
+        files = sorted(FOLDER.glob("story_*.png"))
+        if not files:
+            log.info(f"Keine neuen Bilder in {FOLDER}")
+            return
 
-    unique_files = dedup(files)
-    log.info(f"=== Dedup fertig: {len(unique_files)} einzigartige Bilder ===")
+        log.info(f"=== Post-Processing: {len(files)} Bilder ===")
 
-    if unique_files:
-        log.info("Starte local_to_db.py...")
-        script = Path(__file__).parent / "local_to_db.py"
-        subprocess.run([sys.executable, str(script)], check=False)
+        unique_files = dedup(files)
+        log.info(f"=== Dedup fertig: {len(unique_files)} einzigartige Bilder ===")
+
+        if unique_files:
+            log.info("Starte local_to_db.py...")
+            script = Path(__file__).parent / "local_to_db.py"
+            subprocess.run([sys.executable, str(script)], check=False)
+    finally:
+        lock.close()
 
 
 if __name__ == "__main__":

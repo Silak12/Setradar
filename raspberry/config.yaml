@@ -18,8 +18,14 @@ behavior:
   startup_delay_min: 0
   startup_delay_max: 10
 
-  # Wie lange pro Stunde gescrapt wird (nach dem Delay, Minuten)
-  scrape_duration_min: 45
+  # Zufalls-Skip: Chance dass eine Stunde komplett ausgelassen wird (menschlicher Rhythmus)
+  skip_chance: 0.25
+  # Ab dieser Uhrzeit (bis sleep_start) wird NIE geskippt – Prime-Time läuft stündlich
+  no_skip_after: "19:00"
+
+  # Wie lange pro Stunde gescrapt wird – zufällig zwischen min und max (Minuten)
+  scrape_duration_min: 25
+  scrape_duration_max: 45
 
   # Mini-Session: zufällige Anzahl Screenshots pro Durchgang
   mini_session_shots_min: 15

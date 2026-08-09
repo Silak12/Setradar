@@ -9,6 +9,7 @@ Crontab (einziger Eintrag):
 
 Schlafzeit: 00:30–10:00 → wird übersprungen.
 """
+import os
 import time
 import random
 import logging
@@ -51,26 +52,73 @@ def connect_device(cfg):
     return u2.connect(device_id) if device_id else u2.connect()
 
 
+def _to_minutes(val):
+    """'HH:MM' oder Stunden-Zahl → Minuten seit Mitternacht."""
+    if isinstance(val, str) and ":" in val:
+        h, m = val.split(":")
+        return int(h) * 60 + int(m)
+    return int(val) * 60
+
+
+def _in_window(now_minutes, start, end):
+    """True wenn now im Fenster [start, end) liegt – mit Mitternacht-Übergang."""
+    if start < end:
+        return start <= now_minutes < end
+    return now_minutes >= start or now_minutes < end
+
+
 def is_sleep_time(cfg):
     """Gibt True zurück wenn gerade Schlafzeit ist (unterstützt HH:MM Format)."""
     b = cfg["behavior"]
     now = datetime.now()
     now_minutes = now.hour * 60 + now.minute
+    start = _to_minutes(b.get("sleep_start", "0:30"))
+    end   = _to_minutes(b.get("sleep_end",   "10:00"))
+    return _in_window(now_minutes, start, end)
 
-    # Format: "00:30" oder einfach 1 (Stunde)
-    def to_minutes(val):
-        if isinstance(val, str) and ":" in val:
-            h, m = val.split(":")
-            return int(h) * 60 + int(m)
-        return int(val) * 60
 
-    start = to_minutes(b.get("sleep_start", "0:30"))
-    end   = to_minutes(b.get("sleep_end",   "10:00"))
+def should_skip_session(cfg, log):
+    """
+    Zufalls-Skip: lässt manche Stunden komplett aus → unregelmäßiger,
+    menschlicherer Rhythmus statt striktem Stundentakt.
+    Ab no_skip_after (Prime-Time, default 19:00) bis sleep_start wird NIE geskippt.
+    """
+    b = cfg["behavior"]
+    chance = float(b.get("skip_chance", 0.0))
+    if chance <= 0:
+        return False
+    now = datetime.now()
+    now_minutes = now.hour * 60 + now.minute
+    no_skip     = _to_minutes(b.get("no_skip_after", "19:00"))
+    sleep_start = _to_minutes(b.get("sleep_start", "0:30"))
+    if _in_window(now_minutes, no_skip, sleep_start):
+        return False  # Prime-Time: immer laufen
+    if random.random() < chance:
+        log.info(f"Zufalls-Skip dieser Stunde ({chance:.0%} Chance) – nächster Lauf zur nächsten vollen Stunde")
+        return True
+    return False
 
-    if start < end:
-        return start <= now_minutes < end
-    else:  # Mitternacht-Übergang (z.B. 22:00–06:00)
-        return now_minutes >= start or now_minutes < end
+
+def acquire_lock(log):
+    """
+    Verhindert dass zwei main.py-Instanzen parallel laufen (non-blocking flock).
+    Gibt das offene Lock-File zurück (muss bis Prozessende referenziert bleiben)
+    oder None wenn bereits eine Instanz läuft.
+    """
+    lock_path = BASE_DIR / "logs" / "main.lock"
+    lock_path.parent.mkdir(exist_ok=True)
+    f = open(lock_path, "w")
+    try:
+        import fcntl
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except ImportError:
+        pass  # Windows/Dev: kein flock verfügbar
+    except OSError:
+        f.close()
+        return None
+    f.write(str(os.getpid()))
+    f.flush()
+    return f
 
 
 def start_instagram_fresh(device, log):
@@ -123,10 +171,20 @@ def main():
     setup_logging(cfg)
     log = logging.getLogger("main")
 
+    # ── Lock: keine zweite Instanz parallel ──────────────────────────────────
+    lock = acquire_lock(log)
+    if lock is None:
+        log.info("Andere main.py-Instanz läuft noch – Abbruch")
+        return
+
     # ── Schlafzeit-Check VOR dem Delay ───────────────────────────────────────
     if is_sleep_time(cfg):
         log.info(f"Schlafzeit ({cfg['behavior'].get('sleep_start','0:30')}–"
                  f"{cfg['behavior'].get('sleep_end','10:00')}) – nichts zu tun")
+        return
+
+    # ── Zufalls-Skip (nur außerhalb der Prime-Time) ──────────────────────────
+    if should_skip_session(cfg, log):
         return
 
     # ── Zufälliger Start-Delay (0–25 Min) ────────────────────────────────────
@@ -143,7 +201,10 @@ def main():
         return
 
     # ── Setup ─────────────────────────────────────────────────────────────────
-    scrape_duration = b.get("scrape_duration_min", 25) * 60
+    # Scrape-Dauer zufällig variieren → kein maschinenhaft konstantes Muster
+    dur_lo = b.get("scrape_duration_min", 25)
+    dur_hi = b.get("scrape_duration_max", dur_lo)
+    scrape_duration = random.uniform(dur_lo, dur_hi) * 60
     shots_min       = b.get("mini_session_shots_min", 15)
     shots_max       = b.get("mini_session_shots_max", 20)
     pause_min       = b.get("mini_session_pause_min", 10)

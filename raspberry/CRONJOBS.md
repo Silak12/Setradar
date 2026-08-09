@@ -1,6 +1,6 @@
 # Setradar — Cronjobs auf dem Raspberry Pi
 
-Alle Pfade gehen davon aus, dass das Repo unter `/home/pi/Setradar` liegt.
+Alle Pfade gehen davon aus, dass das Repo unter `/home/admin/Setradar` liegt.
 Falls anders: alle Pfade entsprechend anpassen.
 
 ## Installation
@@ -17,15 +17,16 @@ Und die Blöcke unten am Ende der Datei einfügen.
 # ── Setradar ─────────────────────────────────────────────────────────────────
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-SETRADAR=/home/pi/Setradar
-PY=/home/pi/Setradar/.venv/bin/python
+SETRADAR=/home/admin/Setradar
+PY=/home/admin/Setradar/.venv/bin/python
 
 # Instagram-Story-Bot — jede Stunde zur Minute 0
 # (startet mit Random-Delay 0–10 Min, läuft ~45 Min, ruft danach post_process auf)
 0 * * * * cd $SETRADAR/raspberry && $PY main.py >> $SETRADAR/raspberry/logs/cron.log 2>&1
 
 # Post-Processing Fallback — falls main.py abgestürzt ist, trotzdem dedupen + upload
-35 * * * * cd $SETRADAR/raspberry && $PY post_process.py >> $SETRADAR/raspberry/logs/post_process.log 2>&1
+# (:57 statt :35 – main.py kann bis ~:55 laufen; Lockfile schützt zusätzlich vor Überlappung)
+57 * * * * cd $SETRADAR/raspberry && $PY post_process.py >> $SETRADAR/raspberry/logs/post_process.log 2>&1
 
 # Resident-Advisor-Scraper — 2x täglich Events + Lineups holen
 15 6,18 * * * cd $SETRADAR && $PY -m backend.fetcher.ra_scraper >> $SETRADAR/raspberry/logs/ra_scraper.log 2>&1
@@ -41,19 +42,19 @@ PY=/home/pi/Setradar/.venv/bin/python
 crontab -l
 
 # Live-Logs mitlesen
-tail -f /home/pi/Setradar/raspberry/logs/cron.log
-tail -f /home/pi/Setradar/raspberry/logs/post_process.log
-tail -f /home/pi/Setradar/raspberry/logs/ra_scraper.log
+tail -f /home/admin/Setradar/raspberry/logs/cron.log
+tail -f /home/admin/Setradar/raspberry/logs/post_process.log
+tail -f /home/admin/Setradar/raspberry/logs/ra_scraper.log
 
 # Manuell einen Job testen (ohne auf Cron zu warten)
-cd /home/pi/Setradar/raspberry && /home/pi/Setradar/.venv/bin/python main.py
-cd /home/pi/Setradar && /home/pi/Setradar/.venv/bin/python -m backend.fetcher.ra_scraper --dry-run
+cd /home/admin/Setradar/raspberry && /home/admin/Setradar/.venv/bin/python main.py
+cd /home/admin/Setradar && /home/admin/Setradar/.venv/bin/python -m backend.fetcher.ra_scraper --dry-run
 ```
 
 ## Update auf neue Repo-Version
 
 ```bash
-cd /home/pi/Setradar && bash raspberry/install.sh
+cd /home/admin/Setradar && bash raspberry/install.sh
 ```
 
 `install.sh` macht `git pull` und synct die venv-Dependencies — Cronjobs müssen

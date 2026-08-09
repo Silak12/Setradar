@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>SETRADAR — Berlin</title>
   <meta name="description" content="Wer spielt wann wo. Berlin Techno Timetables." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -35,6 +35,12 @@
   </div>
 
   <section class="popular-rail" id="popularRail"></section>
+
+  <div class="feed-tab-bar" id="feedTabBar" role="tablist" data-i18n-aria-label="feed.label" aria-label="Feed">
+    <button class="feed-tab active" type="button" role="tab" data-feed-mode="all" data-i18n="feed.all">All</button>
+    <button class="feed-tab" type="button" role="tab" data-feed-mode="foryou" data-i18n="feed.foryou">For You</button>
+    <button class="feed-tab" type="button" role="tab" data-feed-mode="saved" data-i18n="feed.saved">Saved</button>
+  </div>
 
   <div class="date-sort-row">
     <nav class="date-nav" id="dateNav"></nav>

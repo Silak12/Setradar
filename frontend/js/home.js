@@ -137,6 +137,8 @@ let _sessionReady = false;
 let availableCities = [];
 let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
 let eventSortMode = localStorage.getItem('setradar_event_sort') || 'interested';
+const FEED_MODES = ['all', 'foryou', 'saved'];
+let feedMode = FEED_MODES.includes(localStorage.getItem('setradar_feed')) ? localStorage.getItem('setradar_feed') : 'all';
 // ── Phase 2: Live Mode state ─────────────────────────────────────────────
 let userPresence = null;          // { user_id, event_id, status } | null
 let liveEventData = { queueTimeline: [], mood: null, presenceRows: [], allRatings: [] };
@@ -338,6 +340,62 @@ function getVisibleEvents(events = allEvents) {
   const city = normalizeCityName(selectedCity);
   if (!city) return [...(events || [])];
   return (events || []).filter(ev => getEventCity(ev) === city);
+}
+function eventMatchesFeed(ev, mode = feedMode) {
+  const id = Number(ev?.id);
+  if (mode === 'saved') return userHypedEventIds.has(id) || favoriteEventIds.has(id);
+  if (mode === 'foryou') {
+    if (userHypedEventIds.has(id) || favoriteEventIds.has(id)) return true;
+    if (ev?.clubs?.id && favoriteClubIds.has(Number(ev.clubs.id))) return true;
+    return (ev?.event_acts || []).some(a => a.acts?.id && favoriteActIds.has(Number(a.acts.id)));
+  }
+  return true;
+}
+function getFeedEvents(events = allEvents) {
+  const visible = getVisibleEvents(events);
+  if (!sessionUser || feedMode === 'all') return visible;
+  return visible.filter(ev => eventMatchesFeed(ev));
+}
+function syncFeedUi() {
+  document.querySelectorAll('#feedTabBar .feed-tab').forEach(btn => {
+    const active = btn.dataset.feedMode === feedMode;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+}
+function setFeedMode(mode, { rerender = true } = {}) {
+  const next = FEED_MODES.includes(mode) ? mode : 'all';
+  if (next !== 'all' && !sessionUser) {
+    syncFeedUi();
+    if (_sessionReady) openAuthModal(AUTH_MODES.LOGIN, `${t(next === 'saved' ? 'feed.saved' : 'feed.foryou')} — Login.`);
+    return false;
+  }
+  if (next === feedMode) return true;
+  feedMode = next;
+  localStorage.setItem('setradar_feed', feedMode);
+  syncFeedUi();
+  if (rerender) {
+    searchMode = false;
+    activeSearch = null;
+    clearSearch({ rerender: false });
+    renderAll({ preserveDateNavScroll: false });
+  }
+  return true;
+}
+function resetFeedModeForGuest() {
+  if (feedMode === 'all') return;
+  feedMode = 'all';
+  localStorage.setItem('setradar_feed', feedMode);
+  syncFeedUi();
+}
+function initFeedControls() {
+  const bar = document.getElementById('feedTabBar');
+  if (!bar) return;
+  syncFeedUi();
+  bar.addEventListener('click', e => {
+    const btn = e.target.closest('.feed-tab');
+    if (btn) setFeedMode(btn.dataset.feedMode);
+  });
 }
 function syncCitySelectorUi() {
   if (!window.SetradarCitySelector) return;
@@ -748,6 +806,7 @@ async function onNavAuthClick() {
   sessionUser = null;
   userProfile = null;
   clearUserCollections();
+  resetFeedModeForGuest();
   stopLivePolling();
   hideLivePanel();
   liveEventData = { queueStats: null, mood: null, presenceRows: [], allRatings: [] };
@@ -794,6 +853,7 @@ function subscribeAuthState() {
     else {
       userProfile = null;
       clearUserCollections();
+      resetFeedModeForGuest();
       stopLivePolling();
       hideLivePanel();
       liveEventData = { queueStats: null, mood: null, presenceRows: [], allRatings: [] };
@@ -1078,7 +1138,7 @@ function renderEventCard(ev, nextActKeys) {
 }
 function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !preserveDateNavScroll } = {}) {
   if (searchMode && activeSearch) { rerenderSearch(); return; }
-  const visibleEvents = getVisibleEvents();
+  const visibleEvents = getFeedEvents();
   const grouped = groupByDate(visibleEvents), nextActKeys = getNextActIds(visibleEvents), main = document.getElementById('mainContent');
   if (!main) return;
   if (!preserveDateNavScroll) activeDateIdx = getDefaultDateIndex(grouped);
@@ -1087,7 +1147,11 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
   renderPopularEvents();
   const scrollY = window.scrollY;
   if (!grouped.length) {
-    main.innerHTML = `<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
+    const isFeedEmpty = sessionUser && feedMode !== 'all';
+    const emptyMsg = isFeedEmpty
+      ? t(feedMode === 'saved' ? 'feed.empty_saved' : 'feed.empty_foryou')
+      : t('empty.no_events');
+    main.innerHTML = `<div class="empty-state feed-empty-state"><span>${emptyMsg}</span>${isFeedEmpty ? `<button class="feed-empty-cta" type="button" data-action="feed-all">${t('feed.show_all')}</button>` : ''}</div>`;
     window.scrollTo(0, scrollY);
     return;
   }
@@ -1126,7 +1190,13 @@ function rerenderView({ preserveDateNavScroll = false } = {}) {
 }
 function jumpToEvent(dateStr, eventId) {
   if (!dateStr) return;
-  const grouped = groupByDate(getVisibleEvents()), idx = grouped.findIndex(([d]) => d === dateStr);
+  let grouped = groupByDate(getFeedEvents()), idx = grouped.findIndex(([d]) => d === dateStr);
+  if (idx === -1 && feedMode !== 'all') {
+    // Target event is filtered out by the current feed — fall back to the full feed
+    setFeedMode('all', { rerender: false });
+    grouped = groupByDate(getFeedEvents());
+    idx = grouped.findIndex(([d]) => d === dateStr);
+  }
   if (idx === -1) return;
   searchMode = false;
   activeSearch = null;
@@ -1494,6 +1564,10 @@ function bindActionHandlers() {
     if (target.dataset.action === 'toggle-favorite-act') {
       const actId = Number(target.dataset.actId);
       await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFollowButtons(actId) });
+    }
+    if (target.dataset.action === 'feed-all') {
+      setFeedMode('all');
+      return;
     }
     if (target.dataset.action === 'score-info') {
       e.stopPropagation();
@@ -1866,7 +1940,7 @@ function initSwipe() {
     }
     if (Math.abs(dx) > 10 && preventDefault) preventDefault();
     curX = x;
-    const grouped = groupByDate(getVisibleEvents()), atStart = activeDateIdx === 0, atEnd = activeDateIdx >= grouped.length - 1;
+    const grouped = groupByDate(getFeedEvents()), atStart = activeDateIdx === 0, atEnd = activeDateIdx >= grouped.length - 1;
     let clamped = dx;
     if ((dx > 0 && atStart) || (dx < 0 && atEnd)) clamped = dx > 0 ? Math.min(dx * 0.18, MAX_RESIST) : Math.max(dx * 0.18, -MAX_RESIST);
     main.style.transition = 'none';
@@ -1875,7 +1949,7 @@ function initSwipe() {
   };
   const endSwipe = () => {
     if (startX === null || !swiping) { startX = null; return; }
-    const dx = curX - startX, grouped = groupByDate(getVisibleEvents()), canNext = activeDateIdx < grouped.length - 1, canPrev = activeDateIdx > 0;
+    const dx = curX - startX, grouped = groupByDate(getFeedEvents()), canNext = activeDateIdx < grouped.length - 1, canPrev = activeDateIdx > 0;
     if (searchMode) { reset(); startX = null; swiping = false; return; }
     if (Math.abs(dx) > 10) suppressClickUntil = Date.now() + 250;
     if (dx < -THRESHOLD && canNext) out(-1, () => { activeDateIdx += 1; renderAll({ preserveDateNavScroll: true, syncDateNavToActive: true }); inp(1); });
@@ -3121,6 +3195,7 @@ async function init() {
   document.addEventListener('setradar:citychange', e => applySelectedCity(e.detail?.city));
   initAuthUi();
   initSortControls();
+  initFeedControls();
   initSearch();
   initArtistPopup();
   initRatingModal();
@@ -3154,6 +3229,7 @@ async function init() {
     availableCities = ['Berlin'];
     syncCitySelectorUi();
   }
+  if (!sessionUser) resetFeedModeForGuest();
   await refreshEventData();
   // Jump to specific date/event or club from profile navigation
   const _hash = window.location.hash.slice(1);

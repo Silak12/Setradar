@@ -36,6 +36,15 @@
       'search.back':              'Back',
       'search.results_for':       'Results for',
 
+      // Feed tabs
+      'feed.label':         'Feed',
+      'feed.all':           'All',
+      'feed.foryou':        'For You',
+      'feed.saved':         'Saved',
+      'feed.empty_foryou':  'Nothing here yet — follow clubs & DJs or mark events as interested to build your feed.',
+      'feed.empty_saved':   'No saved events yet — tap "Interested" on an event to save it here.',
+      'feed.show_all':      'Show all events',
+
       // Sort
       'sort.interested': 'Interested',
       'sort.time':       'Time',
@@ -387,6 +396,15 @@
       'search.events_placeholder':'EVENTS SUCHEN...',
       'search.back':              'Zurück',
       'search.results_for':       'Ergebnisse fuer',
+
+      // Feed tabs
+      'feed.label':         'Feed',
+      'feed.all':           'Alle',
+      'feed.foryou':        'Für dich',
+      'feed.saved':         'Gespeichert',
+      'feed.empty_foryou':  'Noch nichts hier — folge Clubs & DJs oder markiere Events als interessiert, um deinen Feed zu füllen.',
+      'feed.empty_saved':   'Noch keine gespeicherten Events — tippe bei einem Event auf „Interessiert", um es hier zu speichern.',
+      'feed.show_all':      'Alle Events anzeigen',
 
       // Sort
       'sort.interested': 'Interessiert',

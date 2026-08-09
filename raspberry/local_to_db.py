@@ -24,7 +24,7 @@ import time
 import base64
 import argparse
 import difflib
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -43,9 +43,12 @@ SUPABASE_KEY   = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 STORIES_FOLDER          = Path(__file__).parent / "captured_stories"
 PROCESSED_LOG           = Path(__file__).parent / "logs" / "processed_files.json"
+FAILED_LOG              = Path(__file__).parent / "logs" / "failed_files.json"
 OUTPUT_FILE             = Path(__file__).parent / "logs" / "timetable_results.json"
 POLL_INTERVAL           = 300
 DELETE_AFTER_PROCESSING = True
+MAX_ATTEMPTS            = 3    # Versuche pro Bild bei transienten Fehlern (OpenAI/Netz)
+HORIZON_DAYS            = 30   # Events nur innerhalb dieses Zeitraums zuordnen
 
 # ── OCR Pre-Filter ────────────────────────────────────────────────────────────
 # Nur Bilder mit Uhrzeiten oder Cancel-Keywords an OpenAI schicken
@@ -66,11 +69,13 @@ def _get_ocr_reader():
     return _ocr_reader
 
 
-def ocr_prefilter(img_path: Path) -> bool:
+def ocr_prefilter(img_path: Path) -> tuple:
     """
-    Gibt True zurück wenn das Bild Zeiten (21:00) oder Cancel-Keywords enthält
+    Gibt (relevant, ocr_text) zurück.
+    relevant=True wenn das Bild Zeiten (21:00) oder Cancel-Keywords enthält
     und damit an OpenAI geschickt werden soll.
-    False = irrelevant, überspringen.
+    ocr_text = kompletter erkannter Text – geht als Zusatzkontext an OpenAI
+    (hilft bei Namen und Datums-Erkennung).
     """
     try:
         img    = Image.open(img_path)
@@ -92,13 +97,14 @@ def ocr_prefilter(img_path: Path) -> bool:
                 time_texts.append(text)
             full_text.append(text)
 
-        has_time   = bool(_TIME_RE.search(" ".join(time_texts)))
-        has_cancel = any(kw in " ".join(full_text).lower() for kw in _CANCEL_KW)
-        return has_time or has_cancel
+        text_joined = " ".join(full_text)
+        has_time    = bool(_TIME_RE.search(" ".join(time_texts)))
+        has_cancel  = any(kw in text_joined.lower() for kw in _CANCEL_KW)
+        return has_time or has_cancel, text_joined
 
     except Exception as e:
         print(f"  [OCR] Fehler: {e} – sende sicherheitshalber an OpenAI")
-        return True
+        return True, ""
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +117,7 @@ Analyze this Instagram story image and extract any timetable or set time informa
 Return exactly this JSON structure:
 {
   "type": "<one of: timetable | single_set | cancellation | irrelevant>",
+  "date_hint": "<WHEN the event/set takes place, exactly as shown in the image: an explicit date like '12.08.' or '24.08.2026', a weekday like 'Saturday'/'Samstag'/'FR', or a relative word like 'tonight'/'heute'/'tomorrow'/'morgen'. null if no date info is visible>",
   "sets": [
     {
       "name": "<artist or act name as shown in the image>",
@@ -129,6 +136,7 @@ Type definitions:
 - "irrelevant": no timetable or set time information
 
 Rules:
+- If the image shows a date, weekday or words like tonight/heute/tomorrow/morgen for the event, ALWAYS fill date_hint with it (exactly as written)
 - Extract all acts if it's a full timetable
 - For B2B / b2b / vs. / f2f: include both names, put partner(s) in the "b2b" array
 - Use the name exactly as shown (not @handle, just the visible name or handle)
@@ -153,10 +161,31 @@ def save_processed(processed: set):
     PROCESSED_LOG.parent.mkdir(exist_ok=True)
     PROCESSED_LOG.write_text(json.dumps(list(processed)))
 
+
+def load_failed() -> dict:
+    """{filename: fehlversuche} – Bilder die bei transienten Fehlern auf Retry warten."""
+    if FAILED_LOG.exists():
+        try:
+            return json.loads(FAILED_LOG.read_text() or "{}")
+        except json.JSONDecodeError:
+            return {}
+    return {}
+
+
+def save_failed(failed: dict):
+    FAILED_LOG.parent.mkdir(exist_ok=True)
+    FAILED_LOG.write_text(json.dumps(failed))
+
 # ── OpenAI Vision ─────────────────────────────────────────────────────────────
 
-def analyze_image(client: OpenAI, image_path: Path) -> dict:
+def analyze_image(client: OpenAI, image_path: Path, ocr_text: str = "") -> dict:
     b64  = base64.b64encode(image_path.read_bytes()).decode("utf-8")
+
+    user_text = USER_PROMPT
+    if ocr_text:
+        user_text += ("\n\nOCR text extracted from this image by a local OCR engine "
+                      "(may contain errors – use it to double-check names, times and dates):\n"
+                      + ocr_text[:600])
 
     response = client.chat.completions.create(
         model="gpt-4.1-nano",
@@ -167,7 +196,7 @@ def analyze_image(client: OpenAI, image_path: Path) -> dict:
                 "content": [
                     {"type": "image_url",
                      "image_url": {"url": f"data:image/png;base64,{b64}", "detail": "low"}},
-                    {"type": "text", "text": USER_PROMPT},
+                    {"type": "text", "text": user_text},
                 ]
             }
         ],
@@ -186,6 +215,7 @@ def analyze_image(client: OpenAI, image_path: Path) -> dict:
         # Normalisiere: stelle sicher dass sets immer eine Liste ist
         if "sets" not in data:
             data["sets"] = []
+        data.setdefault("date_hint", None)
         for s in data["sets"]:
             s.setdefault("start", None)
             s.setdefault("end", None)
@@ -194,7 +224,7 @@ def analyze_image(client: OpenAI, image_path: Path) -> dict:
         return data
     except json.JSONDecodeError:
         print(f"  [!] JSON Parse Fehler: {raw[:200]}")
-        return {"type": "irrelevant", "sets": []}
+        return {"type": "irrelevant", "sets": [], "date_hint": None}
 
 # ── Name-Cleaning ─────────────────────────────────────────────────────────────
 
@@ -208,6 +238,75 @@ def clean_name(name: str) -> str:
         if upper.startswith(prefix):
             return s[len(prefix):].strip()
     return s
+
+
+def _is_exact_match(extracted_name: str, act: dict) -> bool:
+    """True wenn der extrahierte Name exakt (case-insensitive) auf name oder
+    insta_name des Acts passt – Basis für kritische Writes wie Cancellations."""
+    cands = {extracted_name.strip().lower(), clean_name(extracted_name).lower()}
+    cands.discard("")
+    fields = {(act.get("name") or "").strip().lower(),
+              (act.get("insta_name") or "").strip().lower()}
+    fields.discard("")
+    return bool(cands & fields)
+
+
+# ── Datum aus dem Bild ────────────────────────────────────────────────────────
+
+_WEEKDAYS = {
+    "montag": 0, "mo": 0, "monday": 0, "mon": 0,
+    "dienstag": 1, "di": 1, "tuesday": 1, "tue": 1, "tues": 1,
+    "mittwoch": 2, "mi": 2, "wednesday": 2, "wed": 2,
+    "donnerstag": 3, "do": 3, "thursday": 3, "thu": 3, "thur": 3, "thurs": 3,
+    "freitag": 4, "fr": 4, "friday": 4, "fri": 4,
+    "samstag": 5, "sa": 5, "saturday": 5, "sat": 5, "sonnabend": 5,
+    "sonntag": 6, "so": 6, "sunday": 6, "sun": 6,
+}
+
+
+def resolve_date_hint(hint) -> str | None:
+    """
+    Übersetzt den date_hint aus dem Bild in ein ISO-Datum (YYYY-MM-DD).
+    Unterstützt: 'tonight'/'heute', 'tomorrow'/'morgen', '12.08.', '24.08.2026',
+    'YYYY-MM-DD', Wochentage de/en ('Samstag', 'SAT', ...).
+    Gibt None zurück wenn nichts erkennbar ist.
+    """
+    if not hint:
+        return None
+    s = str(hint).strip().lower()
+    today = date.today()
+
+    if s in ("today", "tonight", "tonite", "heute", "heute nacht", "heute abend"):
+        return today.isoformat()
+    if s in ("tomorrow", "morgen"):
+        return (today + timedelta(days=1)).isoformat()
+
+    # explizites Datum: 12.08. / 12.8.26 / 12.08.2026
+    m = re.search(r"(\d{1,2})\.(\d{1,2})\.?(\d{2,4})?", s)
+    if m:
+        d_, mo = int(m.group(1)), int(m.group(2))
+        yr = m.group(3)
+        year = today.year if not yr else (int(yr) + 2000 if len(yr) == 2 else int(yr))
+        try:
+            cand = date(year, mo, d_)
+            if not yr and cand < today:   # Jahreswechsel: 05.01. im Dezember
+                cand = date(year + 1, mo, d_)
+            return cand.isoformat()
+        except ValueError:
+            return None
+
+    # ISO-Datum
+    m = re.search(r"\d{4}-\d{2}-\d{2}", s)
+    if m:
+        return m.group(0)
+
+    # Wochentag → nächstes Vorkommen (heute zählt mit)
+    for token in re.findall(r"[a-zäöü]+", s):
+        if token in _WEEKDAYS:
+            delta = (_WEEKDAYS[token] - today.weekday()) % 7
+            return (today + timedelta(days=delta)).isoformat()
+
+    return None
 
 
 # ── Supabase ──────────────────────────────────────────────────────────────────
@@ -255,31 +354,98 @@ def find_act(sb: Client, name: str) -> dict | None:
     return None
 
 
-def find_anchor_event(sb: Client, act_ids: list) -> int | None:
+def find_upcoming_event_acts(sb: Client, act_id: int) -> list:
     """
-    Findet das Event das bei den meisten Acts aus einem Bild vorkommt.
-    Gibt event_id zurück wenn ≥2 Acts dasselbe nächste Event teilen.
-    Nutzt Event-Kontext um Ungematchte besser zuzuordnen.
+    Alle kommenden Events (≤ HORIZON_DAYS) eines Acts, sortiert nach Datum.
+    Jede Zeile: id, event_id, start_time, end_time, event_date, event_name.
     """
-    if not act_ids:
+    today   = date.today().isoformat()
+    horizon = (date.today() + timedelta(days=HORIZON_DAYS)).isoformat()
+
+    res = sb.table("event_acts").select("id, event_id, start_time, end_time").eq("act_id", act_id).execute()
+    if not res.data:
+        return []
+
+    event_ids  = [row["event_id"] for row in res.data]
+    events_res = (
+        sb.table("events")
+        .select("id, event_date, event_name")
+        .in_("id", event_ids)
+        .gte("event_date", today)
+        .lte("event_date", horizon)
+        .order("event_date", desc=False)
+        .execute()
+    )
+
+    out = []
+    for ev in events_res.data:
+        for row in res.data:
+            if row["event_id"] == ev["id"]:
+                r = dict(row)
+                r["event_date"] = ev["event_date"]
+                r["event_name"] = ev["event_name"]
+                out.append(r)
+                break
+    return out
+
+
+def choose_event(act_events: dict, target_date: str | None) -> int | None:
+    """
+    Bestimmt DAS Ziel-Event eines Bildes.
+    - Mit Datum aus dem Bild: nur Events an diesem Datum, meistgeteiltes gewinnt.
+    - Ohne Datum: das Event das ≥2 der erkannten Acts teilen (Anchor über ALLE
+      kommenden Events, nicht nur das jeweils nächste).
+      Einzeltreffer reichen ohne Datum NICHT – sonst Fehlzuordnung wenn ein
+      Act mehrfach spielt.
+    """
+    counts: dict = {}
+    labels: dict = {}
+    for rows in act_events.values():
+        for r in rows:
+            if target_date and r["event_date"] != target_date:
+                continue
+            counts[r["event_id"]] = counts.get(r["event_id"], 0) + 1
+            labels[r["event_id"]] = f"'{r['event_name']}' am {r['event_date']}"
+
+    if not counts:
         return None
 
-    event_counts: dict = {}
-    event_names: dict  = {}
-    for act_id in act_ids:
-        ea = find_next_event_act(sb, act_id)
-        if ea:
-            eid = ea["event_id"]
-            event_counts[eid] = event_counts.get(eid, 0) + 1
-            event_names[eid]  = ea["event_name"]
+    best = max(counts, key=lambda k: counts[k])
+    if target_date or counts[best] >= 2:
+        src = f"Datum aus Bild: {target_date}" if target_date else "Anchor"
+        print(f"  [★] Ziel-Event: {labels[best]} – {counts[best]} Act(s) ({src})")
+        return best
+    return None
 
-    if not event_counts:
-        return None
 
-    best_id = max(event_counts, key=lambda k: event_counts[k])
-    print(f"  [★] Anchor-Event: '{event_names[best_id]}' "
-          f"({event_counts[best_id]}/{len(act_ids)} Acts bestätigt)")
-    return best_id
+def resolve_event_act(rows: list, chosen_event_id: int | None, target_date: str | None) -> tuple:
+    """
+    Wählt für einen Act die richtige event_acts-Zeile.
+    Schreibt lieber NICHTS als ins falsche Event (Zeiten werden nie
+    überschrieben – ein Fehlwrite wäre dauerhaft).
+    Rückgabe: (row | None, grund)
+    """
+    if chosen_event_id:
+        for r in rows:
+            if r["event_id"] == chosen_event_id:
+                return r, "ziel-event"
+        # Act steht nicht im Lineup des Ziel-Events → nicht woanders hinschreiben,
+        # die Zeit auf dem Bild gehört zum Ziel-Event
+        return None, "steht nicht im Lineup des Ziel-Events"
+
+    if target_date:
+        dated = [r for r in rows if r["event_date"] == target_date]
+        if len(dated) == 1:
+            return dated[0], "datum"
+        if not dated:
+            return None, f"kein Event am {target_date}"
+        return None, f"mehrere Events am {target_date}"
+
+    if len(rows) == 1:
+        return rows[0], "einziges kommendes Event"
+    if not rows:
+        return None, f"kein kommendes Event ({HORIZON_DAYS} Tage)"
+    return None, f"mehrdeutig: {len(rows)} kommende Events, kein Datum im Bild"
 
 
 def fuzzy_match_in_event(sb: Client, name: str, event_id: int) -> dict | None:
@@ -334,36 +500,6 @@ def fuzzy_match_in_event(sb: Client, name: str, event_id: int) -> dict | None:
     return None
 
 
-def find_next_event_act(sb: Client, act_id: int) -> dict | None:
-    today = date.today().isoformat()
-
-    res = sb.table("event_acts").select("id, event_id, start_time, end_time").eq("act_id", act_id).execute()
-    if not res.data:
-        return None
-
-    event_ids = [row["event_id"] for row in res.data]
-    events_res = (
-        sb.table("events")
-        .select("id, event_date, event_name")
-        .in_("id", event_ids)
-        .gte("event_date", today)
-        .order("event_date", desc=False)
-        .limit(1)
-        .execute()
-    )
-    if not events_res.data:
-        return None
-
-    next_event = events_res.data[0]
-    for row in res.data:
-        if row["event_id"] == next_event["id"]:
-            row["event_date"] = next_event["event_date"]
-            row["event_name"] = next_event["event_name"]
-            return row
-
-    return None
-
-
 def write_set_time(sb: Client, event_act_id: int, start: str | None, end: str | None,
                    current_start: str | None, current_end: str | None,
                    canceled: bool = False) -> str:
@@ -396,10 +532,11 @@ def write_set_time(sb: Client, event_act_id: int, start: str | None, end: str | 
 
 # ── Einen Set verarbeiten ──────────────────────────────────────────────────────
 
-def process_set(sb: Client, set_data: dict, act: dict | None = None) -> dict:
+def process_set(sb: Client, set_data: dict, act: dict | None,
+                event_act: dict | None, skip_reason: str = "") -> dict:
     """
-    Verarbeitet einen Set. Optionaler act-Parameter erlaubt vorgematchten Act
-    aus der zweiphasigen Verarbeitung zu übergeben.
+    Verarbeitet einen Set. Act und event_acts-Zeile kommen vorgematcht aus
+    der mehrphasigen Verarbeitung (Ziel-Event-Auflösung).
     """
     name     = set_data.get("name", "").strip()
     start    = set_data.get("start")
@@ -410,51 +547,64 @@ def process_set(sb: Client, set_data: dict, act: dict | None = None) -> dict:
     if not name:
         return {"matched": False, "reason": "no name"}
 
-    if act is None:
-        act = find_act(sb, name)
     if not act:
         print(f"  [–] Kein Act gefunden für '{name}'")
-        result = {"matched": False, "name": name, "reason": "unknown act"}
-    else:
-        print(f"  [✓] Act: {act['name']} (id={act['id']})")
-        event_act = find_next_event_act(sb, act["id"])
-        if not event_act:
-            print(f"  [–] Kein zukünftiges Event für {act['name']}")
-            result = {"matched": True, "act": act["name"], "reason": "no upcoming event"}
-        else:
-            print(f"  [✓] Event: {event_act['event_name']} am {event_act['event_date']}")
-            status = write_set_time(
-                sb, event_act["id"], start, end,
-                event_act.get("start_time"), event_act.get("end_time"),
-                canceled=canceled
-            )
-            print(f"  [✓] DB: {start}–{end} → {status}")
-            result = {
-                "matched":    True,
-                "act":        act["name"],
-                "event":      event_act["event_name"],
-                "event_date": event_act["event_date"],
-                "start_time": start,
-                "end_time":   end,
-                "canceled":   canceled,
-                "db_status":  status,
-            }
+        return {"matched": False, "name": name, "reason": "unknown act"}
 
-    # B2B-Partner ebenfalls verarbeiten
+    print(f"  [✓] Act: {act['name']} (id={act['id']})")
+
+    if not event_act:
+        print(f"  [–] Kein Event zugeordnet: {skip_reason}")
+        return {"matched": True, "act": act["name"], "reason": skip_reason or "no event"}
+
+    # Cancellations nur bei exaktem Namens-Match schreiben – ein Fuzzy-Treffer
+    # könnte sonst den falschen Act absagen
+    if canceled and not _is_exact_match(name, act):
+        print(f"  [!] Cancel-Meldung, aber '{name}' ≠ '{act['name']}' "
+              f"(kein exakter Match) – Cancel wird NICHT geschrieben")
+        canceled = False
+        if not start and not end:
+            return {"matched": True, "act": act["name"],
+                    "reason": "cancel unsicher (fuzzy match), übersprungen"}
+
+    print(f"  [✓] Event: {event_act['event_name']} am {event_act['event_date']}")
+    status = write_set_time(
+        sb, event_act["id"], start, end,
+        event_act.get("start_time"), event_act.get("end_time"),
+        canceled=canceled
+    )
+    print(f"  [✓] DB: {start}–{end} → {status}")
+    result = {
+        "matched":    True,
+        "act":        act["name"],
+        "event":      event_act["event_name"],
+        "event_date": event_act["event_date"],
+        "start_time": start,
+        "end_time":   end,
+        "canceled":   canceled,
+        "db_status":  status,
+    }
+
+    # B2B-Partner: gleiche Zeiten, GLEICHES Event (nicht deren "nächstes")
     for partner_name in b2b:
         print(f"  [b2b] Verarbeite Partner: {partner_name}")
         partner_act = find_act(sb, partner_name)
         if not partner_act:
             print(f"  [–] B2B-Partner '{partner_name}' nicht gefunden")
             continue
-        partner_event_act = find_next_event_act(sb, partner_act["id"])
-        if not partner_event_act:
-            print(f"  [–] Kein Event für B2B-Partner {partner_act['name']}")
+        pres = (sb.table("event_acts").select("id, start_time, end_time")
+                .eq("act_id", partner_act["id"])
+                .eq("event_id", event_act["event_id"])
+                .limit(1).execute())
+        if not pres.data:
+            print(f"  [–] B2B-Partner {partner_act['name']} steht nicht im Lineup dieses Events")
             continue
+        p = pres.data[0]
+        p_canceled = canceled and _is_exact_match(partner_name, partner_act)
         status = write_set_time(
-            sb, partner_event_act["id"], start, end,
-            partner_event_act.get("start_time"), partner_event_act.get("end_time"),
-            canceled=canceled
+            sb, p["id"], start, end,
+            p.get("start_time"), p.get("end_time"),
+            canceled=p_canceled
         )
         print(f"  [b2b] {partner_act['name']}: {start}–{end} → {status}")
 
@@ -487,6 +637,7 @@ def process_new_images(verbose: bool = True) -> int:
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
     sb            = get_supabase()
     processed     = load_processed()
+    failed        = load_failed()
 
     all_images = sorted(STORIES_FOLDER.glob("story_*.png"))
     new_images = [f for f in all_images if f.name not in processed]
@@ -502,7 +653,8 @@ def process_new_images(verbose: bool = True) -> int:
         print(f"\n── {img_path.name} ──")
         try:
             # OCR Pre-Filter: nur Bilder mit Zeiten/Cancel-Keywords an OpenAI
-            if not ocr_prefilter(img_path):
+            relevant, ocr_text = ocr_prefilter(img_path)
+            if not relevant:
                 print(f"  [OCR] Kein Timetable-Inhalt – überspringe OpenAI")
                 processed.add(img_path.name)
                 save_processed(processed)
@@ -510,11 +662,16 @@ def process_new_images(verbose: bool = True) -> int:
                     img_path.unlink()
                 continue
 
-            extracted = analyze_image(openai_client, img_path)
-            story_type = extracted.get("type", "irrelevant")
-            sets       = extracted.get("sets", [])
+            extracted   = analyze_image(openai_client, img_path, ocr_text)
+            story_type  = extracted.get("type", "irrelevant")
+            sets        = extracted.get("sets", [])
+            date_hint   = extracted.get("date_hint")
+            target_date = resolve_date_hint(date_hint)
 
-            print(f"  Typ: {story_type} | {len(sets)} Set(s) erkannt")
+            info = f"  Typ: {story_type} | {len(sets)} Set(s) erkannt"
+            if date_hint:
+                info += f" | Datum im Bild: '{date_hint}' → {target_date or 'nicht auflösbar'}"
+            print(info)
 
             if story_type == "irrelevant" or not sets:
                 processed.add(img_path.name)
@@ -529,44 +686,75 @@ def process_new_images(verbose: bool = True) -> int:
                 act = find_act(sb, set_data.get("name", ""))
                 phase1.append((set_data, act))
 
-            # Phase 2: Anchor-Event aus gematchten Acts bestimmen
-            matched_act_ids = [act["id"] for _, act in phase1 if act]
-            anchor_event_id = find_anchor_event(sb, matched_act_ids)
+            # Phase 2: kommende Events (30 Tage) aller gematchten Acts sammeln
+            act_events: dict = {}
+            for _, act in phase1:
+                if act and act["id"] not in act_events:
+                    act_events[act["id"]] = find_upcoming_event_acts(sb, act["id"])
 
-            # Phase 3: Ungematchte nochmal gezielt gegen Anchor-Event versuchen
+            # Phase 3: Ziel-Event bestimmen – Datum aus dem Bild schlägt Anchor
+            chosen_event_id = choose_event(act_events, target_date)
+
+            # Phase 3b: Ungematchte nochmal gezielt im Ziel-Event suchen
             final_sets = []
             for set_data, act in phase1:
-                if act is None and anchor_event_id:
+                if act is None and chosen_event_id:
                     name = set_data.get("name", "")
-                    act  = fuzzy_match_in_event(sb, name, anchor_event_id)
+                    act  = fuzzy_match_in_event(sb, name, chosen_event_id)
                     if act:
-                        print(f"  [~] Via Anchor gefunden: '{name}' → '{act['name']}'")
+                        print(f"  [~] Via Ziel-Event gefunden: '{name}' → '{act['name']}'")
+                        if act["id"] not in act_events:
+                            act_events[act["id"]] = find_upcoming_event_acts(sb, act["id"])
                 final_sets.append((set_data, act))
 
-            # Phase 4: In DB schreiben
+            # Phase 4: pro Act die richtige event_acts-Zeile wählen + schreiben
             db_results = []
             for set_data, act in final_sets:
-                res = process_set(sb, set_data, act)
+                event_act, reason = (None, "")
+                if act:
+                    event_act, reason = resolve_event_act(
+                        act_events.get(act["id"], []), chosen_event_id, target_date)
+                res = process_set(sb, set_data, act, event_act, skip_reason=reason)
                 db_results.append(res)
 
             save_result({
                 "file_name":    img_path.name,
                 "processed_at": datetime.now().isoformat(),
                 "story_type":   story_type,
+                "date_hint":    date_hint,
+                "target_date":  target_date,
                 "extracted":    sets,
                 "db":           db_results,
             })
 
             processed.add(img_path.name)
             save_processed(processed)
+            if img_path.name in failed:
+                failed.pop(img_path.name, None)
+                save_failed(failed)
 
             if DELETE_AFTER_PROCESSING:
                 img_path.unlink()
 
         except Exception as e:
-            print(f"  [✗] Fehler: {e}")
-            processed.add(img_path.name)
-            save_processed(processed)
+            # Transiente Fehler (OpenAI-Ausfall, Netz weg) → Retry beim nächsten
+            # Lauf statt Bild dauerhaft zu verlieren. Nach MAX_ATTEMPTS aufgeben.
+            attempts = failed.get(img_path.name, 0) + 1
+            if attempts >= MAX_ATTEMPTS:
+                print(f"  [✗] Fehler: {e} – Versuch {attempts}/{MAX_ATTEMPTS}, gebe auf")
+                processed.add(img_path.name)
+                save_processed(processed)
+                failed.pop(img_path.name, None)
+                if DELETE_AFTER_PROCESSING:
+                    try:
+                        img_path.unlink()
+                    except OSError:
+                        pass
+            else:
+                print(f"  [✗] Fehler: {e} – Versuch {attempts}/{MAX_ATTEMPTS}, "
+                      f"Retry beim nächsten Lauf")
+                failed[img_path.name] = attempts
+            save_failed(failed)
 
     return len(new_images)
 

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/Leo/.claude/projects/c--Users-Leo-Desktop-jsx-Lineup-Berlin/20d99474-9eb3-4114-b436-29305e8a9617/tool-results/**)"
+      "Read(//c/Users/Leo/.claude/projects/c--Users-Leo-Desktop-jsx-Lineup-Berlin/20d99474-9eb3-4114-b436-29305e8a9617/tool-results/**)",
+      "Bash(\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --force-device-scale-factor=1 --window-size=500,844 --hide-scrollbars --virtual-time-budget=9000 --screenshot=\"C:/Users/Leo/AppData/Local/Temp/claude/c--Users-Leo-Desktop-jsx-Lineup-Berlin/d3426450-1093-400e-99dc-64bde970e811/scratchpad/mobile_wrap.png\" \"file://C:/Users/Leo/AppData/Local/Temp/claude/c--Users-Leo-Desktop-jsx-Lineup-Berlin/d3426450-1093-400e-99dc-64bde970e811/scratchpad/wrap.html\")"
     ]
   }
 }
