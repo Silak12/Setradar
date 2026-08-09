@@ -1,0 +1,41 @@
+name: RA Interested Scraper
+
+on:
+  schedule:
+    - cron: "0 11,20 * * *"
+      timezone: "Europe/Berlin"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ra-interested-scraper
+  cancel-in-progress: false
+
+jobs:
+  update-interested:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install scraper dependencies
+        run: python -m pip install requests==2.32.5 python-dotenv==1.2.1 supabase==2.28.0
+
+      - name: Update RA interested counts for the next 28 days
+        run: python backend/fetcher/ra_interested_scraper.py

@@ -12,7 +12,7 @@ from supabase import Client, create_client
 
 ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 SEED_SOURCE = "ra_interested_v1"
-DEFAULT_DAYS_AHEAD = 60
+DEFAULT_DAYS_AHEAD = 28
 
 load_dotenv(ROOT_ENV_FILE)
 
@@ -126,7 +126,7 @@ def _build_seed_rows(events: list[dict], act_counts: Counter[int]) -> list[dict]
 
 def _upsert_seed_rows(supabase: Client, rows: list[dict]) -> None:
     if not rows:
-        print("No upcoming events found in the next 60 days.")
+        print("No upcoming events found in the selected date range.")
         return
 
     try:
@@ -139,6 +139,18 @@ def _upsert_seed_rows(supabase: Client, rows: list[dict]) -> None:
         raise _api_error("Failed to upsert event_hype_seed rows", exc) from exc
 
     print(f"Upserted {len(rows)} event_hype_seed row(s) with source='{SEED_SOURCE}'.")
+
+
+def seed_upcoming_hype(
+    supabase: Client,
+    days_ahead: int = DEFAULT_DAYS_AHEAD,
+) -> int:
+    events = _load_upcoming_events(supabase, days_ahead)
+    event_ids = [int(event["id"]) for event in events if event.get("id") is not None]
+    act_counts = _load_event_act_counts(supabase, event_ids)
+    rows = _build_seed_rows(events, act_counts)
+    _upsert_seed_rows(supabase, rows)
+    return len(rows)
 
 
 def main() -> None:
@@ -158,11 +170,7 @@ def main() -> None:
 
     try:
         supabase = _supabase_client()
-        events = _load_upcoming_events(supabase, args.days)
-        event_ids = [int(event["id"]) for event in events if event.get("id") is not None]
-        act_counts = _load_event_act_counts(supabase, event_ids)
-        rows = _build_seed_rows(events, act_counts)
-        _upsert_seed_rows(supabase, rows)
+        seed_upcoming_hype(supabase, args.days)
     except (RuntimeError, ValueError) as exc:
         print(f"[ERROR] {exc}")
         raise SystemExit(1) from exc

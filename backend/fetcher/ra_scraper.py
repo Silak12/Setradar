@@ -55,7 +55,6 @@ query GET_VENUE_EVENTS($id: ID!, $limit: Int) {
       date
       startTime
       endTime
-      interestedCount
       lineup
       artists {
         id
@@ -77,7 +76,6 @@ query GET_EVENT_DETAIL($id: ID!) {
     date
     startTime
     endTime
-    interestedCount
     lineup
     artists {
       id
@@ -243,34 +241,25 @@ def main():
         import subprocess
         database_dir = Path(__file__).parent.parent / "database"
         lineup_seed = database_dir / "supabase_seed_lineup.py"
-        hype_seed = database_dir / "seed_event_hype.py"
-        missing_scripts = [script for script in (lineup_seed, hype_seed) if not script.exists()]
-        if missing_scripts:
-            for script in missing_scripts:
-                LOGGER.error("[!] DB-Script nicht gefunden: %s", script)
+        if not lineup_seed.exists():
+            LOGGER.error("[!] DB-Script nicht gefunden: %s", lineup_seed)
             sys.exit(1)
 
-        commands = (
-            (
-                "supabase_seed_lineup.py",
+        LOGGER.info("[->] Starte supabase_seed_lineup.py...")
+        try:
+            subprocess.run(
                 [sys.executable, str(lineup_seed), "--input", str(args.output)],
-            ),
-            (
-                "seed_event_hype.py",
-                [sys.executable, str(hype_seed), "--days", str(args.weeks * 7)],
-            ),
-        )
-        for label, command in commands:
-            LOGGER.info("[->] Starte %s...", label)
-            try:
-                subprocess.run(command, check=True)
-            except subprocess.CalledProcessError as exc:
-                LOGGER.error("[!] %s fehlgeschlagen (Exit-Code %s).", label, exc.returncode)
-                sys.exit(exc.returncode or 1)
+                check=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            LOGGER.error(
+                "[!] supabase_seed_lineup.py fehlgeschlagen (Exit-Code %s).",
+                exc.returncode,
+            )
+            sys.exit(exc.returncode or 1)
     else:
         LOGGER.info("[dry-run] Manuell seeden:")
         LOGGER.info("  python supabase_seed_lineup.py --input %s", args.output)
-        LOGGER.info("  python seed_event_hype.py --days %s", args.weeks * 7)
 
 
 if __name__ == "__main__":
