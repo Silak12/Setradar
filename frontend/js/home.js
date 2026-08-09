@@ -24,6 +24,39 @@ function safeUrl(url) {
   const s = String(url).trim();
   return /^https?:\/\//i.test(s) ? escapeHtml(s) : '';
 }
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const STAR_PATH = 'M12 2.5 14.8 8.6 21.5 9.3 16.5 13.8 17.9 20.4 12 17 6.1 20.4 7.5 13.8 2.5 9.3 9.2 8.6Z';
+const HEART_PATH = 'M12 21C12 21 3 14.5 3 8.5C3 5.4 5.4 3 8.5 3C10.2 3 11.9 3.8 13 5.1C14.1 3.8 15.8 3 17.5 3C20.6 3 23 5.4 23 8.5C23 14.5 12 21 12 21Z';
+function buildStarsSvg(value) {
+  const filled = Math.round(Number(value) || 0);
+  return `<span class="star-display" aria-hidden="true">${[1, 2, 3, 4, 5].map(v =>
+    `<svg viewBox="0 0 24 24" class="star-svg${v <= filled ? ' on' : ''}" style="--i:${v - 1}"><path d="${STAR_PATH}"/></svg>`).join('')}</span>`;
+}
+function buildHeartSvg() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}"/></svg>`;
+}
+function particleBurst(x, y, count = 16) {
+  if (REDUCED_MOTION) return;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('span');
+    p.className = 'particle';
+    const size = 3 + Math.random() * 4;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    document.body.appendChild(p);
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 36 + Math.random() * 58;
+    p.animate([
+      { transform: `translate(${x}px, ${y}px) scale(1) rotate(0deg)`, opacity: 1 },
+      { transform: `translate(${x + Math.cos(ang) * dist}px, ${y + Math.sin(ang) * dist - 14}px) scale(0) rotate(${Math.random() * 180 - 90}deg)`, opacity: 0 },
+    ], { duration: 480 + Math.random() * 320, easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)' }).onfinish = () => p.remove();
+  }
+}
+function burstFrom(el) {
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  particleBurst(r.left + r.width / 2, r.top + r.height / 2);
+}
 function formatLocalDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -98,6 +131,8 @@ let activeSearch = null;
 let authMode = AUTH_MODES.LOGIN;
 let demoMode = false;
 let _dataLoaded = false;
+let realtimeRefreshTimer = null;
+const pendingRealtimeEventIds = new Set();
 let _sessionReady = false;
 let availableCities = [];
 let selectedCity = localStorage.getItem('setradar_city') || 'Berlin';
@@ -321,27 +356,6 @@ function applySelectedCity(nextCity) {
   clearSearch({ rerender: false });
   rerenderView({ preserveDateNavScroll: false });
   loadActSpotlight().then(() => { buildPopularEvents(); renderPopularEvents(); });
-}
-function updateStatusBar() {
-  const bar = document.getElementById('statusBar');
-  if (!bar) return;
-  const visibleEvents = getVisibleEvents();
-  const count = getEventsForDateBucket(getDateStr(0), visibleEvents).length;
-  const locale = window.LANG === 'de' ? 'de-DE' : 'en-GB';
-  const time = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-  const todayLabel = t('date.today').toLowerCase();
-  bar.innerHTML = `
-    <div class="status-bar-left"><span class="status-live-dot"></span><span>${escapeHtml(selectedCity)} - ${count} Event${count !== 1 ? 's' : ''} ${todayLabel}</span></div>
-    <div class="status-bar-right">${time}</div>
-  `;
-}
-function setLastUpdated() {
-  const el = document.getElementById('lastUpdated');
-  if (el) el.textContent = t('status.updated') + ' ' + new Date().toLocaleTimeString(window.LANG === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
-}
-function refreshAmbientUi() {
-  updateStatusBar();
-  setLastUpdated();
 }
 function syncBodyLock() {
   const artistOpen = document.getElementById('artistOverlay')?.classList.contains('open');
@@ -766,7 +780,11 @@ function subscribeAuthState() {
   if (!supabaseClient) return;
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     if (_event === 'INITIAL_SESSION') return;
+    const prevUserId = sessionUser?.id || null;
+    const nextUserId = session?.user?.id || null;
     sessionUser = session?.user || null;
+    // Token-Refresh etc. ohne User-Wechsel: kein Re-Render, sonst "springt" die Seite
+    if (prevUserId === nextUserId) return;
     if (sessionUser) {
       await fetchUserProfile();
       await ensureUserProfile();
@@ -947,77 +965,102 @@ function renderPopularEvents() {
     </div>
   `;
 }
+function getClubColor(clubName) {
+  return window.SetradarClubColors ? window.SetradarClubColors.get(clubName) : 'var(--red)';
+}
+function getRunningAct(ev, acts) {
+  if (!isEventRunningNow(ev)) return null;
+  const now = new Date();
+  for (const a of acts) {
+    if (!a.start_time || a.canceled) continue;
+    const start = getEventTimeDate(ev.event_date, fmtTime(a.start_time));
+    if (!start) continue;
+    let end = a.end_time ? getEventTimeDate(ev.event_date, fmtTime(a.end_time)) : new Date(start.getTime() + 2 * 3600000);
+    if (end <= start) end = new Date(end.getTime() + 86400000);
+    if (now >= start && now < end) return a;
+  }
+  return null;
+}
+function buildEqBars() {
+  return `<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>`;
+}
 function renderEventCard(ev, nextActKeys) {
   const acts = sortActs(ev.event_acts || []);
   const hasTime = acts.some(a => a.start_time);
   const venue = ev.clubs?.name ?? '-';
+  const clubColor = getClubColor(ev.clubs?.name);
   const city = getEventCity(ev);
   const doors = fmtTime(ev.time_start);
   const close = fmtTime(ev.time_end);
   const hype = getHype(ev.id);
   const isHyped = userHypedEventIds.has(Number(ev.id));
   const isOpen = expandedEventIds.has(Number(ev.id));
-  const isClubFavorite = ev.clubs?.id ? favoriteClubIds.has(Number(ev.clubs.id)) : false;
-  const venueHtml = ev.clubs?.id
-    ? `<span class="venue-name-group"><span class="venue-tag">${escapeHtml(venue)}</span><button class="club-follow-btn${isClubFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-club" data-club-id="${ev.clubs.id}" aria-pressed="${isClubFavorite}">${isClubFavorite ? '−' : '+'}</button></span>`
-    : `<span class="venue-tag">${escapeHtml(venue)}</span>`;
+  const runningAct = getRunningAct(ev, acts);
+  const clubChip = ev.clubs?.id
+    ? `<button class="club-chip" type="button" data-action="open-club" data-club-id="${ev.clubs.id}" data-club-name="${escapeHtml(venue)}">${escapeHtml(venue)}</button>`
+    : `<span class="club-chip club-chip--static">${escapeHtml(venue)}</span>`;
+  const onAirTag = runningAct
+    ? `<span class="on-air-tag">${buildEqBars()}<span class="on-air-text">ON AIR — ${escapeHtml(runningAct.acts?.name ?? '?')}</span></span>`
+    : '';
   const hl = eventHighlights.get(Number(ev.id));
   const artistRows = acts.map(a => {
-    const start = fmtTime(a.start_time), end = fmtTime(a.end_time), label = start && end ? `${start} - ${end}` : start ? t('act.from', { time: start }) : null;
+    const start = fmtTime(a.start_time), end = fmtTime(a.end_time);
     const actKey = `${ev.id}_${a.sort_order}`;
     const mins = nextActKeys.includes(actKey) ? getMinutesUntil(start, ev.event_date) : null;
     const countdown = mins !== null ? fmtCountdown(mins) : null;
     const actId = a.acts?.id ?? null;
     const numActId = actId ? Number(actId) : null;
+    const actName = a.acts?.name ?? '?';
     const isActFavorite = numActId ? favoriteActIds.has(numActId) : false;
+    const isLive = runningAct === a;
     const isBestAct = numActId && hl?.bestActId === numActId;
     const isSurprise = numActId && hl?.surpriseActId === numActId;
     const isHiddenGem = numActId && hl?.hiddenGemActId === numActId;
-    const actFollowBtn = actId
-      ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '♥' : '♡'}</button>`
-      : '';
-    const existingEvRating = actId && sessionUser ? userActRatings.get(`${actId}:${ev.id}`) : null;
-    const eventHasStarted = (() => { const s = getEventStartDateTime(ev); return s ? new Date() >= s : ev.event_date <= getDateStr(0); })();
-    const actRateBtn = actId && sessionUser && eventHasStarted
-      ? existingEvRating
-        ? `<button class="act-rate-btn act-rate-btn--rated" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${t('act.rate_change')}">${'★'.repeat(existingEvRating.rating)}${'☆'.repeat(5 - existingEvRating.rating)}</button>`
-        : `<button class="act-rate-btn" type="button" data-action="open-rating" data-act-id="${actId}" data-act-name="${escapeHtml(a.acts?.name ?? '?')}" data-event-id="${ev.id}" data-event-name="${escapeHtml(ev.event_name)}" title="${t('act.rate')}">☆☆☆☆☆</button>`
-      : '';
+    const myRating = numActId && sessionUser ? userActRatings.get(`${numActId}:${ev.id}`)?.rating : null;
     const flairs = [
       isBestAct    ? `<span class="act-flair act-flair--best">${t('act.best')}</span>` : '',
       isSurprise   ? `<span class="act-flair act-flair--surprise">${t('act.surprise')}</span>` : '',
       isHiddenGem  ? `<span class="act-flair act-flair--gem">${t('act.gem')}</span>` : '',
     ].filter(Boolean).join('');
+    const timeHtml = a.canceled
+      ? `<span class="dj-row-time tba">—</span>`
+      : start
+        ? `<span class="dj-row-time">${start}${end ? `<small>–${end}</small>` : ''}</span>`
+        : `<span class="dj-row-time tba">${t('live.tba')}</span>`;
+    const starsHtml = numActId && sessionUser && !a.canceled
+      ? `<span class="dj-row-stars">${[1, 2, 3, 4, 5].map(i =>
+          `<button class="dj-row-star${myRating >= i ? ' filled' : ''}" type="button" data-action="rate-act-inline" data-act-id="${numActId}" data-event-id="${ev.id}" data-star="${i}" aria-label="${escapeHtml(actName)}: ${i}/5">★</button>`
+        ).join('')}</span>`
+      : '';
     return `
-      <div class="artist-row ${start ? 'has-time' : ''}${isActFavorite ? ' artist-row--followed' : ''}">
-        <span class="artist-row-left">
-          ${buildActLeftHtml(actId)}
-          ${actFollowBtn}
-        </span>
-        <span class="artist-name">
-          <span class="artist-name-link" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${escapeHtml(a.acts?.name ?? '?')}">${escapeHtml(a.acts?.name ?? '?')}</span>
-          ${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}
-        </span>
-        <span class="artist-row-right">
-          ${actRateBtn}
-          ${countdown ? `<span class="countdown ${mins < 30 ? 'soon' : ''}">${countdown}</span>` : ''}
-          ${a.canceled ? `<span class="artist-time canceled">${t('act.canceled')}</span>` : label ? `<span class="artist-time confirmed">${label}</span>` : `<span class="time-tba">${t('live.tba')}</span>`}
+      <div class="dj-row${isActFavorite ? ' is-followed' : ''}${isLive ? ' is-live' : ''}${a.canceled ? ' is-canceled' : ''}${actId ? '' : ' is-static'}"${actId ? ` data-action="open-artist" data-act-id="${actId}" role="button" tabindex="0"` : ''} data-act-name="${escapeHtml(actName)}">
+        ${timeHtml}
+        <span class="dj-row-name"><span>${escapeHtml(actName)}</span>${flairs ? `<span class="artist-flairs">${flairs}</span>` : ''}</span>
+        <span class="dj-row-state">
+          ${isLive ? buildEqBars() : ''}
+          ${countdown ? `<span class="countdown${mins < 30 ? ' soon' : ''}">${countdown}</span>` : ''}
+          ${a.canceled ? `<span class="dj-row-canceled">${t('act.canceled')}</span>` : ''}
+          ${starsHtml}
+          ${isActFavorite ? `<span class="dj-row-heart" aria-hidden="true">♥</span>` : ''}
+          ${actId ? `<span class="dj-row-chevron" aria-hidden="true">▸</span>` : ''}
         </span>
       </div>
     `;
   }).join('');
+  const presenceHtml = buildPresenceBtn(ev.id);
+  const presenceIsLive = presenceHtml.includes('presence-live-open');
   return `
-    <div class="event-card${isOpen ? ' open' : ''}" data-event-id="${ev.id}">
+    <div class="event-card${isOpen ? ' open' : ''}" data-event-id="${ev.id}" style="--club-color:${clubColor}">
       <div class="card-header" data-action="toggle-timetable" data-event-id="${ev.id}">
         <div class="event-heading">
           <div class="event-name">${escapeHtml(ev.event_name)}</div>
-          ${city ? `<div class="event-city-emphasis">${escapeHtml(city)}</div>` : ''}
+          ${city && city !== selectedCity ? `<div class="event-city-emphasis">${escapeHtml(city)}</div>` : ''}
           ${buildEventScoreBadge(ev)}
         </div>
         <div class="event-meta">
-          ${venueHtml}
+          ${clubChip}
           ${doors ? `<span class="doors-time">↳ ${doors}${close ? ' - ' + close : ''}</span>` : ''}
-          <span class="status-badge ${hasTime ? 'confirmed' : 'pending'}"><span class="status-dot"></span>${hasTime ? t('status.timetable') : t('status.lineup')}</span>
+          ${onAirTag || `<span class="status-badge ${hasTime ? 'confirmed' : 'pending'}"><span class="status-dot"></span>${hasTime ? t('status.timetable') : t('status.lineup')}</span>`}
           <span class="card-chevron">${isOpen ? '▾' : '▸'}</span>
         </div>
       </div>
@@ -1027,9 +1070,9 @@ function renderEventCard(ev, nextActKeys) {
             <span class="spark-icon">&#10022;</span><span>${t('sort.interested')}</span><span class="hype-count">${hype.total_hype}</span>
           </button>
         </div>
-        <div class="event-actions-right">${buildPresenceBtn(ev.id)}</div>
+        <div class="event-actions-right">${presenceIsLive ? presenceHtml : ''}</div>
       </div>
-      <div class="artist-list">${artistRows ? `<div class="lineup-header"><span class="lineup-header-left"><span class="lh-avg lh-label">Ø</span><span class="lh-follow lh-label">♡</span></span><span class="lineup-header-mid lh-label">${t('misc.artist')}</span><span class="lineup-header-right"><span class="lh-label">${t('act.rate')}</span><span class="lh-label">${t('misc.time')}</span></span></div>` : ''}${artistRows || `<span class="time-tba">${t('misc.no_info')}</span>`}${buildQueueChartRow(ev.id)}</div>
+      <div class="artist-list">${artistRows || `<span class="time-tba">${t('misc.no_info')}</span>`}${presenceIsLive ? '' : presenceHtml ? `<div class="event-expanded-actions">${presenceHtml}</div>` : ''}${buildQueueChartRow(ev.id)}</div>
     </div>
   `;
 }
@@ -1042,12 +1085,10 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
   activeDateIdx = grouped.length ? Math.max(0, Math.min(activeDateIdx, grouped.length - 1)) : 0;
   renderDateTabs(grouped, { syncToActive: syncDateNavToActive, smoothSync: syncDateNavToActive && !preserveDateNavScroll });
   renderPopularEvents();
-  updateStatusBar();
   const scrollY = window.scrollY;
   if (!grouped.length) {
     main.innerHTML = `<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
     window.scrollTo(0, scrollY);
-    setLastUpdated();
     return;
   }
   const [dateStr, rawEvents] = grouped[activeDateIdx] ?? grouped[0];
@@ -1060,7 +1101,6 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
     </div>
   `;
   window.scrollTo(0, scrollY);
-  setLastUpdated();
   bindArtistClicks();
 }
 function flashEventCard(eventId) {
@@ -1246,11 +1286,9 @@ function renderSearchResults(label, grouped) {
   const nextActKeys = getNextActIds(searchEvents), main = document.getElementById('mainContent');
   if (!main) return;
   renderPopularEvents();
-  updateStatusBar();
   if (!grouped.length) {
     const statsBlock = activeSearch?.type === 'club' ? `<div class="club-stats-bar" id="clubStatsBar"><span class="club-stat-empty">${t('loading.stats')}</span></div>` : '';
     main.innerHTML = `<div class="search-active-banner"><span><strong>${escapeHtml(label)}</strong>${t('misc.search_banner_no_events')}</span><button class="search-banner-close" type="button" onclick="clearSearch()">${t('search.back')}</button></div>${statsBlock}<div class="empty-state"><span>${t('empty.no_events')}</span></div>`;
-    setLastUpdated();
     return;
   }
   const isClub = activeSearch?.type === 'club';
@@ -1269,7 +1307,6 @@ function renderSearchResults(label, grouped) {
     `;
   });
   main.innerHTML = html;
-  setLastUpdated();
   bindArtistClicks();
 }
 async function toggleFavorite(type, id, { rerender = true, onChange = null } = {}) {
@@ -1340,9 +1377,10 @@ function syncActFavoriteButton(actId) {
   const active = favoriteActIds.has(Number(actId));
   button.classList.toggle('active', active);
   button.setAttribute('aria-pressed', String(active));
-  button.textContent = active ? '♥' : '♡';
   button.setAttribute('aria-label', active ? t('profile.unfollow_artist') : t('profile.follow_artist'));
-  button.setAttribute('title', active ? t('profile.unfollow_artist') : t('profile.follow_artist'));
+  const label = button.querySelector('.heart-btn-label');
+  if (label) label.textContent = active ? t('sheet.following') : t('sheet.follow');
+  else button.textContent = active ? '♥' : '♡';
 }
 function syncHypeButton(eventId) {
   const isHyped = userHypedEventIds.has(Number(eventId));
@@ -1370,7 +1408,55 @@ function syncActFollowButtons(actId) {
     btn.textContent = isActive ? '♥' : '♡';
     btn.closest('.artist-row')?.classList.toggle('artist-row--followed', isActive);
   });
+  document.querySelectorAll(`.dj-row[data-act-id="${actId}"]`).forEach(row => {
+    row.classList.toggle('is-followed', isActive);
+    const heart = row.querySelector('.dj-row-heart');
+    if (isActive && !heart) {
+      const span = document.createElement('span');
+      span.className = 'dj-row-heart';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = '♥';
+      row.querySelector('.dj-row-state')?.insertBefore(span, row.querySelector('.dj-row-chevron'));
+    } else if (!isActive && heart) {
+      heart.remove();
+    }
+  });
   syncActFavoriteButton(actId);
+}
+async function rateActInline(starBtn) {
+  const actId = Number(starBtn.dataset.actId);
+  const eventId = Number(starBtn.dataset.eventId);
+  const rating = Number(starBtn.dataset.star);
+  if (!actId || !eventId || !rating) return;
+  if (!sessionUser || !supabaseClient) { openAuthModal(AUTH_MODES.LOGIN); return; }
+  const strip = starBtn.closest('.dj-row-stars');
+  strip?.querySelectorAll('.dj-row-star').forEach((s, i) => {
+    s.classList.toggle('filled', i < rating);
+    s.classList.remove('pop', 'preview');
+  });
+  requestAnimationFrame(() => starBtn.classList.add('pop'));
+  const cacheKey = `${actId}:${eventId}`;
+  const existing = userActRatings.get(cacheKey);
+  const payload = {
+    user_id: sessionUser.id,
+    act_id: actId,
+    event_id: eventId,
+    rating,
+    was_surprise: existing?.was_surprise ?? false,
+    was_best_act: existing?.was_best_act ?? false,
+  };
+  userActRatings.set(cacheKey, payload);
+  syncEventHighlightsFromLocalRatings(eventId);
+  try {
+    if (existing) {
+      await supabaseClient.from('act_ratings').update(payload)
+        .eq('user_id', sessionUser.id).eq('act_id', actId).eq('event_id', eventId);
+    } else {
+      await supabaseClient.from('act_ratings').insert(payload);
+    }
+  } catch (err) {
+    console.warn('Inline rating save error:', err.message || err);
+  }
 }
 function bindActionHandlers() {
   document.getElementById('mainContent')?.addEventListener('click', async e => {
@@ -1385,6 +1471,18 @@ function bindActionHandlers() {
       const chevron = card?.querySelector('.card-chevron');
       if (chevron) chevron.textContent = expandedEventIds.has(evId) ? '▾' : '▸';
       if (expandedEventIds.has(evId)) renderCardQueueChart(evId);
+      return;
+    }
+    if (target.dataset.action === 'open-artist') {
+      openArtistPopup(target.dataset.actId, target.dataset.actName);
+      return;
+    }
+    if (target.dataset.action === 'rate-act-inline') {
+      await rateActInline(target);
+      return;
+    }
+    if (target.dataset.action === 'open-club') {
+      openClubSheet(Number(target.dataset.clubId), target.dataset.clubName);
       return;
     }
     if (target.dataset.action === 'toggle-hype') await toggleHype(target.dataset.eventId);
@@ -1422,6 +1520,25 @@ function bindActionHandlers() {
         eventName: target.dataset.eventName,
       });
     }
+  });
+  document.getElementById('mainContent')?.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.dj-row[role="button"]');
+    if (!row) return;
+    e.preventDefault();
+    row.click();
+  });
+  document.getElementById('mainContent')?.addEventListener('mouseover', e => {
+    const star = e.target.closest('.dj-row-star');
+    const strip = star?.closest('.dj-row-stars');
+    if (!strip) return;
+    const idx = Number(star.dataset.star) - 1;
+    strip.querySelectorAll('.dj-row-star').forEach((s, i) => s.classList.toggle('preview', i <= idx));
+  });
+  document.getElementById('mainContent')?.addEventListener('mouseout', e => {
+    const strip = e.target.closest('.dj-row-stars');
+    if (!strip || strip.contains(e.relatedTarget)) return;
+    strip.querySelectorAll('.dj-row-star').forEach(s => s.classList.remove('preview'));
   });
   document.getElementById('popularRail')?.addEventListener('click', e => {
     const tab = e.target.closest('[data-rail-tab]');
@@ -1520,7 +1637,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   if (!content) return;
   const numericActId = Number(actId), isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFavorite ? '♥' : '♡'}</button>`
+    ? `<button class="heart-btn${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${buildHeartSvg()}<span class="heart-btn-label">${isFavorite ? t('sheet.following') : t('sheet.follow')}</span></button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${escapeHtml(instaName)}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${escapeHtml(instaName)}</a>`
@@ -1532,11 +1649,10 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   // Rating stats block
   let statsHtml = '';
   if (ratingStats && ratingStats.rating_count > 0) {
-    const stars = '★'.repeat(Math.round(ratingStats.avg_rating)) + '☆'.repeat(5 - Math.round(ratingStats.avg_rating));
     statsHtml = `
       <div class="modal-act-stats">
         <div class="modal-act-stats-row">
-          <span class="modal-act-stars" title="${ratingStats.avg_rating} / 5">${stars}</span>
+          ${buildStarsSvg(ratingStats.avg_rating)}
           <span class="modal-act-avg">${ratingStats.avg_rating}</span>
           <span class="modal-act-count">(${ratingStats.rating_count})</span>
         </div>
@@ -1576,20 +1692,20 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
       return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div><div class="modal-event-venue">${escapeHtml(venue)}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
-    pastHtml = `<div class="modal-events-label modal-events-label--past">Vergangene Events (${pastEvents.length})</div>${pastRows}`;
+    pastHtml = `<div class="modal-events-label modal-events-label--past">${t('sheet.past_events')} (${pastEvents.length})</div>${pastRows}`;
   }
 
   const socialRow = `<div class="modal-social-row">${igHtml}${scHtml}</div>`;
   content.innerHTML = `
     <div class="modal-artist-tag">// ARTIST</div>
-    <div class="artist-modal-header"><div class="modal-artist-name">${escapeHtml(name)}</div><div class="modal-head-actions">${favHtml}</div></div>
+    <div class="artist-modal-header"><div class="modal-artist-name">${escapeHtml(name)}</div></div>
+    <div class="sheet-actions">${favHtml}</div>
     <div class="modal-divider"></div>
-    ${socialRow}
     ${statsHtml}
-    <div class="modal-events-label">Kommende Events (${upcomingEvents.length})</div>
+    ${socialRow}
+    <div class="modal-events-label">${t('sheet.next_gigs')} (${upcomingEvents.length})</div>
     ${rows}
     ${pastHtml}
-    <div class="modal-scanner"></div>
   `;
 }
 function closeArtistPopup() {
@@ -1598,6 +1714,64 @@ function closeArtistPopup() {
   overlay.classList.remove('open');
   overlay.setAttribute('aria-hidden', 'true');
   syncBodyLock();
+}
+async function openClubSheet(clubId, clubName) {
+  const overlay = document.getElementById('artistOverlay'), content = document.getElementById('modalContent');
+  if (!overlay || !content) return;
+  const requestId = ++artistPopupRequestId;
+  const color = getClubColor(clubName);
+  content.innerHTML = `<div class="modal-artist-tag">// CLUB</div><div class="modal-artist-name" style="color:${color}">${escapeHtml(clubName)}</div><div class="modal-divider"></div><div style="color:var(--grey);font-size:11px;letter-spacing:0.1em">Loading...</div>`;
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  syncBodyLock();
+  const upcoming = allEvents
+    .filter(ev => Number(ev.clubs?.id) === Number(clubId) && isUpcomingOrRunningEvent(ev))
+    .sort((a, b) => a.event_date.localeCompare(b.event_date))
+    .slice(0, 10);
+  const stats = await fetchClubStats(clubName);
+  if (requestId !== artistPopupRequestId) return;
+  renderClubSheet(clubId, clubName, color, upcoming, stats);
+}
+function renderClubSheet(clubId, clubName, color, events, stats) {
+  const content = document.getElementById('modalContent');
+  if (!content) return;
+  const numericClubId = Number(clubId), isFavorite = Number.isFinite(numericClubId) && favoriteClubIds.has(numericClubId);
+  const favHtml = Number.isFinite(numericClubId)
+    ? `<button class="heart-btn${isFavorite ? ' active' : ''}" type="button" data-favorite-club-id="${numericClubId}" aria-pressed="${isFavorite}" aria-label="${escapeHtml(clubName)}">${buildHeartSvg()}<span class="heart-btn-label">${isFavorite ? t('sheet.following') : t('sheet.follow')}</span></button>`
+    : '';
+  let statsHtml = '';
+  if (stats && stats.total > 0) {
+    const bits = [];
+    if (stats.avgWait != null) bits.push(`<span class="club-sheet-stat"><b>${stats.avgWait}min</b> ${t('club.avg_wait')}</span>`);
+    if (stats.entryRate != null) bits.push(`<span class="club-sheet-stat"><b>${stats.entryRate}%</b> ${t('club.entry_rate')}</span>`);
+    if (bits.length) statsHtml = `<div class="club-sheet-stats">${bits.join('')}</div>`;
+  }
+  const rows = events.length
+    ? events.map(ev => {
+      const d = formatDateLabel(ev.event_date), start = fmtTime(ev.time_start);
+      return `<div class="modal-event-row modal-event-row--link" data-event-date="${ev.event_date}" data-event-id="${ev.id}"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${escapeHtml(ev.event_name)}</div>${start ? `<div class="modal-event-venue">↳ ${start}</div>` : ''}</div><div class="modal-event-right"><span class="modal-event-goto">-></span></div></div>`;
+    }).join('')
+    : `<div class="modal-no-events">${t('empty.no_upcoming')}</div>`;
+  content.innerHTML = `
+    <div class="modal-artist-tag">// CLUB</div>
+    <div class="artist-modal-header"><div class="modal-artist-name" style="color:${color}">${escapeHtml(clubName)}</div></div>
+    <div class="sheet-actions">${favHtml}</div>
+    <div class="modal-divider"></div>
+    ${statsHtml}
+    <div class="modal-events-label">${t('sheet.next_events')} (${events.length})</div>
+    ${rows}
+  `;
+}
+function syncClubSheetFollow(clubId) {
+  const button = document.querySelector(`[data-favorite-club-id="${clubId}"]`);
+  if (button) {
+    const active = favoriteClubIds.has(Number(clubId));
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+    const label = button.querySelector('.heart-btn-label');
+    if (label) label.textContent = active ? t('sheet.following') : t('sheet.follow');
+  }
+  syncClubFollowButtons(clubId);
 }
 function initArtistPopup() {
   document.getElementById('artistOverlayBg')?.addEventListener('click', closeArtistPopup);
@@ -1610,7 +1784,18 @@ function initArtistPopup() {
     if (fav) {
       e.preventDefault();
       const actId = Number(fav.dataset.favoriteActId);
+      const wasActive = favoriteActIds.has(actId);
       await toggleFavorite('act', actId, { rerender: false, onChange: () => syncActFollowButtons(actId) });
+      if (!wasActive && favoriteActIds.has(actId)) burstFrom(fav);
+      return;
+    }
+    const clubFav = e.target.closest('[data-favorite-club-id]');
+    if (clubFav) {
+      e.preventDefault();
+      const clubId = Number(clubFav.dataset.favoriteClubId);
+      const wasActive = favoriteClubIds.has(clubId);
+      await toggleFavorite('club', clubId, { rerender: false, onChange: () => syncClubSheetFollow(clubId) });
+      if (!wasActive && favoriteClubIds.has(clubId)) burstFrom(clubFav);
       return;
     }
     const rateBtn = e.target.closest('[data-action="open-rating"]');
@@ -1628,6 +1813,30 @@ function initArtistPopup() {
     if (!row) return;
     closeArtistPopup();
     jumpToEvent(row.dataset.eventDate, row.dataset.eventId);
+  });
+  initSheetSwipeDown();
+}
+function initSheetSwipeDown() {
+  const grab = document.getElementById('artistSheetGrab'), modal = document.getElementById('artistModal');
+  if (!grab || !modal) return;
+  let startY = null, dy = 0;
+  grab.addEventListener('touchstart', e => {
+    startY = e.changedTouches[0].clientY;
+    dy = 0;
+    modal.style.transition = 'none';
+  }, { passive: true });
+  grab.addEventListener('touchmove', e => {
+    if (startY === null) return;
+    dy = Math.max(0, e.changedTouches[0].clientY - startY);
+    modal.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  grab.addEventListener('touchend', () => {
+    if (startY === null) return;
+    modal.style.transition = '';
+    modal.style.transform = '';
+    if (dy > 90) closeArtistPopup();
+    startY = null;
+    dy = 0;
   });
 }
 function initSwipe() {
@@ -1912,7 +2121,7 @@ async function loadAvailableCities() {
   if (!availableCities.length) availableCities = ['Berlin'];
   syncCitySelectorUi();
 }
-async function refreshEventData({ preserveDateNavScroll = false, flashEventId = null } = {}) {
+async function refreshEventData({ preserveDateNavScroll = false, flashEventId = null, silent = false } = {}) {
   if (supabaseClient) {
     try {
       allEvents = await loadFromSupabase();
@@ -1938,7 +2147,7 @@ async function refreshEventData({ preserveDateNavScroll = false, flashEventId = 
   if (demoMode) loadDemoHypes();
   else { await loadPublicHypes(allEvents); await loadEventHighlights(allEvents); await loadActSpotlight(); await loadQueueTimeline(allEvents); }
   await loadUserCollections(allEvents);
-  rerenderView({ preserveDateNavScroll });
+  if (!silent) rerenderView({ preserveDateNavScroll });
   _dataLoaded = true;
   if (flashEventId) flashEventCard(flashEventId);
 }
@@ -1947,8 +2156,25 @@ function subscribeRealtime() {
   supabaseClient.channel('event_acts_changes').on(
     'postgres_changes',
     { event: 'UPDATE', schema: 'public', table: 'event_acts' },
-    async payload => refreshEventData({ preserveDateNavScroll: true, flashEventId: payload.new.event_id })
+    payload => queueRealtimeRefresh(payload.new?.event_id)
   ).subscribe();
+}
+// Scraper-Läufe feuern viele Updates am Stück — gebündelt refreshen und nur
+// neu rendern, wenn ein betroffenes Event gerade sichtbar ist.
+function queueRealtimeRefresh(eventId) {
+  if (eventId) pendingRealtimeEventIds.add(Number(eventId));
+  if (realtimeRefreshTimer) return;
+  realtimeRefreshTimer = setTimeout(async () => {
+    realtimeRefreshTimer = null;
+    const ids = [...pendingRealtimeEventIds];
+    pendingRealtimeEventIds.clear();
+    const visibleId = ids.find(id => document.querySelector(`.event-card[data-event-id="${id}"]`));
+    await refreshEventData({
+      preserveDateNavScroll: true,
+      flashEventId: visibleId ?? null,
+      silent: !visibleId,
+    });
+  }, 4000);
 }
 // ═══════════════════════════════════════════════════════════════════════════
 // PHASE 2: LIVE MODE
@@ -2908,7 +3134,6 @@ async function init() {
       availableCities = ['Berlin'];
       syncCitySelectorUi();
       await refreshEventData();
-      setInterval(refreshAmbientUi, 30 * 1000);
       return;
     }
     const { createClient } = window.supabase;
@@ -2941,6 +3166,5 @@ async function init() {
     else if (_club) showClubSearch(_club);
   }
   if (supabaseClient && !demoMode) subscribeRealtime();
-  setInterval(refreshAmbientUi, 30 * 1000);
 }
 init();

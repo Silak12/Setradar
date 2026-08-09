@@ -80,7 +80,6 @@
       // Status bar
       'status.live':    'Live',
       'status.profile': 'Profile',
-      'status.updated': 'Updated:',
 
       // Profile page
       'profile.back':           '← Back to Events',
@@ -114,6 +113,7 @@
       'profile.since':          'Since',
       'profile.recommendations_empty': 'Not enough ratings for recommendations yet - rate more acts!',
       'profile.rated_acts_label': 'Rated Acts',
+      'profile.rank_wall_label': '// YOUR TOP 5',
       'profile.all':               'All',
       'profile.follow_artist':     'Follow artist',
       'profile.unfollow_artist':   'Unfollow artist',
@@ -294,6 +294,13 @@
       'club.avg_wait':    'Avg. Wait',
       'club.entry_rate':  'Entry Rate',
 
+      // Sheets (artist / club bottom sheets)
+      'sheet.follow':      'FOLLOW',
+      'sheet.following':   'FOLLOWING',
+      'sheet.next_gigs':   '// NEXT GIGS',
+      'sheet.next_events': '// NEXT EVENTS',
+      'sheet.past_events': '// PAST EVENTS',
+
       // Misc
       'misc.back':    'Back',
       'misc.artist':  'Artist',
@@ -379,7 +386,6 @@
       'search.clubs_placeholder': 'CLUBS SUCHEN...',
       'search.events_placeholder':'EVENTS SUCHEN...',
       'search.back':              'Zurück',
-      'search.back_btn':          'Zurueck',
       'search.results_for':       'Ergebnisse fuer',
 
       // Sort
@@ -426,7 +432,6 @@
       // Status bar
       'status.live':    'Live',
       'status.profile': 'Profil',
-      'status.updated': 'Stand:',
 
       // Profile page
       'profile.back':           '← Zurück zu den Events',
@@ -460,6 +465,7 @@
       'profile.since':          'Seit',
       'profile.recommendations_empty': 'Noch nicht genug Ratings fuer Empfehlungen - bewerte mehr Acts!',
       'profile.rated_acts_label': 'Bewertete Acts',
+      'profile.rank_wall_label': '// DEINE TOP 5',
       'profile.all':               'Alle',
       'profile.follow_artist':     'Artist folgen',
       'profile.unfollow_artist':   'Artist entfolgen',
@@ -638,6 +644,13 @@
       // Club stats
       'club.avg_wait':    'Ø Wartezeit',
       'club.entry_rate':  'Einlassquote',
+
+      // Sheets (Artist- / Club-Bottom-Sheets)
+      'sheet.follow':      'FOLGEN',
+      'sheet.following':   'GEFOLGT',
+      'sheet.next_gigs':   '// NÄCHSTE GIGS',
+      'sheet.next_events': '// NÄCHSTE EVENTS',
+      'sheet.past_events': '// VERGANGENE EVENTS',
 
       // Misc
       'misc.back': 'Zurück',

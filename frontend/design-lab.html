@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SETRADAR — Design Lab</title>
+  <meta name="description" content="Interner A/B-Vergleich: Artist-Layer Redesign." />
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <meta name="theme-color" content="#080808" />
+  <style>
+    /* ══════════════════════════════════════════════════════════════════
+       SETRADAR DESIGN LAB — Variante A "RADAR" vs. Variante B "CLASSIC"
+       ══════════════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:     #080808;
+      --off-black: #111111;
+      --panel:     #0e0e0e;
+      --red:       #ff2020;
+      --red-soft:  #ff4a4a;
+      --red-dim:   #7a0f0f;
+      --white:     #f0ece4;
+      --grey:      #666666;
+      --grey-lt:   #888888;
+      --line:      #1e1e1e;
+      --mono:    'IBM Plex Mono', monospace;
+      --display: 'Bebas Neue', sans-serif;
+      --sweep-period: 4.5s;
+    }
+
+    html { font-size: 16px; background: var(--black); }
+    body {
+      font-family: var(--mono);
+      background: var(--black);
+      color: var(--white);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+    /* Scanlines wie auf der Hauptseite */
+    body::before {
+      content: '';
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg,
+        transparent, transparent 2px,
+        rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+      z-index: 999;
+    }
+
+    /* ── Layout ── */
+    .lab-wrap { max-width: 520px; margin: 0 auto; padding: 0 16px 80px; }
+
+    .lab-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      max-width: 520px; margin: 0 auto;
+    }
+    .lab-topbar-brand { font-family: var(--display); font-size: 20px; letter-spacing: 0.06em; }
+    .lab-topbar-brand em { font-style: normal; color: var(--red); }
+    .lab-topbar a { font-size: 10px; letter-spacing: 0.12em; color: var(--grey-lt); text-transform: uppercase; padding: 8px 0; }
+
+    .lab-intro { padding: 22px 0 6px; }
+    .lab-eyebrow { font-size: 10px; letter-spacing: 0.18em; color: var(--red); margin-bottom: 8px; }
+    .lab-title { font-family: var(--display); font-size: clamp(38px, 11vw, 52px); line-height: 0.95; }
+    .lab-sub { font-size: 11px; line-height: 1.7; color: var(--grey-lt); margin-top: 10px; max-width: 42ch; }
+
+    /* ── Varianten-Switch (sticky) ── */
+    .lab-switch-wrap {
+      position: sticky; top: 0; z-index: 60;
+      padding: 12px 0;
+      background: linear-gradient(180deg, var(--black) 78%, transparent);
+    }
+    .lab-switch {
+      position: relative; display: flex;
+      border: 1px solid #2a2a2a; background: var(--panel);
+      height: 52px; overflow: hidden;
+    }
+    .lab-switch-indicator {
+      position: absolute; top: 0; left: 0; height: 100%; width: 50%;
+      background: var(--red);
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0.25, 1);
+      z-index: 0;
+    }
+    body.variant-b .lab-switch-indicator { transform: translateX(100%); }
+    .lab-switch button {
+      position: relative; z-index: 1; flex: 1;
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--grey-lt);
+      transition: color 0.25s ease;
+      min-height: 44px;
+    }
+    .lab-switch button small { display: block; font-size: 8px; letter-spacing: 0.2em; opacity: 0.75; margin-top: 2px; }
+    body.variant-a #switchA, body.variant-b #switchB { color: var(--black); font-weight: 500; }
+    body.variant-a #switchB, body.variant-b #switchA { color: var(--grey-lt); }
+
+    /* Variantensichtbarkeit — Elemente behalten ihr natürliches display */
+    body.variant-a .v-b { display: none !important; }
+    body.variant-b .v-a { display: none !important; }
+
+    /* ── Sektionen ── */
+    .lab-section { margin-top: 34px; }
+    .lab-section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 14px;
+    }
+    .lab-section-eyebrow { font-size: 10px; letter-spacing: 0.16em; color: var(--red); }
+    .lab-section-num { font-size: 10px; color: var(--grey); letter-spacing: 0.12em; }
+    .lab-hint { font-size: 10px; color: var(--grey); line-height: 1.6; margin-bottom: 14px; }
+
+    /* ── Demo-Event-Card ── */
+    .demo-card { border: 1px solid #232323; background: var(--off-black); }
+    .demo-card-head { padding: 14px 14px 12px; border-bottom: 1px solid var(--line); }
+    .demo-card-title { font-family: var(--display); font-size: 26px; letter-spacing: 0.03em; line-height: 1; }
+    .demo-card-meta { display: flex; gap: 10px; margin-top: 7px; font-size: 10px; color: var(--grey-lt); letter-spacing: 0.08em; }
+    .demo-card-meta .venue { color: var(--white); border: 1px solid #2c2c2c; padding: 2px 7px; }
+
+    .dj-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 14px; min-height: 56px;
+      border-bottom: 1px solid #161616;
+      width: 100%; text-align: left;
+      transition: background 0.2s ease;
+    }
+    .dj-row:last-child { border-bottom: none; }
+    .dj-row:active { background: rgba(255,32,32,0.06); }
+    .dj-row-time { font-size: 10px; color: var(--grey-lt); width: 44px; flex-shrink: 0; letter-spacing: 0.04em; }
+    .dj-row-name { font-family: var(--display); font-size: 21px; letter-spacing: 0.04em; flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .dj-row-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dj-row-state { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .dj-row-chevron { color: var(--grey); font-size: 12px; }
+
+    /* getrackt-Indikator in der Row */
+    .row-track-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: none; }
+    .row-track-dot::after {
+      content: ''; position: absolute; inset: -4px; border-radius: 50%;
+      border: 1px solid var(--red); opacity: 0;
+      animation: rowPing 2s ease-out infinite;
+    }
+    .dj-row.is-tracked .row-track-dot { display: block; }
+    @keyframes rowPing { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(1.6); opacity: 0; } }
+
+    /* Mini-Rating-Anzeige in der Row */
+    .row-rating { display: none; align-items: flex-end; gap: 2px; height: 14px; }
+    .dj-row.is-rated .row-rating { display: flex; }
+    .row-rating .rb { width: 4px; background: #3a3a3a; }
+    .row-rating .rb.on { background: var(--red); }
+    .row-rating-stars { display: none; font-size: 11px; letter-spacing: 0.05em; color: var(--red); }
+    .dj-row.is-rated .row-rating-stars { display: block; }
+    body.variant-b .row-rating { display: none !important; }
+    body.variant-a .row-rating-stars { display: none !important; }
+    body.variant-a .dj-row.is-rated .row-rating { display: flex; }
+
+    /* ── Artist Sheet (Bottom Sheet) ── */
+    .sheet-overlay { position: fixed; inset: 0; z-index: 100; visibility: hidden; }
+    .sheet-overlay.open { visibility: visible; }
+    .sheet-bg {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.72);
+      opacity: 0; transition: opacity 0.35s ease;
+      backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    }
+    .sheet-overlay.open .sheet-bg { opacity: 1; }
+    .sheet {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      max-width: 520px; margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid #262626; border-bottom: none;
+      transform: translateY(105%);
+      transition: transform 0.5s cubic-bezier(0.32, 0.72, 0.22, 1);
+      padding: 0 20px calc(24px + env(safe-area-inset-bottom));
+      will-change: transform;
+    }
+    .sheet-overlay.open .sheet { transform: translateY(0); }
+    .sheet-topline {
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--red), transparent);
+      animation: lineBreath 3s ease-in-out infinite;
+    }
+    @keyframes lineBreath {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    .sheet-grab { display: flex; justify-content: center; padding: 12px 0 4px; touch-action: none; cursor: grab; }
+    .sheet-grab span { width: 42px; height: 4px; background: #2e2e2e; border-radius: 2px; }
+    .sheet-eyebrow { font-size: 10px; letter-spacing: 0.18em; color: var(--red); margin-top: 8px; }
+    .sheet-name { font-family: var(--display); font-size: clamp(40px, 12vw, 56px); line-height: 0.95; margin-top: 4px; }
+    .sheet-meta { font-size: 10px; color: var(--grey-lt); letter-spacing: 0.1em; margin-top: 8px; display: flex; gap: 14px; }
+    .sheet-meta b { color: var(--white); font-weight: 500; }
+
+    .sheet-actions { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+
+    /* A: TRACK-Button mit Ping */
+    .track-btn {
+      position: relative; display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid #3a3a3a; padding: 13px 20px;
+      font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--white); transition: border-color 0.25s ease, color 0.25s ease;
+      min-height: 48px;
+    }
+    .track-btn .track-icon { font-size: 14px; line-height: 1; }
+    .track-btn.active { border-color: var(--red); color: var(--red); }
+    .track-ping { position: absolute; inset: -1px; border: 1px solid var(--red); opacity: 0; pointer-events: none; }
+    .track-btn.active .track-ping { animation: trackPing 1.9s cubic-bezier(0.2, 0.6, 0.3, 1) infinite; }
+    .track-btn.active .track-ping:nth-child(2) { animation-delay: 0.6s; }
+    @keyframes trackPing {
+      0% { transform: scale(1); opacity: 0.65; }
+      100% { transform: scale(1.28, 1.9); opacity: 0; }
+    }
+
+    /* B: Herz-Button */
+    .heart-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid #3a3a3a; padding: 13px 20px;
+      font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+      min-height: 48px;
+      transition: border-color 0.25s ease, color 0.25s ease;
+    }
+    .heart-btn svg { width: 18px; height: 18px; }
+    .heart-btn svg path { fill: none; stroke: var(--white); stroke-width: 1.8; transition: fill 0.2s ease, stroke 0.2s ease; }
+    .heart-btn.active { border-color: var(--red); color: var(--red); }
+    .heart-btn.active svg path { fill: var(--red); stroke: var(--red); }
+    .heart-btn.active svg { animation: heartPop 0.45s cubic-bezier(0.34, 1.56, 0.4, 1); }
+    @keyframes heartPop {
+      0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); }
+    }
+
+    /* ── Rating-Widgets ── */
+    .rate-block { margin-top: 26px; }
+    .rate-label { font-size: 10px; letter-spacing: 0.16em; color: var(--grey-lt); text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .rate-value { color: var(--red); }
+
+    /* A: Signal-Balken */
+    .sig-rate { display: flex; align-items: flex-end; gap: 10px; height: 76px; touch-action: none; }
+    .sig-bar {
+      flex: 1; max-width: 58px; height: var(--h);
+      border: 1px solid #2c2c2c; background: #141414;
+      position: relative; overflow: hidden;
+      min-width: 44px;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .sig-bar .fill {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 0;
+      background: linear-gradient(180deg, #ff6a3a, var(--red));
+      transition: height 0.3s cubic-bezier(0.34, 1.3, 0.4, 1);
+      transition-delay: calc(var(--i) * 45ms);
+      transform-origin: bottom;
+    }
+    .sig-bar.on .fill { height: 100%; animation: eqBob 1.5s ease-in-out infinite; animation-delay: calc(var(--i) * 140ms); }
+    .sig-bar.on { border-color: var(--red); box-shadow: 0 0 12px rgba(255, 32, 32, 0.22); }
+    @keyframes eqBob {
+      0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.88); }
+    }
+
+    /* B: Sterne */
+    .star-rate { display: flex; gap: 6px; }
+    .star-btn { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; }
+    .star-btn svg { width: 34px; height: 34px; overflow: visible; }
+    .star-btn svg path { fill: none; stroke: #4a4a4a; stroke-width: 1.6; stroke-linejoin: round; transition: fill 0.2s ease, stroke 0.2s ease; transition-delay: calc(var(--i) * 40ms); }
+    .star-btn.on svg path { fill: var(--red); stroke: var(--red); }
+    .star-btn.on svg { animation: starPop 0.4s cubic-bezier(0.34, 1.56, 0.4, 1); animation-delay: calc(var(--i) * 40ms); }
+    @keyframes starPop {
+      0% { transform: scale(1) rotate(0deg); } 45% { transform: scale(1.35) rotate(-8deg); } 100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .rate-save {
+      margin-top: 20px; width: 100%;
+      border: 1px solid var(--red); color: var(--red);
+      padding: 15px; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+      transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+      min-height: 50px;
+    }
+    .rate-save:disabled { border-color: #2c2c2c; color: var(--grey); }
+    .rate-save.saved { background: var(--red); color: var(--black); }
+
+    /* Nächste Gigs */
+    .sheet-gigs { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 14px; }
+    .sheet-gigs-label { font-size: 10px; letter-spacing: 0.16em; color: var(--red); margin-bottom: 10px; }
+    .gig-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #161616; font-size: 11px; letter-spacing: 0.06em; }
+    .gig-row:last-child { border-bottom: none; }
+    .gig-row .gig-date { color: var(--grey-lt); }
+
+    /* ── Profil-Hero A: RADAR SCOPE ── */
+    .radar-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 6px; }
+    .radar {
+      position: relative;
+      width: min(80vw, 330px); aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid #2e2e2e;
+      background:
+        radial-gradient(circle, transparent 0 24.5%, #202020 24.5% 25%, transparent 25% 49.5%, #202020 49.5% 50%, transparent 50% 74.5%, #202020 74.5% 75%, transparent 75%),
+        radial-gradient(circle at 50% 50%, rgba(255,32,32,0.05), transparent 65%);
+    }
+    .radar::before, .radar::after {
+      content: ''; position: absolute; background: #1c1c1c;
+    }
+    .radar::before { left: 50%; top: 2%; bottom: 2%; width: 1px; }
+    .radar::after { top: 50%; left: 2%; right: 2%; height: 1px; }
+    .radar-sweep {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(from 0deg, rgba(255,32,32,0.4), rgba(255,32,32,0.06) 52deg, transparent 68deg);
+      animation: radarSweep var(--sweep-period) linear infinite;
+      will-change: transform;
+    }
+    @keyframes radarSweep { to { transform: rotate(360deg); } }
+    .radar-blip {
+      position: absolute; width: 9px; height: 9px; border-radius: 50%;
+      background: #571212;
+      transform: translate(-50%, -50%);
+      animation: blipGlow var(--sweep-period) linear infinite;
+      animation-delay: var(--bd);
+    }
+    @keyframes blipGlow {
+      0%, 6% { background: var(--red-soft); box-shadow: 0 0 14px 5px rgba(255,32,32,0.55); }
+      22%    { background: #8a1a1a; box-shadow: 0 0 4px 1px rgba(255,32,32,0.15); }
+      40%, 100% { background: #571212; box-shadow: none; }
+    }
+    .radar-blip-label {
+      position: absolute; transform: translate(-50%, 8px);
+      font-size: 8px; letter-spacing: 0.1em; color: var(--grey);
+      white-space: nowrap; pointer-events: none;
+      animation: labelGlow var(--sweep-period) linear infinite;
+      animation-delay: var(--bd);
+    }
+    @keyframes labelGlow {
+      0%, 8% { color: var(--white); } 30%, 100% { color: var(--grey); }
+    }
+    .radar-center { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: var(--red); transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(255,32,32,0.7); }
+    .radar-legend { margin-top: 16px; font-size: 9px; letter-spacing: 0.14em; color: var(--grey); text-transform: uppercase; text-align: center; line-height: 1.8; }
+    .radar-legend b { color: var(--grey-lt); font-weight: 400; }
+
+    /* ── Profil-Hero B: RANKING WALL ── */
+    .rank-wall { padding: 4px 0; }
+    .rank-row {
+      display: flex; align-items: baseline; gap: 14px;
+      padding: 11px 0; border-bottom: 1px solid #161616;
+      opacity: 0; transform: translateY(16px);
+    }
+    .rank-wall.animate .rank-row { animation: rankIn 0.55s cubic-bezier(0.22, 0.9, 0.3, 1) forwards; animation-delay: calc(var(--i) * 110ms); }
+    @keyframes rankIn { to { opacity: 1; transform: translateY(0); } }
+    .rank-num { font-size: 11px; color: var(--grey); width: 26px; flex-shrink: 0; letter-spacing: 0.1em; }
+    .rank-body { flex: 1; min-width: 0; }
+    .rank-name { font-family: var(--display); line-height: 1; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-row[style*="--i:0"] .rank-name { font-size: clamp(36px, 10.5vw, 46px); }
+    .rank-row[style*="--i:1"] .rank-name { font-size: clamp(30px, 8.5vw, 38px); }
+    .rank-row[style*="--i:2"] .rank-name { font-size: clamp(26px, 7.5vw, 32px); }
+    .rank-row[style*="--i:3"] .rank-name, .rank-row[style*="--i:4"] .rank-name { font-size: clamp(22px, 6.5vw, 27px); }
+    .rank-bar { height: 3px; background: var(--red); width: 0; margin-top: 6px; }
+    .rank-wall.animate .rank-bar { animation: rankBar 0.7s cubic-bezier(0.22, 0.9, 0.3, 1) forwards; animation-delay: calc(var(--i) * 110ms + 250ms); }
+    @keyframes rankBar { to { width: var(--bw); } }
+    .rank-score { font-size: 11px; color: var(--red); letter-spacing: 0.08em; flex-shrink: 0; }
+    .rank-score small { color: var(--grey); font-size: 9px; display: block; text-align: right; margin-top: 2px; letter-spacing: 0.1em; }
+
+    /* ── Partikel ── */
+    .particle {
+      position: fixed; top: 0; left: 0;
+      width: 5px; height: 5px; background: var(--red);
+      pointer-events: none; z-index: 1001;
+    }
+
+    /* ── Footer ── */
+    .lab-footer { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 18px; }
+    .lab-footer-q { font-family: var(--display); font-size: 30px; line-height: 1; }
+    .lab-footer-q em { font-style: normal; color: var(--red); }
+    .lab-footer-text { font-size: 10px; color: var(--grey-lt); line-height: 1.8; margin-top: 10px; }
+
+    /* ── Reduced Motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="variant-a">
+
+  <header class="lab-topbar">
+    <div class="lab-topbar-brand">SET<em>RADAR</em> LAB</div>
+    <a href="index.html">← ZUR APP</a>
+  </header>
+
+  <div class="lab-wrap">
+
+    <div class="lab-intro">
+      <div class="lab-eyebrow">// DESIGN LAB — ARTIST-LAYER</div>
+      <div class="lab-title">A ODER B?</div>
+      <p class="lab-sub">
+        Zwei Varianten für Liken, Bewerten &amp; „Deine DJs“.
+        Oben umschalten, alles antippen und ausprobieren — am besten am Handy.
+      </p>
+    </div>
+
+    <div class="lab-switch-wrap">
+      <div class="lab-switch" role="tablist" aria-label="Variante wählen">
+        <div class="lab-switch-indicator"></div>
+        <button id="switchA" role="tab" aria-selected="true">A — RADAR<small>Signal · Track · Scope</small></button>
+        <button id="switchB" role="tab" aria-selected="false">B — CLASSIC<small>Sterne · Herz · Top 5</small></button>
+      </div>
+    </div>
+
+    <!-- ═══ 01: LINEUP ═══ -->
+    <section class="lab-section">
+      <div class="lab-section-head">
+        <span class="lab-section-eyebrow">// LINEUP — TAP AUF EINEN DJ</span>
+        <span class="lab-section-num">01</span>
+      </div>
+      <p class="lab-hint">So sähe die aufgeräumte Event-Card aus: Die Row zeigt nur Zeit, Name und deinen Status. Alles Weitere passiert im Artist-Sheet.</p>
+      <div class="demo-card">
+        <div class="demo-card-head">
+          <div class="demo-card-title">GRENZLAND NACHT</div>
+          <div class="demo-card-meta">
+            <span class="venue">TRESOR</span>
+            <span>↳ 23:59 – 12:00</span>
+            <span>✧ 214</span>
+          </div>
+        </div>
+        <div id="djRows"></div>
+      </div>
+    </section>
+
+    <!-- ═══ 02: PROFIL-HERO ═══ -->
+    <section class="lab-section">
+      <div class="lab-section-head">
+        <span class="lab-section-eyebrow v-a">// PROFIL — DEIN RADAR</span>
+        <span class="lab-section-eyebrow v-b">// PROFIL — DEINE TOP 5</span>
+        <span class="lab-section-num">02</span>
+      </div>
+      <p class="lab-hint v-a">Deine getrackten DJs als Blips auf dem Schirm. Je näher am Zentrum, desto besser dein Rating. Der Sweep bringt sie zum Leuchten.</p>
+      <p class="lab-hint v-b">Deine bestbewerteten DJs als Ranking-Wall — groß, plakativ, screenshotbar.</p>
+
+      <!-- A: Radar Scope -->
+      <div class="v-a">
+        <div class="radar-wrap">
+          <div class="radar" id="radarScope">
+            <div class="radar-sweep"></div>
+            <div class="radar-center"></div>
+          </div>
+          <div class="radar-legend">
+            <b>INNEN</b> = DEINE FAVORITEN · <b>BLIP</b> = GETRACKTER DJ
+          </div>
+        </div>
+      </div>
+
+      <!-- B: Ranking Wall -->
+      <div class="v-b">
+        <div class="rank-wall" id="rankWall"></div>
+      </div>
+    </section>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="lab-footer">
+      <div class="lab-footer-q">WELCHE FÜHLT SICH BESSER AN — <em>A</em> ODER <em>B</em>?</div>
+      <p class="lab-footer-text">
+        Mischen geht auch (z.&nbsp;B. Radar-Scope im Profil, aber Sterne statt Signal-Balken).
+        Merk dir dein Gefühl und sag es Claude — dann wird die Gewinner-Variante in die App eingebaut.
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- ═══ ARTIST SHEET ═══ -->
+  <div class="sheet-overlay" id="sheetOverlay" aria-hidden="true">
+    <div class="sheet-bg" id="sheetBg"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName" id="sheet">
+      <div class="sheet-topline"></div>
+      <div class="sheet-grab" id="sheetGrab"><span></span></div>
+      <div class="sheet-eyebrow">// ARTIST</div>
+      <div class="sheet-name" id="sheetName">—</div>
+      <div class="sheet-meta">
+        <span><b id="sheetGigs">0</b> GIGS IN BERLIN</span>
+        <span>Ø <b id="sheetAvg">—</b> COMMUNITY</span>
+      </div>
+
+      <div class="sheet-actions">
+        <!-- A: TRACK -->
+        <button class="track-btn v-a" id="trackBtn" type="button">
+          <span class="track-ping"></span>
+          <span class="track-ping"></span>
+          <span class="track-icon" id="trackIcon">◎</span>
+          <span id="trackLabel">TRACK</span>
+        </button>
+        <!-- B: HERZ -->
+        <button class="heart-btn v-b" id="heartBtn" type="button">
+          <svg viewBox="0 0 24 24"><path d="M12 21C12 21 3 14.5 3 8.5C3 5.4 5.4 3 8.5 3C10.2 3 11.9 3.8 13 5.1C14.1 3.8 15.8 3 17.5 3C20.6 3 23 5.4 23 8.5C23 14.5 12 21 12 21Z"/></svg>
+          <span id="heartLabel">FOLGEN</span>
+        </button>
+      </div>
+
+      <div class="rate-block">
+        <div class="rate-label">
+          <span>DEIN RATING</span>
+          <span class="rate-value" id="rateValue">—</span>
+        </div>
+        <!-- A: Signal-Balken -->
+        <div class="sig-rate v-a" id="sigRate" role="group" aria-label="Rating 1 bis 5">
+          <button class="sig-bar" style="--h:34%;--i:0" data-val="1" aria-label="1 von 5"><span class="fill"></span></button>
+          <button class="sig-bar" style="--h:50%;--i:1" data-val="2" aria-label="2 von 5"><span class="fill"></span></button>
+          <button class="sig-bar" style="--h:66%;--i:2" data-val="3" aria-label="3 von 5"><span class="fill"></span></button>
+          <button class="sig-bar" style="--h:83%;--i:3" data-val="4" aria-label="4 von 5"><span class="fill"></span></button>
+          <button class="sig-bar" style="--h:100%;--i:4" data-val="5" aria-label="5 von 5"><span class="fill"></span></button>
+        </div>
+        <!-- B: Sterne -->
+        <div class="star-rate v-b" id="starRate" role="group" aria-label="Rating 1 bis 5"></div>
+
+        <button class="rate-save" id="rateSave" type="button" disabled>RATING SPEICHERN</button>
+      </div>
+
+      <div class="sheet-gigs">
+        <div class="sheet-gigs-label">// NÄCHSTE GIGS</div>
+        <div id="sheetGigList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Demo-Daten ── */
+      const DJS = [
+        { id: 1, name: 'HÉCTOR OAKS',    time: '02:00', gigs: 8, avg: 4.6, next: [['SA 15.08', 'TRESOR'], ['FR 04.09', 'RSO']] },
+        { id: 2, name: 'DR. RUBINSTEIN', time: '04:00', gigs: 5, avg: 4.4, next: [['SA 22.08', 'KITKAT']] },
+        { id: 3, name: 'KOBOSIL',        time: '06:00', gigs: 6, avg: 4.1, next: [['FR 28.08', 'BERGHAIN']] },
+        { id: 4, name: 'VTSS',           time: '08:00', gigs: 3, avg: 3.9, next: [['SA 12.09', 'RSO']] },
+        { id: 5, name: 'FJAAK',          time: '10:00', gigs: 7, avg: 4.2, next: [['FR 21.08', 'TRESOR'], ['SA 29.08', 'ABOUT BLANK']] },
+      ];
+      // Vorbefüllter Zustand, damit Radar & Ranking sofort leben:
+      const state = new Map([
+        [1, { tracked: true,  rating: 5 }],
+        [2, { tracked: true,  rating: 5 }],
+        [3, { tracked: true,  rating: 4 }],
+        [4, { tracked: false, rating: 3 }],
+        [5, { tracked: true,  rating: 4 }],
+      ]);
+      const getState = id => state.get(id) || state.set(id, { tracked: false, rating: 0 }).get(id);
+
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let currentDj = null;
+      let pendingRating = 0;
+
+      /* ── Varianten-Switch ── */
+      const switchA = document.getElementById('switchA');
+      const switchB = document.getElementById('switchB');
+      function setVariant(v) {
+        document.body.classList.toggle('variant-a', v === 'a');
+        document.body.classList.toggle('variant-b', v === 'b');
+        switchA.setAttribute('aria-selected', String(v === 'a'));
+        switchB.setAttribute('aria-selected', String(v === 'b'));
+        if (v === 'b') replayRankWall();
+        renderRows();
+      }
+      switchA.addEventListener('click', () => setVariant('a'));
+      switchB.addEventListener('click', () => setVariant('b'));
+
+      /* ── Partikel-Burst ── */
+      function burst(x, y, count = 16) {
+        if (reducedMotion) return;
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement('span');
+          p.className = 'particle';
+          const size = 3 + Math.random() * 4;
+          p.style.width = size + 'px';
+          p.style.height = size + 'px';
+          document.body.appendChild(p);
+          const ang = Math.random() * Math.PI * 2;
+          const dist = 36 + Math.random() * 58;
+          p.animate([
+            { transform: `translate(${x}px, ${y}px) scale(1) rotate(0deg)`, opacity: 1 },
+            { transform: `translate(${x + Math.cos(ang) * dist}px, ${y + Math.sin(ang) * dist - 14}px) scale(0) rotate(${Math.random() * 180 - 90}deg)`, opacity: 0 },
+          ], { duration: 480 + Math.random() * 320, easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)' }).onfinish = () => p.remove();
+        }
+      }
+      function burstFrom(el) {
+        const r = el.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top + r.height / 2);
+      }
+
+      /* ── Lineup-Rows ── */
+      const djRowsEl = document.getElementById('djRows');
+      function renderRows() {
+        djRowsEl.innerHTML = DJS.map(dj => {
+          const s = getState(dj.id);
+          const bars = [1, 2, 3, 4, 5].map(v =>
+            `<span class="rb${v <= s.rating ? ' on' : ''}" style="height:${4 + v * 2}px"></span>`).join('');
+          const stars = '★'.repeat(s.rating) + '☆'.repeat(5 - s.rating);
+          return `
+            <button class="dj-row${s.tracked ? ' is-tracked' : ''}${s.rating ? ' is-rated' : ''}" type="button" data-dj="${dj.id}">
+              <span class="dj-row-time">${dj.time}</span>
+              <span class="dj-row-name"><span>${dj.name}</span></span>
+              <span class="dj-row-state">
+                <span class="row-track-dot"></span>
+                <span class="row-rating">${bars}</span>
+                <span class="row-rating-stars">${stars}</span>
+                <span class="dj-row-chevron">▸</span>
+              </span>
+            </button>`;
+        }).join('');
+      }
+      djRowsEl.addEventListener('click', e => {
+        const row = e.target.closest('.dj-row');
+        if (row) openSheet(Number(row.dataset.dj));
+      });
+
+      /* ── Artist Sheet ── */
+      const overlay = document.getElementById('sheetOverlay');
+      const sheet = document.getElementById('sheet');
+      const rateSave = document.getElementById('rateSave');
+      const rateValue = document.getElementById('rateValue');
+
+      function openSheet(id) {
+        currentDj = DJS.find(d => d.id === id);
+        const s = getState(id);
+        pendingRating = s.rating;
+        document.getElementById('sheetName').textContent = currentDj.name;
+        document.getElementById('sheetGigs').textContent = currentDj.gigs;
+        document.getElementById('sheetAvg').textContent = currentDj.avg.toFixed(1);
+        document.getElementById('sheetGigList').innerHTML = currentDj.next.map(([d, club]) =>
+          `<div class="gig-row"><span class="gig-date">${d}</span><span>${club}</span></div>`).join('');
+        syncFollowUi(s.tracked);
+        syncRatingUi(s.rating);
+        rateSave.classList.remove('saved');
+        rateSave.textContent = 'RATING SPEICHERN';
+        rateSave.disabled = !s.rating;
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeSheet() {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        renderRows();
+        renderRadar();
+        renderRankWall();
+      }
+      document.getElementById('sheetBg').addEventListener('click', closeSheet);
+      window.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+      // Swipe-down zum Schließen (nur am Grab-Handle)
+      let dragY = null;
+      const grab = document.getElementById('sheetGrab');
+      grab.addEventListener('touchstart', e => { dragY = e.touches[0].clientY; sheet.style.transition = 'none'; }, { passive: true });
+      grab.addEventListener('touchmove', e => {
+        if (dragY === null) return;
+        const dy = Math.max(0, e.touches[0].clientY - dragY);
+        sheet.style.transform = `translateY(${dy}px)`;
+      }, { passive: true });
+      grab.addEventListener('touchend', e => {
+        const dy = Math.max(0, e.changedTouches[0].clientY - (dragY ?? 0));
+        sheet.style.transition = '';
+        sheet.style.transform = '';
+        dragY = null;
+        if (dy > 90) closeSheet();
+      });
+
+      /* ── Follow (TRACK / Herz) ── */
+      const trackBtn = document.getElementById('trackBtn');
+      const heartBtn = document.getElementById('heartBtn');
+      function syncFollowUi(tracked) {
+        trackBtn.classList.toggle('active', tracked);
+        document.getElementById('trackIcon').textContent = tracked ? '◉' : '◎';
+        document.getElementById('trackLabel').textContent = tracked ? 'TRACKING' : 'TRACK';
+        heartBtn.classList.toggle('active', tracked);
+        document.getElementById('heartLabel').textContent = tracked ? 'GEFOLGT' : 'FOLGEN';
+      }
+      function toggleFollow(btn) {
+        if (!currentDj) return;
+        const s = getState(currentDj.id);
+        s.tracked = !s.tracked;
+        syncFollowUi(s.tracked);
+        if (s.tracked) burstFrom(btn);
+      }
+      trackBtn.addEventListener('click', () => toggleFollow(trackBtn));
+      heartBtn.addEventListener('click', () => toggleFollow(heartBtn));
+
+      /* ── Rating A: Signal-Balken (Tap + Drag) ── */
+      const sigRate = document.getElementById('sigRate');
+      const sigBars = [...sigRate.querySelectorAll('.sig-bar')];
+      function setPending(val) {
+        pendingRating = val;
+        syncRatingUi(val);
+        rateSave.disabled = !val;
+        rateSave.classList.remove('saved');
+        rateSave.textContent = 'RATING SPEICHERN';
+      }
+      function syncRatingUi(val) {
+        sigBars.forEach(b => b.classList.toggle('on', Number(b.dataset.val) <= val));
+        starBtns.forEach(b => b.classList.toggle('on', Number(b.dataset.val) <= val));
+        rateValue.textContent = val ? `${val} / 5` : '—';
+      }
+      sigRate.addEventListener('pointerdown', e => {
+        const pick = el => { const bar = el?.closest?.('.sig-bar'); if (bar) setPending(Number(bar.dataset.val)); };
+        pick(e.target);
+        const move = ev => pick(document.elementFromPoint(ev.clientX, ev.clientY));
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+
+      /* ── Rating B: Sterne ── */
+      const starRate = document.getElementById('starRate');
+      const STAR_PATH = 'M12 2.5 14.8 8.6 21.5 9.3 16.5 13.8 17.9 20.4 12 17 6.1 20.4 7.5 13.8 2.5 9.3 9.2 8.6Z';
+      starRate.innerHTML = [1, 2, 3, 4, 5].map(v =>
+        `<button class="star-btn" style="--i:${v - 1}" data-val="${v}" aria-label="${v} von 5">
+           <svg viewBox="0 0 24 24"><path d="${STAR_PATH}"/></svg>
+         </button>`).join('');
+      const starBtns = [...starRate.querySelectorAll('.star-btn')];
+      starRate.addEventListener('click', e => {
+        const btn = e.target.closest('.star-btn');
+        if (btn) setPending(Number(btn.dataset.val));
+      });
+
+      /* ── Speichern + Burst ── */
+      rateSave.addEventListener('click', () => {
+        if (!currentDj || !pendingRating) return;
+        getState(currentDj.id).rating = pendingRating;
+        rateSave.classList.add('saved');
+        rateSave.textContent = 'GESPEICHERT ✓';
+        burstFrom(rateSave);
+        if (navigator.vibrate) navigator.vibrate(30);
+        setTimeout(closeSheet, 700);
+      });
+
+      /* ── Profil-Hero A: Radar ── */
+      const radar = document.getElementById('radarScope');
+      const SWEEP_MS = 4500;
+      function renderRadar() {
+        radar.querySelectorAll('.radar-blip, .radar-blip-label').forEach(el => el.remove());
+        const tracked = DJS.filter(d => getState(d.id).tracked);
+        tracked.forEach((dj, i) => {
+          const s = getState(dj.id);
+          const angle = (360 / tracked.length) * i + 24;             // gleichmäßig verteilt, leicht gedreht
+          const radius = s.rating ? (5 - s.rating) * 9 + 14 : 42;     // 5★ → innen (14%), 1★ → außen (50%)
+          const rad = angle * Math.PI / 180;
+          const x = 50 + radius * Math.sin(rad);
+          const y = 50 - radius * Math.cos(rad);
+          const delay = -((360 - angle) / 360) * SWEEP_MS;            // Glow synchron zum Sweep
+          const blip = document.createElement('span');
+          blip.className = 'radar-blip';
+          blip.style.cssText = `left:${x}%;top:${y}%;--bd:${delay}ms`;
+          const label = document.createElement('span');
+          label.className = 'radar-blip-label';
+          label.textContent = dj.name;
+          label.style.cssText = `left:${x}%;top:${y}%;--bd:${delay}ms`;
+          radar.append(blip, label);
+        });
+      }
+
+      /* ── Profil-Hero B: Ranking Wall ── */
+      const rankWall = document.getElementById('rankWall');
+      function renderRankWall() {
+        const rated = DJS
+          .map(d => ({ ...d, r: getState(d.id).rating }))
+          .filter(d => d.r > 0)
+          .sort((a, b) => b.r - a.r || b.avg - a.avg)
+          .slice(0, 5);
+        rankWall.innerHTML = rated.map((d, i) => `
+          <div class="rank-row" style="--i:${i}">
+            <span class="rank-num">0${i + 1}</span>
+            <span class="rank-body">
+              <span class="rank-name">${d.name}</span>
+              <span class="rank-bar" style="--bw:${d.r * 20}%"></span>
+            </span>
+            <span class="rank-score">★ ${d.r}.0<small>DEIN RATING</small></span>
+          </div>`).join('');
+      }
+      function replayRankWall() {
+        rankWall.classList.remove('animate');
+        void rankWall.offsetWidth;
+        rankWall.classList.add('animate');
+      }
+
+      /* ── Init ── */
+      renderRows();
+      renderRadar();
+      renderRankWall();
+      rankWall.classList.add('animate');
+    })();
+  </script>
+</body>
+</html>

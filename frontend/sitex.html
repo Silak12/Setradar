@@ -32,13 +32,6 @@
     </div>
   </header>
 
-  <div class="status-bar">
-    <div class="status-bar-left">
-      <span>// SITE X</span>
-    </div>
-    <div class="status-bar-right" id="statusBarRight">—</div>
-  </div>
-
   <main id="mainContent">
 
     <div class="sitex-header">
@@ -264,9 +257,6 @@
         const metaRes = await fetch(`sitex/${currentKey}/meta.json`);
         if (!metaRes.ok) throw new Error('meta.json not found');
         const meta = await metaRes.json();
-
-        const sbr = document.getElementById('statusBarRight');
-        if (sbr) sbr.textContent = `#${String(meta.edition).padStart(3,'0')} — ${statusLabel(meta.status)}`;
 
         document.querySelectorAll('.nav-sitex-link').forEach(el => el.classList.add('active'));
 

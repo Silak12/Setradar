@@ -277,7 +277,11 @@
     if (!_client) return;
     _client.auth.onAuthStateChange(async (_event, session) => {
       if (_event === 'INITIAL_SESSION') return;
+      const prevUserId = _user?.id || null;
+      const nextUserId = session?.user?.id || null;
       _user = session?.user || null;
+      // Token-Refresh ohne User-Wechsel: UI nicht neu aufbauen
+      if (prevUserId === nextUserId) return;
       if (_user) {
         await fetchProfile();
         await ensureProfile();

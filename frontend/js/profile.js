@@ -319,15 +319,6 @@ function fmtTime(value) {
   return value ? String(value).slice(0, 5) : null;
 }
 
-function updateProfileClocks() {
-  const locale = window.LANG === 'de' ? 'de-DE' : 'en-GB';
-  const time = new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-  const footer = document.getElementById('lastUpdated');
-  if (footer) footer.textContent = `Stand: ${time}`;
-  const status = document.getElementById('statusBarRight');
-  if (status) status.textContent = time;
-}
-
 function zeroHype() {
   return { seed_hype: 0, real_hype: 0, total_hype: 0 };
 }
@@ -932,11 +923,30 @@ function renderRatedActsPage(animDir = 0) {
   }, 170);
 }
 
+function renderRankWall() {
+  const el = document.getElementById('rankWall');
+  if (!el) return;
+  const top = [...allRatedActs].sort((a, b) => b.avg - a.avg || b.count - a.count).slice(0, 5);
+  if (!top.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="rank-wall">
+      <div class="rank-wall-label">${t('profile.rank_wall_label')}</div>
+      ${top.map((a, i) => `
+        <button class="rank-row profile-act-link" type="button" style="--i:${i};--bw:${Math.round((a.avg / 5) * 100)}%" data-act-id="${a.id}" data-act-name="${escapeHtml(a.name)}">
+          <span class="rank-num">0${i + 1}</span>
+          <span class="rank-name">${escapeHtml(a.name)}</span>
+          <span class="rank-meta">★ ${a.avg.toFixed(1)}${a.count > 1 ? ` · ${a.count}×` : ''}</span>
+          <span class="rank-bar" aria-hidden="true"></span>
+        </button>`).join('')}
+    </div>`;
+}
+
 function initRatedActsSection(topActs) {
   allRatedActs = topActs;
   ratedFilter  = 0;
   ratedSort    = 'avg-desc';
   ratedPageIdx = 0;
+  renderRankWall();
 
   // Filter buttons
   document.getElementById('ratedActsFilters')?.addEventListener('click', e => {
@@ -1054,6 +1064,20 @@ function syncBodyLock() {
   document.body.style.overflow = artistOpen || ratingOpen || settingsOpen ? 'hidden' : '';
 }
 
+const STAR_PATH = 'M12 2.5 14.8 8.6 21.5 9.3 16.5 13.8 17.9 20.4 12 17 6.1 20.4 7.5 13.8 2.5 9.3 9.2 8.6Z';
+const HEART_PATH = 'M12 21C12 21 3 14.5 3 8.5C3 5.4 5.4 3 8.5 3C10.2 3 11.9 3.8 13 5.1C14.1 3.8 15.8 3 17.5 3C20.6 3 23 5.4 23 8.5C23 14.5 12 21 12 21Z';
+function buildStarsSvg(value) {
+  const full = Math.round(Number(value) || 0);
+  let out = '';
+  for (let i = 0; i < 5; i++) {
+    out += `<svg class="star-svg${i < full ? ' on' : ''}" style="--i:${i}" viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR_PATH}"/></svg>`;
+  }
+  return `<span class="star-display" title="${value} / 5">${out}</span>`;
+}
+function buildHeartSvg() {
+  return `<svg viewBox="0 0 26 24" aria-hidden="true"><path d="${HEART_PATH}"/></svg>`;
+}
+
 async function openArtistPopup(actId, actName) {
   const overlay = document.getElementById('artistOverlay');
   const content = document.getElementById('modalContent');
@@ -1133,7 +1157,7 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
   const numericActId = Number(actId);
   const isFavorite = Number.isFinite(numericActId) && favoriteActIds.has(numericActId);
   const favHtml = Number.isFinite(numericActId)
-    ? `<button class="modal-act-favorite${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}" title="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${isFavorite ? '♥' : '♡'}</button>`
+    ? `<button class="heart-btn${isFavorite ? ' active' : ''}" type="button" data-favorite-act-id="${numericActId}" data-act-name="${escapeHtml(name)}" data-act-insta-name="${escapeHtml(instaName || '')}" aria-pressed="${isFavorite}" aria-label="${isFavorite ? t('profile.unfollow_artist') : t('profile.follow_artist')}">${buildHeartSvg()}<span class="heart-btn-label">${isFavorite ? t('sheet.following') : t('sheet.follow')}</span></button>`
     : '';
   const igHtml = instaName
     ? `<a class="modal-ig-link" href="https://instagram.com/${instaName}" target="_blank" rel="noopener"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>@${instaName}</a>`
@@ -1144,11 +1168,10 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
 
   let statsHtml = '';
   if (ratingStats && ratingStats.rating_count > 0) {
-    const stars = '★'.repeat(Math.round(ratingStats.avg_rating)) + '☆'.repeat(5 - Math.round(ratingStats.avg_rating));
     statsHtml = `
       <div class="modal-act-stats">
         <div class="modal-act-stats-row">
-          <span class="modal-act-stars" title="${ratingStats.avg_rating} / 5">${stars}</span>
+          ${buildStarsSvg(ratingStats.avg_rating)}
           <span class="modal-act-avg">${ratingStats.avg_rating}</span>
           <span class="modal-act-count">(${ratingStats.rating_count})</span>
         </div>
@@ -1190,21 +1213,21 @@ function renderArtistModal(name, instaName, upcomingEvents, actId, pastEvents = 
       const venue = city ? `${city} — ${ev.clubs?.name ?? ''}` : (ev.clubs?.name ?? '-');
       return `<div class="modal-event-row modal-event-row--past"><div class="modal-event-date"><span class="med">${d.day}</span><span class="mmonth">${d.monthShort}</span><span class="mwday">${d.weekday}</span></div><div class="modal-event-info"><div class="modal-event-name">${ev.event_name}</div><div class="modal-event-venue">${venue}</div></div><div class="modal-event-right">${rateBtn}</div></div>`;
     }).join('');
-    pastHtml = `<div class="modal-events-label modal-events-label--past">${t('profile.past_events')} (${pastEvents.length})</div>${pastRows}`;
+    pastHtml = `<div class="modal-events-label modal-events-label--past">${t('sheet.past_events')} (${pastEvents.length})</div>${pastRows}`;
   }
 
   const socialRow = `<div class="modal-social-row">${igHtml}${scHtml}</div>`;
 
   content.innerHTML = `
     <div class="modal-artist-tag">// ARTIST</div>
-    <div class="artist-modal-header"><div class="modal-artist-name">${name}</div><div class="modal-head-actions">${favHtml}</div></div>
+    <div class="artist-modal-header"><div class="modal-artist-name">${name}</div></div>
+    <div class="sheet-actions">${favHtml}</div>
     <div class="modal-divider"></div>
-    ${socialRow}
     ${statsHtml}
-    <div class="modal-events-label">${t('profile.upcoming_events')} (${upcomingEvents.length})</div>
+    ${socialRow}
+    <div class="modal-events-label">${t('sheet.next_gigs')} (${upcomingEvents.length})</div>
     ${rows}
     ${pastHtml}
-    <div class="modal-scanner"></div>
   `;
 }
 
@@ -1216,7 +1239,32 @@ function closeArtistPopup() {
   syncBodyLock();
 }
 
+function initSheetSwipeDown() {
+  const grab = document.getElementById('artistSheetGrab'), modal = document.getElementById('artistModal');
+  if (!grab || !modal) return;
+  let startY = null, dy = 0;
+  grab.addEventListener('touchstart', e => {
+    startY = e.changedTouches[0].clientY;
+    dy = 0;
+    modal.style.transition = 'none';
+  }, { passive: true });
+  grab.addEventListener('touchmove', e => {
+    if (startY === null) return;
+    dy = Math.max(0, e.changedTouches[0].clientY - startY);
+    modal.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  grab.addEventListener('touchend', () => {
+    if (startY === null) return;
+    modal.style.transition = '';
+    modal.style.transform = '';
+    if (dy > 90) closeArtistPopup();
+    startY = null;
+    dy = 0;
+  });
+}
+
 function initArtistPopup() {
+  initSheetSwipeDown();
   document.getElementById('artistOverlayBg')?.addEventListener('click', closeArtistPopup);
   document.getElementById('modalClose')?.addEventListener('click', closeArtistPopup);
   document.addEventListener('keydown', e => {
@@ -1365,11 +1413,18 @@ function syncProfileClubButtons(clubId) {
 
 function syncProfileActButtons(actId) {
   const isActive = favoriteActIds.has(Number(actId));
-  document.querySelectorAll(`#hypesList [data-action="toggle-favorite-act"][data-act-id="${actId}"]`).forEach(btn => {
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-pressed', String(isActive));
-    btn.textContent = isActive ? '\u2665' : '\u2661';
-    btn.closest('.artist-row')?.classList.toggle('artist-row--followed', isActive);
+  document.querySelectorAll(`#hypesList .dj-row[data-act-id="${actId}"]`).forEach(row => {
+    row.classList.toggle('is-followed', isActive);
+    const heart = row.querySelector('.dj-row-heart');
+    if (isActive && !heart) {
+      const span = document.createElement('span');
+      span.className = 'dj-row-heart';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = '\u2665';
+      row.querySelector('.dj-row-state')?.insertBefore(span, row.querySelector('.dj-row-chevron'));
+    } else if (!isActive && heart) {
+      heart.remove();
+    }
   });
   document.querySelectorAll(`[data-profile-act-follow="${actId}"]`).forEach(btn => {
     btn.classList.toggle('active', isActive);
@@ -1382,8 +1437,9 @@ function syncProfileActButtons(actId) {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', String(isActive));
     btn.setAttribute('aria-label', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
-    btn.setAttribute('title', isActive ? t('profile.unfollow_artist') : t('profile.follow_artist'));
-    btn.textContent = isActive ? '\u2665' : '\u2661';
+    const label = btn.querySelector('.heart-btn-label');
+    if (label) label.textContent = isActive ? t('sheet.following') : t('sheet.follow');
+    else btn.textContent = isActive ? '\u2665' : '\u2661';
   });
 }
 
@@ -1474,9 +1530,63 @@ async function toggleProfileHype(id) {
   }
 }
 
+async function rateActInline(starBtn) {
+  const actId = Number(starBtn.dataset.actId);
+  const eventId = Number(starBtn.dataset.eventId);
+  const rating = Number(starBtn.dataset.star);
+  if (!actId || !eventId || !rating || !sessionUser || !supabaseClient) return;
+  const strip = starBtn.closest('.dj-row-stars');
+  strip?.querySelectorAll('.dj-row-star').forEach((s, i) => {
+    s.classList.toggle('filled', i < rating);
+    s.classList.remove('pop', 'preview');
+  });
+  requestAnimationFrame(() => starBtn.classList.add('pop'));
+  const cacheKey = `${actId}:${eventId}`;
+  const existing = userActRatings.get(cacheKey);
+  const payload = {
+    user_id: sessionUser.id,
+    act_id: actId,
+    event_id: eventId,
+    rating,
+    was_surprise: existing?.was_surprise ?? false,
+    was_best_act: existing?.was_best_act ?? false,
+  };
+  userActRatings.set(cacheKey, payload);
+  try {
+    if (existing) {
+      await supabaseClient.from('act_ratings').update(payload)
+        .eq('user_id', sessionUser.id).eq('act_id', actId).eq('event_id', eventId);
+    } else {
+      await supabaseClient.from('act_ratings').insert(payload);
+    }
+  } catch (err) {
+    console.warn('Inline rating save error:', err.message || err);
+  }
+}
+
 function initProfileEventCards() {
   const container = document.getElementById('hypesList');
   if (!container) return;
+
+  container.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.dj-row[role="button"]');
+    if (!row) return;
+    e.preventDefault();
+    row.click();
+  });
+  container.addEventListener('mouseover', e => {
+    const star = e.target.closest('.dj-row-star');
+    const strip = star?.closest('.dj-row-stars');
+    if (!strip) return;
+    const idx = Number(star.dataset.star) - 1;
+    strip.querySelectorAll('.dj-row-star').forEach((s, i) => s.classList.toggle('preview', i <= idx));
+  });
+  container.addEventListener('mouseout', e => {
+    const strip = e.target.closest('.dj-row-stars');
+    if (!strip || strip.contains(e.relatedTarget)) return;
+    strip.querySelectorAll('.dj-row-star').forEach(s => s.classList.remove('preview'));
+  });
 
   container.addEventListener('click', async e => {
     const artist = e.target.closest('.artist-name-link[data-act-id]');
@@ -1489,6 +1599,16 @@ function initProfileEventCards() {
     const target = e.target.closest('[data-action]');
     if (!target) return;
     e.preventDefault();
+
+    if (target.dataset.action === 'open-artist') {
+      openArtistPopup(target.dataset.actId, target.dataset.actName);
+      return;
+    }
+
+    if (target.dataset.action === 'rate-act-inline') {
+      await rateActInline(target);
+      return;
+    }
 
     if (target.dataset.action === 'toggle-timetable') {
       const eventId = Number(target.dataset.eventId);
@@ -2661,8 +2781,6 @@ async function init() {
     console.error('Profil laden Fehler:', err);
   }
 
-  updateProfileClocks();
-  setInterval(updateProfileClocks, 30 * 1000);
   initSettings();
   initPushSettings();
 }
