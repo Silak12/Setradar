@@ -4,16 +4,60 @@
     "area_id": 34,
     "clubs": [
       {
+        "club": "://about blank",
+        "venue_id": 28354
+      },
+      {
         "club": "ÆDEN",
         "venue_id": 187744
+      },
+      {
+        "club": "arkaoda Berlin",
+        "venue_id": 145577
       },
       {
         "club": "Berghain",
         "venue_id": 5031
       },
       {
+        "club": "Birgit",
+        "venue_id": 104289
+      },
+      {
+        "club": "Burg Schnabel",
+        "venue_id": 112987
+      },
+      {
+        "club": "Club der Visionaere",
+        "venue_id": 6949
+      },
+      {
         "club": "Der weiße Hase",
         "venue_id": 107593
+      },
+      {
+        "club": "DSTRKT (ehem. Anomalie Art Club)",
+        "venue_id": 284750
+      },
+      {
+        "club": "Else",
+        "venue_id": 79607
+      },
+      {
+        "club": "Heideglühen",
+        "venue_id": 206374
+      },
+      {
+        "club": "Hoppetosse",
+        "venue_id": 9585
+      },
+      {
+        "club": "Insomnia",
+        "venue_id": 66688
+      },
+      {
+        "club": "Kater",
+        "venue_id": 99161
       },
       {
         "club": "KitKat",
@@ -24,8 +68,20 @@
         "venue_id": 17071
       },
       {
+        "club": "Marie Antoinette",
+        "venue_id": 37540
+      },
+      {
+        "club": "OHM",
+        "venue_id": 75457
+      },
+      {
         "club": "OST",
         "venue_id": 141987
+      },
+      {
+        "club": "OXI",
+        "venue_id": 184646
       },
       {
         "club": "Renate",
@@ -40,8 +96,40 @@
         "venue_id": 185172
       },
       {
+        "club": "SAGE / Sage Beach",
+        "venue_id": 47291
+      },
+      {
+        "club": "SchwuZ",
+        "venue_id": 34193
+      },
+      {
+        "club": "Sisyphos",
+        "venue_id": 17118
+      },
+      {
+        "club": "SO36",
+        "venue_id": 15179
+      },
+      {
+        "club": "Trauma Arts and Culture",
+        "venue_id": 157011
+      },
+      {
         "club": "Tresor",
         "venue_id": 5494
+      },
+      {
+        "club": "Void Club",
+        "venue_id": 106495
+      },
+      {
+        "club": "Watergate",
+        "venue_id": 3213
+      },
+      {
+        "club": "ZENNER",
+        "venue_id": 188239
       }
     ]
   },
