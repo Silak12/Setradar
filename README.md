@@ -160,7 +160,13 @@ python backend/database/create_schema_from_json.py --input backend/database/line
 
 ```powershell
 .\.venv\Scripts\python.exe backend/database/supabase_seed_lineup.py --input backend/fetcher/lineup_seed_example.json
+.\.venv\Scripts\python.exe backend/database/seed_event_hype.py --days 60
 ```
+
+Der RA-Scraper liest pro Event auch `interestedCount` (auf der deutschen
+RA-Seite „Interessiert“) ein. Ein normaler Scraper-Lauf schreibt den Wert nach
+`events.interested_count` und aktualisiert danach automatisch den öffentlichen
+„Interested“-Zähler. Nur bei `--dry-run` werden beide DB-Schritte übersprungen.
 
 7. Ergebnis pruefen (optional)
 
