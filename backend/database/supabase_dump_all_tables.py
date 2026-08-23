@@ -23,8 +23,8 @@ def _required_env(name: str) -> str:
 
 def _supabase_client() -> Client:
     supabase_url = _required_env("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or _required_env(
-        "SUPABASE_ANON_KEY"
+    supabase_key = os.getenv("SUPABASE_SECRET_KEY") or _required_env(
+        "SUPABASE_SERVICE_ROLE_KEY"
     )
     return create_client(supabase_url, supabase_key)
 
@@ -48,14 +48,14 @@ def _list_tables_via_rpc(supabase: Client) -> list[str]:
                 "create or replace function public.list_public_tables()\n"
                 "returns table(table_name text)\n"
                 "language sql\n"
-                "security definer\n"
+                "security invoker\n"
                 "as $$\n"
                 "  select tablename::text\n"
                 "  from pg_tables\n"
                 "  where schemaname = 'public'\n"
                 "  order by tablename;\n"
                 "$$;\n"
-                "grant execute on function public.list_public_tables() to anon;"
+                "grant execute on function public.list_public_tables() to service_role;"
             ) from exc
         message = getattr(exc, "message", str(exc))
         raise RuntimeError(

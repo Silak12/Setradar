@@ -680,7 +680,7 @@ window.PastEventModal = (() => {
         _pub.from('event_acts')
           .select('act_id, start_time, end_time, sort_order, canceled, acts(id, name, insta_name)')
           .eq('event_id', eventId).order('sort_order'),
-        _pub.from('act_ratings')
+        _pub.from('act_ratings_public')
           .select('act_id, rating, was_surprise')
           .eq('event_id', eventId),
         _pub.from('event_queue_buckets')

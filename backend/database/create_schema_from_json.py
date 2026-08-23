@@ -82,8 +82,14 @@ create unique index if not exists events_ra_id_key
 create table if not exists acts (
     id bigserial primary key,
     name text not null unique,
+    name_normalized text generated always as (lower(btrim(name))) stored,
     insta_name text null
 );
+
+alter table acts add column if not exists name_normalized text
+    generated always as (lower(btrim(name))) stored;
+create unique index if not exists acts_name_normalized_key
+    on acts(name_normalized);
 
 create table if not exists event_acts (
     id bigserial primary key,
@@ -136,10 +142,12 @@ alter table event_acts add column if not exists start_time time null;
 alter table event_acts add column if not exists end_time time null;
 alter table acts add column if not exists insta_name text null;
 
--- Grants for anon role
+-- Public clients may read the catalog. Imports must use a Supabase secret/service
+-- key and therefore the service_role database role.
 grant usage on schema public to anon;
-grant select, insert, update on table cities, clubs, events, acts, event_acts to anon;
-grant usage, select, update on all sequences in schema public to anon;
+revoke insert, update, delete on table cities, clubs, events, acts, event_acts from anon;
+revoke usage, select, update on all sequences in schema public from anon;
+grant select on table cities, clubs, events, acts, event_acts to anon;
 
 -- RLS policies for anon role
 alter table cities enable row level security;
@@ -154,9 +162,6 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert cities" on cities;
-create policy "anon can insert cities" on cities
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can select clubs" on clubs;
 create policy "anon can select clubs" on clubs
@@ -164,9 +169,6 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert clubs" on clubs;
-create policy "anon can insert clubs" on clubs
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can select events" on events;
 create policy "anon can select events" on events
@@ -174,9 +176,6 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert events" on events;
-create policy "anon can insert events" on events
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can select acts" on acts;
 create policy "anon can select acts" on acts
@@ -184,15 +183,8 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert acts" on acts;
-create policy "anon can insert acts" on acts
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can update acts" on acts;
-create policy "anon can update acts" on acts
-for update to anon
-using (true)
-with check (true);
 
 drop policy if exists "anon can select event_acts" on event_acts;
 create policy "anon can select event_acts" on event_acts
@@ -200,15 +192,8 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert event_acts" on event_acts;
-create policy "anon can insert event_acts" on event_acts
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can update event_acts" on event_acts;
-create policy "anon can update event_acts" on event_acts
-for update to anon
-using (true)
-with check (true);
 
 -- Optional compatibility for existing 'items' table
 do $$

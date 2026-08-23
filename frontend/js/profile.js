@@ -2216,10 +2216,6 @@ async function loadProfile() {
 
   // 9. Collaborative filtering recommendations (rating-based similarity)
   const myRatedActIds = [...actRatingMap.keys()];
-  const myAvgByAct = new Map();
-  actRatingMap.forEach((v, id) => {
-    myAvgByAct.set(id, v.ratings.reduce((a, b) => a + b, 0) / v.ratings.length);
-  });
 
   // Check localStorage cache first
   const recsCacheKey = `sr_recs_${sessionUser.id}`;
@@ -2236,105 +2232,58 @@ async function loadProfile() {
     allRecommendations = cachedEntry.recs || [];
     dismissedRecIds = new Set(cachedEntry.dismissed || []);
   } else if (myRatedActIds.length) {
-    // Fetch other users' ratings for the same acts (with actual rating value)
-    const { data: otherRatings = [] } = await supabaseClient
-      .from('act_ratings')
-      .select('user_id, act_id, rating')
-      .in('act_id', myRatedActIds)
-      .neq('user_id', sessionUser.id);
+    // Similarity is calculated in the database. The RPC returns aggregate act
+    // scores only, so no other user's id or individual rating reaches the browser.
+    const { data: recommendationRows = [], error: recommendationError } =
+      await supabaseClient.rpc('get_my_act_recommendations');
+    if (recommendationError) {
+      console.warn('Recommendation fetch error:', recommendationError.message || recommendationError);
+    }
 
-    // Compute similarity: per shared act, sim = 1 - |myRating - theirRating| / 4
-    // Both high AND both low count positively (similar taste)
-    const simSumMap = new Map();
-    const simCountMap = new Map();
-    (otherRatings || []).forEach(r => {
-      const myRating = myAvgByAct.get(r.act_id);
-      if (!myRating) return;
-      const sim = 1 - Math.abs(myRating - r.rating) / 4;
-      simSumMap.set(r.user_id, (simSumMap.get(r.user_id) || 0) + sim);
-      simCountMap.set(r.user_id, (simCountMap.get(r.user_id) || 0) + 1);
-    });
+    const scoreRows = (recommendationRows || []).map(row => ({
+      actId: Number(row.act_id),
+      predictedScore: Number(row.predicted_score || 0),
+      rawScore: Number(row.raw_score || 0),
+    })).filter(row => row.actId);
 
-    // Normalize by shared count so users with 1 shared act don't dominate
-    const normalizedSim = new Map();
-    simSumMap.forEach((sum, uid) => {
-      const shared = simCountMap.get(uid) || 1;
-      if (shared >= 2) normalizedSim.set(uid, sum / shared); // require at least 2 shared
-    });
+    const actScoresCache = {};
+    scoreRows.forEach(row => { actScoresCache[row.actId] = row.predictedScore; });
 
-    const topSimilarUsers = [...normalizedSim.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .map(([uid]) => uid);
+    const topRows = scoreRows
+      .filter(row => row.predictedScore >= 8)
+      .sort((a, b) => b.rawScore - a.rawScore)
+      .slice(0, 15);
+    const topRecIds = topRows.map(row => row.actId);
+    const allCandidateIds = scoreRows.map(row => row.actId);
 
-    if (topSimilarUsers.length) {
-      // Fetch ALL ratings (any score) from similar users for acts I haven't rated.
-      // No rating threshold here — acts rated poorly pull event scores down too.
-      let candQuery = supabaseClient
-        .from('act_ratings')
-        .select('act_id, user_id, rating')
-        .in('user_id', topSimilarUsers);
-      if (myRatedActIds.length) {
-        candQuery = candQuery.not('act_id', 'in', `(${myRatedActIds.join(',')})`);
-      }
-      const { data: candidateRatings = [] } = await candQuery;
+    if (allCandidateIds.length) {
+      const fetchIds = [...new Set([...topRecIds, ...allCandidateIds])].slice(0, 500);
+      const { data: recActDetails = [] } = await supabaseClient
+        .from('acts')
+        .select('id, name, insta_name')
+        .in('id', fetchIds);
 
-      // Weighted sum AND weight per act (needed for proper normalization)
-      const recScoreMap  = new Map(); // actId → sum(sim × rating)
-      const recWeightMap = new Map(); // actId → sum(sim)
-      (candidateRatings || []).forEach(r => {
-        const sim = normalizedSim.get(r.user_id) || 0;
-        const id  = Number(r.act_id);
-        recScoreMap.set(id,  (recScoreMap.get(id)  || 0) + sim * r.rating);
-        recWeightMap.set(id, (recWeightMap.get(id) || 0) + sim);
-      });
-
-      // Full normalized act score map: actId → predicted 0–10 score.
-      // Used on the home page to score events even for non-recommended acts.
-      const actScoresCache = {};
-      recScoreMap.forEach((weightedSum, id) => {
-        const totalSim = recWeightMap.get(id) || 1;
-        // weighted avg rating (1–5) × 2 → 0–10 scale
-        actScoresCache[id] = Math.round((weightedSum / totalSim) * 20) / 10;
-      });
-
-      // Recommendations: only well-predicted acts (≥8/10 ≈ 4★+), top 15 by raw score
-      const topRecIds = [...recScoreMap.entries()]
-        .filter(([id]) => (actScoresCache[id] || 0) >= 8)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15)
-        .map(([id]) => id);
-
-      const allCandidateIds = [...recScoreMap.keys()];
-      if (allCandidateIds.length) {
-        const fetchIds = [...new Set([...topRecIds, ...allCandidateIds])].slice(0, 500);
-        const { data: recActDetails = [] } = await supabaseClient
-          .from('acts')
-          .select('id, name, insta_name')
-          .in('id', fetchIds);
-
-        if (topRecIds.length) {
-          const maxScore = recScoreMap.get(topRecIds[0]) || 1;
-          allRecommendations = topRecIds
-            .map(id => recActDetails.find(a => Number(a.id) === id))
-            .filter(Boolean)
-            .map(a => ({
-              ...a,
-              id: Number(a.id),
-              confidence: Math.round((recScoreMap.get(Number(a.id)) / maxScore) * 85) + 10,
-            }));
-        }
-
-        // Persist recs + full actScores map to localStorage
-        try {
-          localStorage.setItem(recsCacheKey, JSON.stringify({
-            recs: allRecommendations,
-            actScores: actScoresCache,
-            ts: Date.now(),
-            dismissed: [],
+      if (topRecIds.length) {
+        const rawScoreByAct = new Map(scoreRows.map(row => [row.actId, row.rawScore]));
+        const maxScore = topRows[0]?.rawScore || 1;
+        allRecommendations = topRecIds
+          .map(id => recActDetails.find(a => Number(a.id) === id))
+          .filter(Boolean)
+          .map(a => ({
+            ...a,
+            id: Number(a.id),
+            confidence: Math.round((rawScoreByAct.get(Number(a.id)) / maxScore) * 85) + 10,
           }));
-        } catch {}
       }
+
+      try {
+        localStorage.setItem(recsCacheKey, JSON.stringify({
+          recs: allRecommendations,
+          actScores: actScoresCache,
+          ts: Date.now(),
+          dismissed: [],
+        }));
+      } catch {}
     }
     dismissedRecIds = new Set();
   }

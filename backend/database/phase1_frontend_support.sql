@@ -33,13 +33,14 @@ using (true);
 
 grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, delete on table public.favorites to authenticated;
-grant select on table public.event_hypes to anon, authenticated;
-grant insert, delete on table public.event_hypes to authenticated;
+revoke select, insert, update, delete on table public.event_hypes from anon;
+grant select, insert, delete on table public.event_hypes to authenticated;
 grant select on table public.event_hype_seed to anon, authenticated;
 
 grant usage, select on sequence public.favorites_id_seq, public.event_hypes_id_seq to authenticated;
 
-create or replace view public.events_with_hype as
+create or replace view public.events_with_hype
+with (security_invoker = true) as
 select
   e.*,
   eht.total_hype,

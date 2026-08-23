@@ -2477,7 +2477,7 @@ async function fetchLiveData(eventId) {
             .eq('user_id', sessionUser.id)
             .order('created_at')
         : Promise.resolve({ data: [] }),
-      pubClient.from('act_ratings').select('act_id, rating, was_surprise').eq('event_id', eventId),
+      pubClient.from('act_ratings_public').select('act_id, rating, was_surprise').eq('event_id', eventId),
     ]);
     const presenceRows = pRes.data || [];
     const queueRows = presenceRows.filter(r => r.status === 'queue');
