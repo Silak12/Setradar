@@ -16,9 +16,7 @@
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   // Dritt-Browser auf iOS (Chrome/Firefox/Edge): Teilen sitzt oben statt unten
   const IS_IOS_ALT_BROWSER = IS_IOS && /CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
-  // iPad: Safari-Teilen sitzt ebenfalls oben rechts
-  const IS_IPAD = /iPad/.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const IS_SAMSUNG = /SamsungBrowser/i.test(navigator.userAgent);
   const IS_STANDALONE = (window.matchMedia
     && window.matchMedia('(display-mode: standalone)').matches)
     || window.navigator.standalone === true;
@@ -177,10 +175,7 @@
   function installScene() {
     const rowKey = IS_IOS ? 'ob.s4.row_ios' : 'ob.s4.row_android';
     const trigger = IS_IOS
-      ? `<svg class="ob-share-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-           <path d="M12 14V3.5"/><path d="M8.5 6.5 12 3l3.5 3.5"/>
-           <path d="M7 10H5.5v9.5h13V10H17"/>
-         </svg>`
+      ? '<span class="ob-menu-glyph" aria-hidden="true">\u22ef</span>'
       : '<span class="ob-menu-glyph" aria-hidden="true">\u22ee</span>';
     const tiles = Array.from({ length: 7 }, (_, i) => `<i style="--i:${i}"></i>`).join('');
     return `
@@ -198,7 +193,7 @@
               <span data-i18n="${rowKey}"></span>
             </span>
           </div>
-          <div class="ob-phone-bar">
+          <div class="ob-phone-bar ob-phone-bar--right">
             ${trigger}
             <i class="ob-tap ob-tap--bar"></i>
           </div>
@@ -216,7 +211,9 @@
       scene: 'install',
       html: installScene,
       keys: 's4',
-      subKey: IS_IOS ? 'ob.s4.sub_ios' : 'ob.s4.sub_android',
+      subKey: IS_IOS
+        ? 'ob.s4.sub_ios'
+        : (IS_SAMSUNG ? 'ob.s4.sub_samsung' : 'ob.s4.sub_android'),
     });
   }
 
@@ -453,30 +450,35 @@
 
   function openInstallGuide() {
     if (!overlay || overlay.querySelector('.ob-guide')) return;
-    const arrowTop = IS_IOS_ALT_BROWSER || IS_IPAD;
-    const step1Key = arrowTop ? 'ob.guide_step1_top' : 'ob.guide_step1_bottom';
+    // Safari (iOS 26): \u22ef unten rechts -> Teilen -> \u201eMehr anzeigen\u201c -> + Zum Home-Bildschirm.
+    // In Chrome/Firefox/Edge auf iOS gibt es die Option nicht -> Hinweis auf Safari.
+    const steps = [
+      { icon: '<span class="ob-guide-glyph">\u22ef</span>', key: 'ob.guide_step_dots' },
+      { icon: `<svg class="ob-guide-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M12 14V3.5"/><path d="M8.5 6.5 12 3l3.5 3.5"/>
+            <path d="M7 10H5.5v9.5h13V10H17"/>
+          </svg>`, key: 'ob.guide_step_share' },
+      { icon: `<svg class="ob-guide-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>`, key: 'ob.guide_step_more' },
+      { icon: '<span class="ob-guide-plus">+</span>', key: 'ob.guide_step_add' },
+    ];
     const guide = document.createElement('div');
-    guide.className = 'ob-guide' + (arrowTop ? ' ob-guide--top' : '');
+    guide.className = 'ob-guide' + (IS_IOS_ALT_BROWSER ? '' : ' ob-guide--br');
     guide.innerHTML = `
       <div class="ob-guide-box">
         <div class="ob-guide-title" data-i18n="ob.guide_title"></div>
+        ${IS_IOS_ALT_BROWSER
+          ? '<p class="ob-guide-safari" data-i18n="ob.guide_safari_only"></p>'
+          : ''}
+        ${steps.map((step, i) => `
         <div class="ob-guide-step">
-          <span class="ob-guide-num">1</span>
-          <svg class="ob-guide-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-            <path d="M12 14V3.5"/><path d="M8.5 6.5 12 3l3.5 3.5"/>
-            <path d="M7 10H5.5v9.5h13V10H17"/>
-          </svg>
-          <span data-i18n="${step1Key}"></span>
-        </div>
-        <div class="ob-guide-step">
-          <span class="ob-guide-num">2</span>
-          <span class="ob-guide-plus">+</span>
-          <span data-i18n="ob.guide_step2"></span>
-        </div>
+          <span class="ob-guide-num">${i + 1}</span>
+          ${step.icon}
+          <span data-i18n="${step.key}"></span>
+        </div>`).join('')}
         <p class="ob-guide-hint" data-i18n="ob.guide_hint"></p>
         <button class="ob-guide-done" type="button" data-i18n="ob.guide_done"></button>
       </div>
-      <div class="ob-guide-arrow" aria-hidden="true">${arrowTop ? '\u2191' : '\u2193'}</div>`;
+      ${IS_IOS_ALT_BROWSER ? '' : '<div class="ob-guide-arrow" aria-hidden="true">\u2193</div>'}`;
     overlay.appendChild(guide);
     if (typeof window.applyTranslations === 'function') window.applyTranslations(guide);
     guide.addEventListener('click', e => {

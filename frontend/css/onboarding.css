@@ -362,21 +362,39 @@
   text-shadow: 0 0 12px rgba(255, 32, 32, 0.6);
   animation: obArrowBounce 1.1s ease-in-out infinite;
 }
-.ob-guide--top .ob-guide-arrow {
+.ob-guide--br .ob-guide-arrow {
   left: auto;
-  right: 18px;
-  bottom: auto;
-  top: calc(8px + var(--safe-top, 0px));
+  right: 20px;
   transform: none;
-  animation-name: obArrowBounceUp;
+  animation-name: obArrowBounceR;
 }
 @keyframes obArrowBounce {
   0%, 100% { transform: translate(-50%, 0); }
   50%      { transform: translate(-50%, 7px); }
 }
-@keyframes obArrowBounceUp {
+@keyframes obArrowBounceR {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-7px); }
+  50%      { transform: translateY(7px); }
+}
+.ob-guide-glyph {
+  width: 22px;
+  text-align: center;
+  font-size: 17px;
+  color: var(--white);
+  flex-shrink: 0;
+  line-height: 1;
+}
+.ob-guide-chevron {
+  width: 22px;
+  height: 22px;
+  color: var(--white);
+  flex-shrink: 0;
+}
+.ob-guide-safari {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--red);
+  margin: 0 0 6px;
 }
 @media (prefers-reduced-motion: reduce) {
   .ob-guide-share, .ob-guide-arrow { animation: none !important; }
@@ -1193,14 +1211,14 @@
   align-items: center;
   justify-content: center;
 }
-.ob-share-glyph { width: 20px; height: 20px; color: #eaeaea; }
+.ob-phone-bar--right { justify-content: flex-end; padding-right: 18px; }
 .ob-menu-glyph { font-size: 19px; color: #eaeaea; line-height: 1; }
 .ob-tap--bar {
   position: absolute;
-  left: 50%;
+  left: auto;
+  right: 11px;
   top: 50%;
-  margin: -13px 0 0 -13px;
-  right: auto;
+  margin: -13px 0 0 0;
 }
 .ob-slide.active .ob-tap--bar { animation: obTapBar 11s infinite both; }
 @keyframes obTapBar {
