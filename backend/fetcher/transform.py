@@ -27,8 +27,89 @@ def _extract_social_name(raw: str | None, domain_hint: str) -> str:
     return value
 
 
+# ── Lineup-Text-Parsing ───────────────────────────────────────────────────────
+#
+# RA verlinkt nur Artists mit Profil (`artists[]` bzw. <artist>-Tags im
+# lineup-Feld). Acts ohne RA-Profil stehen als reiner Text im Lineup und
+# fehlten frueher komplett. Der Parser holt sie nach und filtert Junk
+# (Sektions-Header, Ticket-Hinweise, Zeiten, lose Set-Deskriptoren).
+
+_ARTIST_TAG_RE = re.compile(r"<artist\b[^>]*>(.*?)</artist>", re.IGNORECASE | re.DOTALL)
+_MARKUP_RE = re.compile(r"<[^>]+>")
+_TIME_TOKEN_RE = re.compile(r"\d{1,2}[:.]\d{2}")
+_SET_SUFFIX_RE = re.compile(
+    r"\s*\(\s*[^)]*\b(?:live|set|dj|b2b|b3b|hybrid|showcase|all\s*night|extended)\b[^)]*\)\s*$",
+    re.IGNORECASE,
+)
+_LINEUP_SPLIT_RE = re.compile(r"[\n\r\u2028\u2029,;]+|\s+b[23]b\s+", re.IGNORECASE)
+_PAREN_RE = re.compile(r"\([^)]*\)")
+_WORD_RE = re.compile(r"[^\W_]+", re.UNICODE)
+
+# Woerter, die auf Nicht-Act-Zeilen hindeuten. Eine Zeile fliegt nur raus,
+# wenn ALLE ihre Woerter Junk (oder reine Zahlen) sind — "The Shredder"
+# ueberlebt, "SATURDAY DAY OPEN AIR" nicht.
+_LINEUP_JUNK_TOKENS = frozenset("""
+    monday tuesday wednesday thursday friday saturday sunday
+    montag dienstag mittwoch donnerstag freitag samstag sonntag
+    day night indoor outdoor open air floor stage room basement main
+    garden garten terrasse rooftop
+    part parts ticket tickets tba tbc lineup line up doors entry
+    info infos important notice instagram capacity person secure per
+    and und with mit more many uhr pm am till until from bis ab
+    hosted presents pres invites b2b b3b vs feat ft
+""".split())
+
+
+def _clean_lineup_segment(segment: str) -> str:
+    name = segment.strip().strip("-\u2013\u2014\u2022\u00b7|: ").strip()
+    return _SET_SUFFIX_RE.sub("", name).strip()
+
+
+def _is_probable_act_name(name: str) -> bool:
+    if len(name) < 2 or len(name) > 40:
+        return False
+    if _TIME_TOKEN_RE.search(name):
+        return False
+    tokens = _WORD_RE.findall(name.lower())
+    if not tokens or len(tokens) > 4:
+        return False
+    return any(token not in _LINEUP_JUNK_TOKENS and not token.isdigit() for token in tokens)
+
+
+def _act_dedupe_key(name: str) -> str:
+    """Gleicher Artist trotz RA-Suffixen: 'NOTMYTYPE (2)' == 'NOTMYTYPE(Bounce Set)'."""
+    return _normalize_event_title(_PAREN_RE.sub(" ", name))
+
+
+def _lineup_text_acts(raw_lineup: str | None) -> list[str]:
+    """Alle plausiblen Act-Namen aus dem lineup-Feld, in Textreihenfolge."""
+    if not raw_lineup:
+        return []
+    text = _ARTIST_TAG_RE.sub(lambda m: "\n" + m.group(1) + "\n", str(raw_lineup))
+    text = _MARKUP_RE.sub("\n", text)
+    names = []
+    for segment in _LINEUP_SPLIT_RE.split(text):
+        name = _clean_lineup_segment(segment)
+        if name and _is_probable_act_name(name):
+            names.append(name)
+    return names
+
+
+def _empty_socials_act(name: str) -> dict:
+    return {
+        "name": name,
+        "insta_name": "",
+        "insta_url": "",
+        "soundcloud_name": "",
+        "soundcloud_url": "",
+        "start_time": None,
+        "end_time": None,
+    }
+
+
 def event_to_acts(event: dict) -> list[dict]:
     acts = []
+    seen: set[str] = set()
     for artist in (event.get("artists") or []):
         name = (artist.get("name") or "").strip()
         if name:
@@ -43,19 +124,16 @@ def event_to_acts(event: dict) -> list[dict]:
                 "start_time": None,
                 "end_time": None,
             })
-    if not acts:
-        for name in [n.strip() for n in (event.get("lineup") or "").split(",") if n.strip()]:
-            acts.append(
-                {
-                    "name": name,
-                    "insta_name": "",
-                    "insta_url": "",
-                    "soundcloud_name": "",
-                    "soundcloud_url": "",
-                    "start_time": None,
-                    "end_time": None,
-                }
-            )
+            seen.add(_act_dedupe_key(name))
+
+    # Unverlinkte Acts aus dem Lineup-Text nachziehen (bzw. kompletter
+    # Fallback, wenn RA gar keine artists[] liefert).
+    for name in _lineup_text_acts(event.get("lineup")):
+        key = _act_dedupe_key(name)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        acts.append(_empty_socials_act(name))
     return acts
 
 

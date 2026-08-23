@@ -165,3 +165,43 @@ def test_afterparty_with_shared_dj_is_kept() -> None:
     events = _lokschuppen([main, afterparty, parallel])
 
     assert sorted(event["ra_id"] for event in events) == ["1", "2", "3"]
+
+
+def test_unlinked_lineup_acts_are_added_after_linked_artists() -> None:
+    # Realer Auszug aus RA-Event 2510526 (HIVE FREE RAVE): unverlinkte Acts
+    # stehen als Plaintext im lineup-Feld, Set-Deskriptoren haengen teils
+    # ausserhalb des <artist>-Tags.
+    from backend.fetcher.transform import event_to_acts
+
+    event = {
+        "artists": [{"name": "IGDA"}, {"name": "NOTMYTYPE (2)"}, {"name": "Rabe Rax"}],
+        "lineup": (
+            "IMPORTANT - THE EVENT WILL BE DIVIDED INTO 3 PARTS\n\n"
+            "PART 2 - SATURDAY DAY - OPEN AIR 14:00 - 22:00\n\n"
+            "You can secure 1 ticket per person, per part.\n\n"
+            "Keep an eye on our Instagram to follow any updates on the capacity!\n\n"
+            "SATURDAY DAY OPEN AIR\n"
+            '<artist id="134793">IGDA</artist>\xa0(Schranz set)\n'
+            "MANIL\n"
+            "NOTMYTYPE(Bounce Set)\n"
+            '<artist id="177897">Rabe Rax</artist>\xa0\n'
+            "VATOZ LOCOZ (Live)\n"
+        ),
+    }
+
+    names = [act["name"] for act in event_to_acts(event)]
+
+    assert names == ["IGDA", "NOTMYTYPE (2)", "Rabe Rax", "MANIL", "VATOZ LOCOZ"]
+
+
+def test_lineup_fallback_without_artists_keeps_tagged_and_plain_names() -> None:
+    from backend.fetcher.transform import event_to_acts
+
+    event = {
+        "artists": [],
+        "lineup": 'MAIN FLOOR\n<artist id="1">L.zwo</artist>\u2028B2B <artist id="2">DiscoDaisy</artist>\nThe Shredder',
+    }
+
+    names = [act["name"] for act in event_to_acts(event)]
+
+    assert names == ["L.zwo", "DiscoDaisy", "The Shredder"]
