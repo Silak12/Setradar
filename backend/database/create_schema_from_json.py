@@ -60,14 +60,24 @@ create table if not exists events (
     id bigserial primary key,
     club_id bigint not null references clubs(id) on delete cascade,
     event_date date not null,
+    event_end_date date not null,
     event_name text not null default '',
     time_start time null,
     time_end time null,
-    unique (club_id, event_date, event_name)
+    ra_id text null,
+    is_active boolean not null default true
 );
 
 alter table events add column if not exists time_start time null;
 alter table events add column if not exists time_end time null;
+alter table events add column if not exists event_end_date date null;
+update events set event_end_date = event_date where event_end_date is null;
+alter table events alter column event_end_date set not null;
+alter table events add column if not exists ra_id text null;
+alter table events add column if not exists is_active boolean not null default true;
+alter table events drop constraint if exists events_club_id_event_date_event_name_key;
+create unique index if not exists events_ra_id_key
+    on events (ra_id) where ra_id is not null;
 
 create table if not exists acts (
     id bigserial primary key,
@@ -218,9 +228,9 @@ $$;
     statements: list[str] = [header]
     seen_cities: set[str] = set()
     seen_clubs: set[tuple[str, str]] = set()
-    seen_events: set[tuple[str, str, str, str]] = set()
+    seen_events: set[tuple[str, ...]] = set()
     seen_acts: dict[str, str | None] = {}
-    seen_event_acts: set[tuple[str, str, str, str, str]] = set()
+    seen_event_acts: set[tuple[str, ...]] = set()
 
     cities = payload.get("cities", [])
     for city in cities:
@@ -254,7 +264,9 @@ $$;
             events = club.get("events", [])
             for event in events:
                 event_date = str(event.get("date", "")).strip()
+                event_end_date = str(event.get("end_date") or event_date).strip()
                 event_name = str(event.get("name", "")).strip()
+                ra_id = str(event.get("ra_id") or "").strip() or None
                 event_time_start = event.get("time_start")
                 event_time_end = event.get("time_end")
                 event_time_start = (
@@ -268,7 +280,7 @@ $$;
                 if not event_date:
                     continue
 
-                event_key = (city_name, club_name, event_date, event_name)
+                event_key = ("ra", ra_id) if ra_id else (city_name, club_name, event_date, event_name)
                 if event_key not in seen_events:
                     event_time_start_expr = (
                         f"{sql_literal(event_time_start)}::time"
@@ -280,17 +292,31 @@ $$;
                         if event_time_end
                         else "null"
                     )
-                    statements.append(
-                        "insert into events (club_id, event_date, event_name, time_start, time_end)\n"
-                        f"select cl.id, {sql_literal(event_date)}::date, {sql_literal(event_name)}, "
-                        f"{event_time_start_expr}, {event_time_end_expr}\n"
+                    ra_id_expr = sql_literal(ra_id) if ra_id else "null"
+                    statement = (
+                        "insert into events (club_id, event_date, event_end_date, event_name, "
+                        "time_start, time_end, ra_id, is_active)\n"
+                        f"select cl.id, {sql_literal(event_date)}::date, "
+                        f"{sql_literal(event_end_date)}::date, {sql_literal(event_name)}, "
+                        f"{event_time_start_expr}, {event_time_end_expr}, {ra_id_expr}, true\n"
                         "from clubs cl\n"
                         "join cities c on c.id = cl.city_id\n"
                         f"where c.name = {sql_literal(city_name)} and cl.name = {sql_literal(club_name)}\n"
-                        "on conflict (club_id, event_date, event_name) do update set\n"
-                        "  time_start = coalesce(excluded.time_start, events.time_start),\n"
-                        "  time_end = coalesce(excluded.time_end, events.time_end);\n"
                     )
+                    if ra_id:
+                        statement += (
+                            "on conflict (ra_id) where ra_id is not null do update set\n"
+                            "  club_id = excluded.club_id,\n"
+                            "  event_date = excluded.event_date,\n"
+                            "  event_end_date = excluded.event_end_date,\n"
+                            "  event_name = excluded.event_name,\n"
+                            "  time_start = excluded.time_start,\n"
+                            "  time_end = excluded.time_end,\n"
+                            "  is_active = true;\n"
+                        )
+                    else:
+                        statement += ";\n"
+                    statements.append(statement)
                     seen_events.add(event_key)
 
                 acts = event.get("acts", [])
@@ -314,7 +340,7 @@ $$;
                         )
                         seen_acts[act_name] = act_insta_name or current_known_insta
 
-                    event_act_key = (city_name, club_name, event_date, event_name, act_name)
+                    event_act_key = (*event_key, act_name)
                     if event_act_key in seen_event_acts:
                         continue
 
@@ -323,6 +349,14 @@ $$;
                     )
                     act_end_time_expr = (
                         f"{sql_literal(act_end_time)}::time" if act_end_time else "null"
+                    )
+                    event_where = (
+                        f"  and e.ra_id = {sql_literal(ra_id)}\n"
+                        if ra_id
+                        else (
+                            f"  and e.event_date = {sql_literal(event_date)}::date\n"
+                            f"  and e.event_name = {sql_literal(event_name)}\n"
+                        )
                     )
                     statements.append(
                         "insert into event_acts (event_id, act_id, start_time, end_time, sort_order)\n"
@@ -334,8 +368,8 @@ $$;
                         f"{sql_literal(act_name)}\n"
                         f"where c.name = {sql_literal(city_name)}\n"
                         f"  and cl.name = {sql_literal(club_name)}\n"
-                        f"  and e.event_date = {sql_literal(event_date)}::date\n"
-                        f"  and e.event_name = {sql_literal(event_name)}\n"
+                        + event_where
+                        +
                         "on conflict (event_id, act_id) do update set\n"
                         "  start_time = coalesce(excluded.start_time, event_acts.start_time),\n"
                         "  end_time = coalesce(excluded.end_time, event_acts.end_time),\n"

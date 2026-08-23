@@ -20,11 +20,11 @@ from pathlib import Path
 
 try:
     from .ra_client import gql
-    from .transform import build_lineup_json
+    from .transform import build_lineup_json, get_event_end_date
     from .venues_config import VenuesConfigError, load_venues_config
 except ImportError:
     from ra_client import gql
-    from transform import build_lineup_json
+    from transform import build_lineup_json, get_event_end_date
     from venues_config import VenuesConfigError, load_venues_config
 
 # ── Konfiguration ─────────────────────────────────────────────────────────────
@@ -55,6 +55,7 @@ query GET_VENUE_EVENTS($id: ID!, $limit: Int) {
       date
       startTime
       endTime
+      interestedCount
       lineup
       artists {
         id
@@ -76,6 +77,7 @@ query GET_EVENT_DETAIL($id: ID!) {
     date
     startTime
     endTime
+    interestedCount
     lineup
     artists {
       id
@@ -133,16 +135,20 @@ def fetch_venue_events(venue_id: int, weeks_ahead: int = DEFAULT_WEEKS) -> list[
     data = gql(VENUE_EVENTS_QUERY, {"id": venue_id, "limit": limit})
 
     if not data:
-        return []
+        raise RuntimeError(f"RA lieferte keine Antwort fuer venue_id={venue_id}")
 
     venue_data = (data.get("data") or {}).get("venue")
     if not venue_data:
-        LOGGER.warning("  [–] Keine venue-Daten erhalten.")
-        return []
+        raise RuntimeError(f"RA lieferte keine Venue-Daten fuer venue_id={venue_id}")
 
     raw = venue_data.get("events") or []
     if isinstance(raw, dict):  # Sicherheitsnetz falls paginiertes Objekt
         raw = raw.get("data", [])
+    if len(raw) >= limit:
+        raise RuntimeError(
+            f"RA Event-Limit fuer venue_id={venue_id} erreicht ({limit}); "
+            "Snapshot waere moeglicherweise unvollstaendig."
+        )
 
     result = []
     for event in raw:
@@ -151,8 +157,14 @@ def fetch_venue_events(venue_id: int, weeks_ahead: int = DEFAULT_WEEKS) -> list[
             event_date = date.fromisoformat(event_date_str)
         except ValueError:
             continue
-        # Nur Events im gewünschten Zeitraum
-        if today <= event_date <= cutoff:
+        event_end_date_value = get_event_end_date(event)
+        event_end_date = (
+            date.fromisoformat(event_end_date_value)
+            if event_end_date_value
+            else event_date
+        )
+        # Also include events which started earlier but are still running.
+        if event_end_date >= today and event_date <= cutoff:
             result.append(event)
 
     LOGGER.info(
@@ -223,7 +235,14 @@ def main():
         scraped[venue_cfg["venue_id"]] = events
         LOGGER.info("  [ok] %s Event(s) im Zeitfenster", len(events))
 
-    payload = build_lineup_json(venues, scraped)
+    sync_start = date.today()
+    sync_end = sync_start + timedelta(weeks=args.weeks)
+    payload = build_lineup_json(
+        venues,
+        scraped,
+        sync_start=sync_start,
+        sync_end=sync_end,
+    )
 
     total_events = sum(len(club["events"]) for city in payload["cities"] for club in city["clubs"])
     total_acts   = sum(

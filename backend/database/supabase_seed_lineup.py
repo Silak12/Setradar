@@ -2,9 +2,14 @@ import argparse
 import json
 import os
 import re
+import time
+import unicodedata
+from difflib import SequenceMatcher
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
+import httpx
 from dotenv import load_dotenv
 from postgrest.exceptions import APIError
 from supabase import Client, create_client
@@ -13,8 +18,39 @@ ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 FRONTEND_CONFIG_FILE = Path(__file__).resolve().parents[2] / "frontend" / "js" / "config.js"
 DEFAULT_INPUT = Path(__file__).resolve().parents[1] / "fetcher" / "lineup_seed_example.json"
 DEFAULT_SCHEMA_SQL = Path(__file__).with_name("lineup_init.sql")
+RA_IDENTITY_MIGRATION_SQL = (
+    Path(__file__).resolve().parents[2]
+    / "supabase"
+    / "migrations"
+    / "20260823000000_ra_event_identity.sql"
+)
 
 load_dotenv(ROOT_ENV_FILE)
+
+
+def _retry_transport(func):
+    """Retry idempotent Supabase operations after transient HTTP failures."""
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        last_error: httpx.TransportError | None = None
+        for attempt in range(5):
+            try:
+                return func(*args, **kwargs)
+            except httpx.TransportError as exc:
+                last_error = exc
+                if attempt == 4:
+                    break
+                delay = 2 ** attempt
+                print(
+                    f"[WARN] Supabase transport interrupted in {func.__name__}; "
+                    f"retrying in {delay}s ({attempt + 1}/4)."
+                )
+                time.sleep(delay)
+        raise RuntimeError(
+            f"Supabase transport failed repeatedly in {func.__name__}: {last_error}"
+        ) from last_error
+
+    return wrapped
 
 
 def _required_env(name: str) -> str:
@@ -126,6 +162,7 @@ def _api_error(prefix: str, exc: APIError) -> RuntimeError:
     return RuntimeError(f"{prefix} (code: {code}): {message}")
 
 
+@_retry_transport
 def _has_column(supabase: Client, table: str, column: str) -> bool:
     try:
         supabase.table(table).select(column).limit(1).execute()
@@ -134,6 +171,7 @@ def _has_column(supabase: Client, table: str, column: str) -> bool:
         return False
 
 
+@_retry_transport
 def _ensure_required_tables(supabase: Client) -> None:
     required_tables = ["cities", "clubs", "events", "acts", "event_acts"]
     missing_tables: list[str] = []
@@ -159,11 +197,16 @@ def _ensure_required_tables(supabase: Client) -> None:
         )
 
     try:
-        supabase.table("events").select("time_start,time_end").limit(1).execute()
+        (
+            supabase.table("events")
+            .select("time_start,time_end,event_end_date,ra_id,is_active")
+            .limit(1)
+            .execute()
+        )
     except APIError as exc:
         raise RuntimeError(
-            "Schema mismatch: 'events.time_start/time_end' fehlen. "
-            f"Run SQL from '{DEFAULT_SCHEMA_SQL}' in the Supabase SQL Editor to migrate."
+            "Schema mismatch: RA identity columns on 'events' are missing. "
+            f"Run SQL from '{RA_IDENTITY_MIGRATION_SQL}' in the Supabase SQL Editor to migrate."
         ) from exc
 
     try:
@@ -183,6 +226,7 @@ def _ensure_required_tables(supabase: Client) -> None:
         ) from exc
 
 
+@_retry_transport
 def _get_or_create_city_id(supabase: Client, city_name: str) -> int:
     try:
         found = (
@@ -197,6 +241,7 @@ def _get_or_create_city_id(supabase: Client, city_name: str) -> int:
         raise _api_error(f"City upsert failed for '{city_name}'", exc) from exc
 
 
+@_retry_transport
 def _get_or_create_club_id(supabase: Client, city_id: int, club_name: str) -> int:
     try:
         found = (
@@ -220,50 +265,115 @@ def _get_or_create_club_id(supabase: Client, city_id: int, club_name: str) -> in
         raise _api_error(f"Club upsert failed for '{club_name}'", exc) from exc
 
 
+def _normalize_event_name(value: Any) -> str:
+    normalized = unicodedata.normalize("NFKD", str(value or ""))
+    ascii_value = "".join(char for char in normalized if not unicodedata.combining(char))
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", ascii_value.lower()).split())
+
+
+def _same_legacy_ra_event(candidate: dict[str, Any], incoming: dict[str, Any]) -> bool:
+    """Conservatively identify pre-ra_id rows created by an older scraper run."""
+    old_name = _normalize_event_name(candidate.get("event_name"))
+    new_name = _normalize_event_name(incoming.get("event_name"))
+    if not old_name or not new_name:
+        return False
+
+    for field in ("time_start", "time_end"):
+        old_value = str(candidate.get(field) or "")[:5]
+        new_value = str(incoming.get(field) or "")[:5]
+        if old_value and new_value and old_value != new_value:
+            return False
+
+    if old_name == new_name:
+        return True
+    if min(len(old_name), len(new_name)) >= 8 and (
+        old_name.startswith(new_name) or new_name.startswith(old_name)
+    ):
+        return True
+    return SequenceMatcher(None, old_name, new_name).ratio() >= 0.78
+
+
+@_retry_transport
 def _get_or_create_event_id(
     supabase: Client,
     club_id: int,
     event_date: str,
+    event_end_date: str | None,
     event_name: str,
     time_start: str | None,
     time_end: str | None,
     interested_count: int | None,
     supports_interested_count: bool,
-) -> int:
+    ra_id: str | None,
+) -> tuple[int, list[int]]:
     try:
-        found = (
+        incoming = {
+            "event_name": event_name,
+            "time_start": time_start,
+            "time_end": time_end,
+        }
+        exact_ra = []
+        if ra_id:
+            exact_ra = (
+                supabase.table("events")
+                .select("id")
+                .eq("ra_id", ra_id)
+                .limit(1)
+                .execute()
+            ).data or []
+
+        candidates = (
             supabase.table("events")
-            .select("id")
+            .select("id,event_name,time_start,time_end,ra_id")
             .eq("club_id", club_id)
             .eq("event_date", event_date)
-            .eq("event_name", event_name)
-            .limit(1)
             .execute()
-        )
-        if found.data:
-            event_id = int(found.data[0]["id"])
-            update_payload: dict[str, Any] = {}
-            if time_start is not None:
-                update_payload["time_start"] = time_start
-            if time_end is not None:
-                update_payload["time_end"] = time_end
+        ).data or []
+        legacy_matches = [
+            candidate
+            for candidate in candidates
+            if not candidate.get("ra_id")
+            and _same_legacy_ra_event(candidate, incoming)
+        ]
+
+        matches = exact_ra or legacy_matches
+        duplicate_ids: list[int] = []
+        if matches:
+            event_id = min(int(row["id"]) for row in matches)
+            duplicate_ids = sorted({
+                int(row["id"])
+                for row in legacy_matches
+                if int(row["id"]) != event_id
+            })
+            update_payload: dict[str, Any] = {
+                "club_id": club_id,
+                "event_date": event_date,
+                "event_end_date": event_end_date or event_date,
+                "event_name": event_name,
+                "time_start": time_start,
+                "time_end": time_end,
+                "ra_id": ra_id,
+                "is_active": True,
+            }
             if supports_interested_count and interested_count is not None:
                 update_payload["interested_count"] = interested_count
-            if update_payload:
-                (
-                    supabase.table("events")
-                    .update(update_payload)
-                    .eq("id", event_id)
-                    .execute()
-                )
-            return event_id
+            (
+                supabase.table("events")
+                .update(update_payload)
+                .eq("id", event_id)
+                .execute()
+            )
+            return event_id, duplicate_ids
 
         create_payload: dict[str, Any] = {
             "club_id": club_id,
             "event_date": event_date,
+            "event_end_date": event_end_date or event_date,
             "event_name": event_name,
             "time_start": time_start,
             "time_end": time_end,
+            "ra_id": ra_id,
+            "is_active": True,
         }
         if supports_interested_count:
             create_payload["interested_count"] = interested_count
@@ -272,12 +382,13 @@ def _get_or_create_event_id(
             .insert(create_payload)
             .execute()
         )
-        return int(created.data[0]["id"])
+        return int(created.data[0]["id"]), []
     except APIError as exc:
         label = f"{event_date} / {event_name or '<no-name>'}"
         raise _api_error(f"Event upsert failed for '{label}'", exc) from exc
 
 
+@_retry_transport
 def _get_or_create_act_id(
     supabase: Client,
     act_name: str,
@@ -375,6 +486,7 @@ def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None, str | None, s
     return "", None, None, None, None
 
 
+@_retry_transport
 def _upsert_event_act(
     supabase: Client,
     event_id: int,
@@ -419,6 +531,67 @@ def _upsert_event_act(
         raise _api_error(f"event_acts upsert failed for {key}", exc) from exc
 
 
+@_retry_transport
+def _remove_stale_event_acts(
+    supabase: Client,
+    event_id: int,
+    current_act_ids: set[int],
+) -> int:
+    try:
+        existing = (
+            supabase.table("event_acts")
+            .select("id,act_id")
+            .eq("event_id", event_id)
+            .execute()
+        ).data or []
+        stale_ids = [
+            int(row["id"])
+            for row in existing
+            if int(row["act_id"]) not in current_act_ids
+        ]
+        if stale_ids:
+            supabase.table("event_acts").delete().in_("id", stale_ids).execute()
+        return len(stale_ids)
+    except APIError as exc:
+        raise _api_error(f"Stale lineup cleanup failed for event_id={event_id}", exc) from exc
+
+
+@_retry_transport
+def _deactivate_missing_ra_events(
+    supabase: Client,
+    club_id: int,
+    source_sync: dict[str, Any],
+    current_ra_ids: set[str],
+) -> int:
+    if not source_sync.get("complete") or source_sync.get("source") != "ra":
+        return 0
+    window_start = str(source_sync.get("window_start") or "")
+    window_end = str(source_sync.get("window_end") or "")
+    if not window_start or not window_end:
+        return 0
+
+    try:
+        rows = (
+            supabase.table("events")
+            .select("id,ra_id,event_date,event_end_date,is_active")
+            .eq("club_id", club_id)
+            .execute()
+        ).data or []
+        stale_ids = []
+        for row in rows:
+            ra_id = str(row.get("ra_id") or "").strip()
+            start_date = str(row.get("event_date") or "")
+            end_date = str(row.get("event_end_date") or start_date)
+            overlaps_window = end_date >= window_start and start_date <= window_end
+            if ra_id and overlaps_window and ra_id not in current_ra_ids and row.get("is_active") is not False:
+                stale_ids.append(int(row["id"]))
+        if stale_ids:
+            supabase.table("events").update({"is_active": False}).in_("id", stale_ids).execute()
+        return len(stale_ids)
+    except APIError as exc:
+        raise _api_error(f"RA snapshot cleanup failed for club_id={club_id}", exc) from exc
+
+
 def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = True) -> None:
     supports_interested_count = _has_column(supabase, "events", "interested_count")
     supports_soundcloud_url = _has_column(supabase, "acts", "soundcloud_url")
@@ -442,6 +615,8 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
         "events": 0,
         "acts": 0,
         "event_acts": 0,
+        "event_acts_removed": 0,
+        "events_deactivated": 0,
     }
 
     for city in payload.get("cities", []):
@@ -457,10 +632,15 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                 continue
             club_id = _get_or_create_club_id(supabase, city_id, club_name)
             counters["clubs"] += 1
+            current_ra_ids: set[str] = set()
 
             for event in club.get("events", []):
                 event_date = str(event.get("date", "")).strip()
+                event_end_date = str(event.get("end_date") or event_date).strip() or None
                 event_name = str(event.get("name", "")).strip()
+                ra_id = str(event.get("ra_id") or "").strip() or None
+                if ra_id:
+                    current_ra_ids.add(ra_id)
                 event_time_start = event.get("time_start")
                 event_time_end = event.get("time_end")
                 event_time_start = (
@@ -480,18 +660,29 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                 if not event_date:
                     continue
 
-                event_id = _get_or_create_event_id(
+                event_id, duplicate_ids = _get_or_create_event_id(
                     supabase,
                     club_id,
                     event_date,
+                    event_end_date,
                     event_name,
                     event_time_start,
                     event_time_end,
                     interested_count,
                     supports_interested_count,
+                    ra_id,
                 )
                 counters["events"] += 1
+                if duplicate_ids:
+                    (
+                        supabase.table("events")
+                        .update({"is_active": False})
+                        .in_("id", duplicate_ids)
+                        .execute()
+                    )
+                    counters["events_deactivated"] += len(duplicate_ids)
 
+                current_act_ids: set[int] = set()
                 for idx, raw_act in enumerate(event.get("acts", []), start=1):
                     (
                         act_name,
@@ -510,6 +701,7 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                         supports_soundcloud_url=supports_soundcloud_url,
                     )
                     counters["acts"] += 1
+                    current_act_ids.add(act_id)
 
                     _upsert_event_act(
                         supabase=supabase,
@@ -520,6 +712,20 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                         sort_order=idx,
                     )
                     counters["event_acts"] += 1
+
+                if ra_id:
+                    counters["event_acts_removed"] += _remove_stale_event_acts(
+                        supabase,
+                        event_id,
+                        current_act_ids,
+                    )
+
+            counters["events_deactivated"] += _deactivate_missing_ra_events(
+                supabase,
+                club_id,
+                club.get("source_sync") or {},
+                current_ra_ids,
+            )
 
     if verbose:
         print("Seed completed.")

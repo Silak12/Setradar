@@ -1104,10 +1104,10 @@ async function openArtistPopup(actId, actName) {
         const [upRes, pastRes] = await Promise.all([
           pubClient.from('events')
             .select('id, event_name, event_date, time_start, clubs(id, name, cities(name))')
-            .in('id', eventIds).gte('event_date', getDateStr(0)).order('event_date'),
+            .in('id', eventIds).eq('is_active', true).gte('event_date', getDateStr(0)).order('event_date'),
           pubClient.from('events')
             .select('id, event_name, event_date, clubs(id, name, cities(name))')
-            .in('id', eventIds).lt('event_date', getDateStr(0))
+            .in('id', eventIds).eq('is_active', true).lt('event_date', getDateStr(0))
             .order('event_date', { ascending: false }).limit(8),
         ]);
         if (upRes.data) {

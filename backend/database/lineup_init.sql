@@ -19,16 +19,26 @@ create table if not exists events (
     id bigserial primary key,
     club_id bigint not null references clubs(id) on delete cascade,
     event_date date not null,
+    event_end_date date not null,
     event_name text not null default '',
     time_start time null,
     time_end time null,
     interested_count integer null,
-    unique (club_id, event_date, event_name)
+    ra_id text null,
+    is_active boolean not null default true
 );
 
 alter table events add column if not exists time_start time null;
 alter table events add column if not exists time_end time null;
 alter table events add column if not exists interested_count integer null;
+alter table events add column if not exists event_end_date date null;
+update events set event_end_date = event_date where event_end_date is null;
+alter table events alter column event_end_date set not null;
+alter table events add column if not exists ra_id text null;
+alter table events add column if not exists is_active boolean not null default true;
+alter table events drop constraint if exists events_club_id_event_date_event_name_key;
+create unique index if not exists events_ra_id_key
+    on events (ra_id) where ra_id is not null;
 
 create table if not exists acts (
     id bigserial primary key,
@@ -186,8 +196,8 @@ from cities c
 where c.name = 'Berlin'
 on conflict (city_id, name) do nothing;
 
-insert into events (club_id, event_date, event_name, time_start, time_end)
-select cl.id, '2026-02-27'::date, 'Candyflip x Wyldhearts', '23:00'::time, '09:00'::time
+insert into events (club_id, event_date, event_end_date, event_name, time_start, time_end)
+select cl.id, '2026-02-27'::date, '2026-02-28'::date, 'Candyflip x Wyldhearts', '23:00'::time, '09:00'::time
 from clubs cl
 join cities c on c.id = cl.city_id
 where c.name = 'Berlin' and cl.name = 'Lokschuppen'
