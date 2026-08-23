@@ -160,6 +160,7 @@ async function loadComponents() {
   await Promise.all([
     loadComponent('navbar', `${base}/navbar.html`),
     loadComponent('footer', `${base}/footer.html`),
+    loadComponent('helpOverlayHost', `${base}/help.html`),
   ]);
 
   initCitySelector();

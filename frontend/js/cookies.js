@@ -13,10 +13,23 @@ function dismissCookieNotice() {
   hideCookieBanner();
 }
 
+/**
+ * Der Banner liegt fix ueber allem (z-index 1300) und wuerde sonst den
+ * unteren Teil offener Sheets verdecken. Seine Hoehe wird als CSS-Variable
+ * veroeffentlicht, damit scrollbare Sheets entsprechend Platz lassen.
+ */
+function syncCookieBannerHeight() {
+  const banner = document.getElementById('cookieBanner');
+  const height = banner ? Math.ceil(banner.getBoundingClientRect().height) + 12 : 0;
+  document.documentElement.style.setProperty('--cookie-banner-h', `${height}px`);
+}
+
 function hideCookieBanner() {
   const banner = document.getElementById('cookieBanner');
   if (!banner) return;
   banner.classList.remove('visible');
+  document.documentElement.style.setProperty('--cookie-banner-h', '0px');
+  window.removeEventListener('resize', syncCookieBannerHeight);
   banner.addEventListener('transitionend', () => banner.remove(), { once: true });
 }
 
@@ -52,7 +65,13 @@ function showCookieBanner() {
     </div>
   `;
   document.body.appendChild(banner);
-  requestAnimationFrame(() => requestAnimationFrame(() => banner.classList.add('visible')));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    banner.classList.add('visible');
+    syncCookieBannerHeight();
+  }));
+  window.addEventListener('resize', syncCookieBannerHeight);
+  // Der Banner waechst noch, wenn die Web-Fonts nachladen — dann neu messen.
+  if (document.fonts?.ready) document.fonts.ready.then(syncCookieBannerHeight).catch(() => {});
 }
 
 function initCookies() {

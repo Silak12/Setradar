@@ -358,6 +358,7 @@
     overlay = null;
     el.classList.add('ob-closing');
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     setTimeout(() => el.remove(), 320);
     document.removeEventListener('keydown', onKeydown);
     // Dynamische App-Inhalte rendern nur beim Laden — nach Sprachwechsel neu
@@ -372,7 +373,10 @@
     langAtOpen = window.LANG || 'en';
     overlay = buildOverlay();
     document.body.appendChild(overlay);
+    // Scroll-Lock auf beiden Ebenen: body allein reicht je nach Browser nicht,
+    // um das Scrollen der Seite hinter dem Overlay zu verhindern.
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     wireOverlay();
     document.addEventListener('keydown', onKeydown);
     goTo(0, 1);
@@ -496,8 +500,9 @@
       setTimeout(open, 240);
     });
 
-    // Erster Besuch: automatisch öffnen (nach dem ersten Paint)
-    if (!hasSeen()) setTimeout(open, 650);
+    // Erster Besuch: automatisch öffnen (nach dem ersten Paint). Nur auf der
+    // Feed-Seite — auf Unterseiten laeuft das Tutorial nur per Replay-Button.
+    if (!hasSeen() && document.body.dataset.page === 'home') setTimeout(open, 650);
   }
 
   window.openOnboarding = open;
