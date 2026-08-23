@@ -1,4 +1,11 @@
-from backend.database.supabase_seed_lineup import _same_legacy_ra_event
+from backend.database.supabase_seed_lineup import (
+    _normalize_act_name,
+    _same_legacy_ra_event,
+)
+
+
+def test_act_name_normalization_matches_database_identity() -> None:
+    assert _normalize_act_name("  TBA  ") == "tba"
 
 
 def test_changed_ra_title_matches_legacy_row_with_same_schedule() -> None:

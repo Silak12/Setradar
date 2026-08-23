@@ -99,25 +99,18 @@ def _supabase_client() -> Client:
         "VITE_SUPABASE_URL",
     )
 
-    # Prefer service role for backend writes, then fall back to publishable/anon key.
+    # Database imports are privileged backend writes. Never fall back to a
+    # browser-safe publishable/anon key.
     supabase_key = _first_env(
+        "SUPABASE_SECRET_KEY",
         "SUPABASE_SERVICE_ROLE_KEY",
         "SUPABASE_SERVICE_KEY",
-        "SUPABASE_SECRET_KEY",
-        "SUPABASE_PUBLISHABLE_KEY",
-        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-        "VITE_SUPABASE_PUBLISHABLE_KEY",
-        "SUPABASE_ANON_KEY",
     )
 
-    frontend_url, frontend_key = _frontend_supabase_config()
+    frontend_url, _ = _frontend_supabase_config()
     if not supabase_url and frontend_url:
         supabase_url = frontend_url
         print(f"[INFO] Using SUPABASE_URL from {FRONTEND_CONFIG_FILE}")
-    if not supabase_key and frontend_key:
-        supabase_key = frontend_key
-        print(f"[INFO] Using SUPABASE key from {FRONTEND_CONFIG_FILE}")
-
     if not supabase_url:
         raise ValueError(
             "Missing required environment variable: one of "
@@ -126,9 +119,7 @@ def _supabase_client() -> Client:
     if not supabase_key:
         raise ValueError(
             "Missing required environment variable: one of "
-            "SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY, SUPABASE_SECRET_KEY, "
-            "SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, "
-            "VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_ANON_KEY"
+            "SUPABASE_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY"
         )
 
     return create_client(supabase_url, supabase_key)
@@ -388,6 +379,11 @@ def _get_or_create_event_id(
         raise _api_error(f"Event upsert failed for '{label}'", exc) from exc
 
 
+def _normalize_act_name(act_name: str) -> str:
+    """Match the generated acts.name_normalized database expression."""
+    return act_name.strip().lower()
+
+
 @_retry_transport
 def _get_or_create_act_id(
     supabase: Client,
@@ -400,7 +396,7 @@ def _get_or_create_act_id(
         found = (
             supabase.table("acts")
             .select("id,insta_name")
-            .eq("name", act_name)
+            .eq("name_normalized", _normalize_act_name(act_name))
             .limit(1)
             .execute()
         )
