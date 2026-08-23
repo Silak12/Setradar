@@ -25,7 +25,10 @@ def _optional_json_env(name: str):
         raise ValueError(f"{name} must be a JSON object.")
     return payload
 
-supabase = create_client(_required_env("SUPABASE_URL"), _required_env("SUPABASE_ANON_KEY"))
+supabase = create_client(
+    _required_env("SUPABASE_URL"),
+    os.getenv("SUPABASE_SECRET_KEY") or _required_env("SUPABASE_SERVICE_ROLE_KEY"),
+)
 
 table_name = os.getenv("SUPABASE_TABLE", "items")
 insert_payload = _optional_json_env("SUPABASE_INSERT_JSON")

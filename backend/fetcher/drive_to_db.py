@@ -11,7 +11,7 @@ Umgebungsvariablen (.env):
     OPENAI_API_KEY               = sk-...
     DRIVE_FOLDER_ID              = ID des Drive-Ordners
     SUPABASE_URL                 = https://xxx.supabase.co
-    SUPABASE_SERVICE_ROLE_KEY    = eyJ...
+    SUPABASE_SECRET_KEY          = sb_secret_...
 
 Usage:
     python drive_to_db.py
@@ -42,7 +42,7 @@ SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON", "service_account
 OPENAI_API_KEY       = os.getenv("OPENAI_API_KEY", "")
 DRIVE_FOLDER_ID      = os.getenv("DRIVE_FOLDER_ID", "")
 SUPABASE_URL         = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY         = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_KEY         = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 PROCESSED_LOG = Path(__file__).parent / "processed_files.json"
 OUTPUT_FILE   = Path(__file__).parent / "timetable_results.json"
@@ -242,7 +242,7 @@ def process_new_images(verbose: bool = True) -> int:
         print("[✗] OPENAI_API_KEY nicht gesetzt!")
         return 0
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("[✗] SUPABASE_URL oder SUPABASE_SERVICE_ROLE_KEY nicht gesetzt!")
+        print("[✗] SUPABASE_URL und SUPABASE_SECRET_KEY (oder Legacy-Service-Key) nicht gesetzt!")
         return 0
 
     drive_service = get_drive_service()

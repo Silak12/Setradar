@@ -149,6 +149,11 @@ def build_event_updates(
         for event in events
         if event.get("id") is not None and event.get("club_id") is not None
     }
+    db_events_by_ra_id = {
+        str(event.get("ra_id")): event
+        for event in events
+        if event.get("id") is not None and event.get("ra_id")
+    }
 
     # The current DB schema merges duplicate RA listings with the same
     # club/date/title. Keep the larger public count in that rare case.
@@ -159,10 +164,18 @@ def build_event_updates(
         if club_id is None:
             unmatched.append(item)
             continue
-        key = (club_id, item["event_date"], item["event_name"])
-        if key not in db_events:
+        fallback_key = (club_id, item["event_date"], item["event_name"])
+        matched_event = db_events_by_ra_id.get(str(item.get("ra_id") or ""))
+        if matched_event is None:
+            matched_event = db_events.get(fallback_key)
+        if matched_event is None:
             unmatched.append(item)
             continue
+        key = (
+            int(matched_event["club_id"]),
+            str(matched_event.get("event_date") or ""),
+            str(matched_event.get("event_name") or "").strip(),
+        )
         counts_by_key[key] = max(
             counts_by_key.get(key, 0),
             int(item["interested_count"]),
@@ -194,24 +207,43 @@ def update_database(supabase: Client, scraped: list[dict]) -> int:
         )
         events_response = (
             supabase.table("events")
-            .select("id,club_id,event_date,event_name")
+            .select("id,club_id,event_date,event_name,ra_id")
             .gte("event_date", today.isoformat())
             .lte("event_date", cutoff.isoformat())
             .execute()
         )
+        event_rows = list(events_response.data or [])
+        scraped_ra_ids = sorted({
+            str(item.get("ra_id") or "")
+            for item in scraped
+            if item.get("ra_id")
+        })
+        if scraped_ra_ids:
+            identity_response = (
+                supabase.table("events")
+                .select("id,club_id,event_date,event_name,ra_id")
+                .in_("ra_id", scraped_ra_ids)
+                .execute()
+            )
+            event_rows_by_id = {
+                int(row["id"]): row
+                for row in [*event_rows, *(identity_response.data or [])]
+            }
+            event_rows = list(event_rows_by_id.values())
         updates, unmatched = build_event_updates(
             scraped,
             clubs_response.data or [],
-            events_response.data or [],
+            event_rows,
         )
         if scraped and not updates:
             raise RuntimeError(
                 "RA returned interested counts, but none matched an existing DB event."
             )
-        for start in range(0, len(updates), 200):
+        for update in updates:
             (
                 supabase.table("events")
-                .upsert(updates[start : start + 200], on_conflict="id")
+                .update({"interested_count": update["interested_count"]})
+                .eq("id", update["id"])
                 .execute()
             )
     except APIError as exc:

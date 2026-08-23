@@ -19,23 +19,39 @@ create table if not exists events (
     id bigserial primary key,
     club_id bigint not null references clubs(id) on delete cascade,
     event_date date not null,
+    event_end_date date not null,
     event_name text not null default '',
     time_start time null,
     time_end time null,
     interested_count integer null,
-    unique (club_id, event_date, event_name)
+    ra_id text null,
+    is_active boolean not null default true
 );
 
 alter table events add column if not exists time_start time null;
 alter table events add column if not exists time_end time null;
 alter table events add column if not exists interested_count integer null;
+alter table events add column if not exists event_end_date date null;
+update events set event_end_date = event_date where event_end_date is null;
+alter table events alter column event_end_date set not null;
+alter table events add column if not exists ra_id text null;
+alter table events add column if not exists is_active boolean not null default true;
+alter table events drop constraint if exists events_club_id_event_date_event_name_key;
+create unique index if not exists events_ra_id_key
+    on events (ra_id) where ra_id is not null;
 
 create table if not exists acts (
     id bigserial primary key,
     name text not null unique,
+    name_normalized text generated always as (lower(btrim(name))) stored,
     insta_name text null,
     soundcloud_url text null
 );
+
+alter table acts add column if not exists name_normalized text
+    generated always as (lower(btrim(name))) stored;
+create unique index if not exists acts_name_normalized_key
+    on acts(name_normalized);
 
 create table if not exists event_acts (
     id bigserial primary key,
@@ -89,10 +105,12 @@ alter table event_acts add column if not exists end_time time null;
 alter table acts add column if not exists insta_name text null;
 alter table acts add column if not exists soundcloud_url text null;
 
--- Grants for anon role
+-- Public clients may read the catalog. Imports must use a Supabase secret/service
+-- key and therefore the service_role database role.
 grant usage on schema public to anon;
-grant select, insert, update on table cities, clubs, events, acts, event_acts to anon;
-grant usage, select, update on all sequences in schema public to anon;
+revoke insert, update, delete on table cities, clubs, events, acts, event_acts from anon;
+revoke usage, select, update on all sequences in schema public from anon;
+grant select on table cities, clubs, events, acts, event_acts to anon;
 
 -- RLS policies for anon role
 alter table cities enable row level security;
@@ -107,9 +125,6 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert cities" on cities;
-create policy "anon can insert cities" on cities
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can select clubs" on clubs;
 create policy "anon can select clubs" on clubs
@@ -117,9 +132,6 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert clubs" on clubs;
-create policy "anon can insert clubs" on clubs
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can select events" on events;
 create policy "anon can select events" on events
@@ -127,9 +139,6 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert events" on events;
-create policy "anon can insert events" on events
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can select acts" on acts;
 create policy "anon can select acts" on acts
@@ -137,15 +146,8 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert acts" on acts;
-create policy "anon can insert acts" on acts
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can update acts" on acts;
-create policy "anon can update acts" on acts
-for update to anon
-using (true)
-with check (true);
 
 drop policy if exists "anon can select event_acts" on event_acts;
 create policy "anon can select event_acts" on event_acts
@@ -153,15 +155,8 @@ for select to anon
 using (true);
 
 drop policy if exists "anon can insert event_acts" on event_acts;
-create policy "anon can insert event_acts" on event_acts
-for insert to anon
-with check (true);
 
 drop policy if exists "anon can update event_acts" on event_acts;
-create policy "anon can update event_acts" on event_acts
-for update to anon
-using (true)
-with check (true);
 
 -- Optional compatibility for existing 'items' table
 do $$
@@ -186,8 +181,8 @@ from cities c
 where c.name = 'Berlin'
 on conflict (city_id, name) do nothing;
 
-insert into events (club_id, event_date, event_name, time_start, time_end)
-select cl.id, '2026-02-27'::date, 'Candyflip x Wyldhearts', '23:00'::time, '09:00'::time
+insert into events (club_id, event_date, event_end_date, event_name, time_start, time_end)
+select cl.id, '2026-02-27'::date, '2026-02-28'::date, 'Candyflip x Wyldhearts', '23:00'::time, '09:00'::time
 from clubs cl
 join cities c on c.id = cl.city_id
 where c.name = 'Berlin' and cl.name = 'Lokschuppen'

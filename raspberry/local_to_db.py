@@ -10,7 +10,7 @@ setradar - local_to_db.py
 Umgebungsvariablen (.env):
     OPENAI_API_KEY               = sk-...
     SUPABASE_URL                 = https://xxx.supabase.co
-    SUPABASE_SERVICE_ROLE_KEY    = eyJ...
+    SUPABASE_SECRET_KEY          = sb_secret_...
 
 Usage:
     python local_to_db.py
@@ -39,7 +39,7 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SUPABASE_URL   = os.getenv("SUPABASE_URL", "")
-SUPABASE_KEY   = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_KEY   = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
 STORIES_FOLDER          = Path(__file__).parent / "captured_stories"
 PROCESSED_LOG           = Path(__file__).parent / "logs" / "processed_files.json"
@@ -511,7 +511,7 @@ def write_set_time(sb: Client, event_act_id: int, start: str | None, end: str | 
     if canceled:
         # Cancellation immer schreiben – auch wenn Zeiten bereits vorhanden
         sb.table("event_acts").update({"canceled": True}).eq("id", event_act_id).execute()
-        print(f"  [!] CANCELED – in DB eingetragen")
+        print("  [!] CANCELED – in DB eingetragen")
         return "canceled"
 
     if current_start or current_end:
@@ -631,7 +631,7 @@ def process_new_images(verbose: bool = True) -> int:
         print("[✗] OPENAI_API_KEY nicht gesetzt!")
         return 0
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("[✗] SUPABASE_URL oder SUPABASE_SERVICE_ROLE_KEY nicht gesetzt!")
+        print("[✗] SUPABASE_URL und SUPABASE_SECRET_KEY (oder Legacy-Service-Key) nicht gesetzt!")
         return 0
 
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -655,7 +655,7 @@ def process_new_images(verbose: bool = True) -> int:
             # OCR Pre-Filter: nur Bilder mit Zeiten/Cancel-Keywords an OpenAI
             relevant, ocr_text = ocr_prefilter(img_path)
             if not relevant:
-                print(f"  [OCR] Kein Timetable-Inhalt – überspringe OpenAI")
+                print("  [OCR] Kein Timetable-Inhalt – überspringe OpenAI")
                 processed.add(img_path.name)
                 save_processed(processed)
                 if DELETE_AFTER_PROCESSING:

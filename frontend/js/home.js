@@ -236,13 +236,25 @@ function getEventTimeDate(dateStr, timeStr) {
 }
 function getEventStartDateTime(ev) {
   if (!ev?.event_date) return null;
-  if (ev.time_start) return getEventTimeDate(ev.event_date, fmtTime(ev.time_start));
-  return parseDateStr(ev.event_date);
+  const start = parseDateStr(ev.event_date);
+  if (!start || !ev.time_start) return start;
+  const [hours, minutes] = fmtTime(ev.time_start).split(':').map(Number);
+  start.setHours(hours, minutes, 0, 0);
+  return start;
 }
 function getEventEndDateTime(ev) {
   if (!ev?.event_date) return null;
-  if (ev.time_end) return getEventTimeDate(ev.event_date, fmtTime(ev.time_end));
-  return getEventStartDateTime(ev);
+  const end = parseDateStr(ev.event_end_date || ev.event_date);
+  if (!end) return getEventStartDateTime(ev);
+  if (ev.time_end) {
+    const [hours, minutes] = fmtTime(ev.time_end).split(':').map(Number);
+    end.setHours(hours, minutes, 0, 0);
+  }
+  const start = getEventStartDateTime(ev);
+  if ((ev.event_end_date || ev.event_date) === ev.event_date && start && end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
+  return end;
 }
 function isEventRunningNow(ev, now = new Date()) {
   const start = getEventStartDateTime(ev);
@@ -257,10 +269,23 @@ function isUpcomingOrRunningEvent(ev, now = new Date()) {
 }
 function getBucketDatesForEvent(ev, now = new Date()) {
   const dates = [];
-  if (ev?.event_date) dates.push(ev.event_date);
-  const today = formatLocalDateKey(now);
-  if (isEventRunningNow(ev, now) && today !== ev?.event_date && !dates.includes(today)) {
-    dates.push(today);
+  const first = parseDateStr(ev?.event_date);
+  const startDateTime = getEventStartDateTime(ev);
+  const endDateTime = getEventEndDateTime(ev);
+  const last = endDateTime ? parseDateStr(formatLocalDateKey(endDateTime)) : null;
+  if (!first || !last) return dates;
+  const durationMs = startDateTime && endDateTime ? endDateTime - startDateTime : 0;
+  if (durationMs >= 24 * 60 * 60 * 1000) {
+    // Cap malformed source ranges while placing a genuine multi-day event in
+    // every relevant date bucket exactly once.
+    for (let cursor = new Date(first), days = 0; cursor <= last && days < 31; days += 1) {
+      dates.push(formatLocalDateKey(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  } else {
+    dates.push(ev.event_date);
+    const today = formatLocalDateKey(now);
+    if (isEventRunningNow(ev, now) && today !== ev.event_date) dates.push(today);
   }
   return dates;
 }
@@ -1672,8 +1697,8 @@ async function openArtistPopup(actId, actName) {
       if (eventActRows?.length) {
         const eventIds = eventActRows.map(r => r.event_id);
         const [upRes, pastRes] = await Promise.all([
-          pubClient.from('events').select('id, event_name, event_date, time_start, time_end, clubs(id, name, cities(name))').in('id', eventIds).gte('event_date', getDateStr(-2)).order('event_date'),
-          pubClient.from('events').select('id, event_name, event_date, time_start, time_end, clubs(id, name, cities(name))').in('id', eventIds).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
+          pubClient.from('events').select('id, event_name, event_date, time_start, time_end, clubs(id, name, cities(name))').in('id', eventIds).eq('is_active', true).gte('event_date', getDateStr(-2)).order('event_date'),
+          pubClient.from('events').select('id, event_name, event_date, time_start, time_end, clubs(id, name, cities(name))').in('id', eventIds).eq('is_active', true).lt('event_date', getDateStr(0)).order('event_date', { ascending: false }).limit(8),
         ]);
         if (upRes.data) {
           const eventMap = {};
@@ -2063,6 +2088,7 @@ async function loadActSpotlight() {
     const { data: rawEvents, error: evErr } = await pubClient
       .from('events')
       .select('id, event_name, clubs(name, cities(name)), event_acts(acts(id, name, insta_name))')
+      .eq('is_active', true)
       .gte('event_date', from)
       .lte('event_date', to);
     if (evErr) throw evErr;
@@ -2163,15 +2189,17 @@ async function loadFromSupabase() {
   const { data, error } = await (supabaseAnonClient || supabaseClient)
     .from('events')
     .select(`
-      id, event_name, event_date, time_start, time_end,
+      id, event_name, event_date, event_end_date, time_start, time_end,
       clubs ( id, name, cities ( name ) ),
       event_acts ( start_time, end_time, sort_order, canceled, acts ( id, name, insta_name ) )
     `)
-    .gte('event_date', getDateStr(-2))
+    .eq('is_active', true)
+    .gte('event_date', getDateStr(-31))
     .lte('event_date', getDateStr(60))
     .order('event_date');
   if (error) throw error;
-  return data || [];
+  const visibleFrom = getDateStr(-2);
+  return (data || []).filter(ev => (ev.event_end_date || ev.event_date) >= visibleFrom);
 }
 async function loadAvailableCities() {
   const publicClient = supabaseAnonClient || supabaseClient;
@@ -2449,7 +2477,7 @@ async function fetchLiveData(eventId) {
             .eq('user_id', sessionUser.id)
             .order('created_at')
         : Promise.resolve({ data: [] }),
-      pubClient.from('act_ratings').select('act_id, rating, was_surprise').eq('event_id', eventId),
+      pubClient.from('act_ratings_public').select('act_id, rating, was_surprise').eq('event_id', eventId),
     ]);
     const presenceRows = pRes.data || [];
     const queueRows = presenceRows.filter(r => r.status === 'queue');
