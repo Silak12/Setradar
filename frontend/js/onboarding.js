@@ -14,6 +14,11 @@
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // Dritt-Browser auf iOS (Chrome/Firefox/Edge): Teilen sitzt oben statt unten
+  const IS_IOS_ALT_BROWSER = IS_IOS && /CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+  // iPad: Safari-Teilen sitzt ebenfalls oben rechts
+  const IS_IPAD = /iPad/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const IS_STANDALONE = (window.matchMedia
     && window.matchMedia('(display-mode: standalone)').matches)
     || window.navigator.standalone === true;
@@ -237,7 +242,7 @@
             ${last
               ? `<div class="ob-cta-row">
                    ${slide.scene === 'install'
-                     ? `<button class="ob-install" type="button" hidden data-i18n="ob.install"></button>`
+                     ? `<button class="ob-install" type="button" ${IS_IOS ? '' : 'hidden '}data-i18n="${IS_IOS ? 'ob.install_ios' : 'ob.install'}"></button>`
                      : ''}
                    <button class="ob-cta" type="button">
                      <span data-i18n="ob.cta"></span><span class="ob-cta-arrow">→</span>
@@ -394,18 +399,22 @@
 
     const installBtn = overlay.querySelector('.ob-install');
     if (installBtn) {
-      if (installPrompt) installBtn.hidden = false;
-      installBtn.addEventListener('click', async () => {
-        const prompt = installPrompt;
-        if (!prompt) return;
-        installPrompt = null;
-        installBtn.hidden = true;
-        try { await prompt.prompt(); } catch (err) { /* dismissed */ }
-      });
+      if (IS_IOS) {
+        installBtn.addEventListener('click', openInstallGuide);
+      } else {
+        if (installPrompt) installBtn.hidden = false;
+        installBtn.addEventListener('click', async () => {
+          const prompt = installPrompt;
+          if (!prompt) return;
+          installPrompt = null;
+          installBtn.hidden = true;
+          try { await prompt.prompt(); } catch (err) { /* dismissed */ }
+        });
+      }
     }
 
     overlay.addEventListener('pointerdown', e => {
-      if (e.target.closest('.ob-skip, .ob-cta, .ob-lang, .ob-install')) return;
+      if (e.target.closest('.ob-skip, .ob-cta, .ob-lang, .ob-install, .ob-guide')) return;
       pointer = { x: e.clientX, y: e.clientY, t: Date.now() };
       holdTimer = setTimeout(pauseStory, 240);
     });
@@ -433,6 +442,45 @@
       pointer = null;
       clearTimeout(holdTimer);
       resumeStory();
+    });
+  }
+
+  /* ── iOS-Install-Guide: Pfeil auf den echten Teilen-Button ──────────── */
+
+  function closeInstallGuide() {
+    overlay?.querySelector('.ob-guide')?.remove();
+  }
+
+  function openInstallGuide() {
+    if (!overlay || overlay.querySelector('.ob-guide')) return;
+    const arrowTop = IS_IOS_ALT_BROWSER || IS_IPAD;
+    const step1Key = arrowTop ? 'ob.guide_step1_top' : 'ob.guide_step1_bottom';
+    const guide = document.createElement('div');
+    guide.className = 'ob-guide' + (arrowTop ? ' ob-guide--top' : '');
+    guide.innerHTML = `
+      <div class="ob-guide-box">
+        <div class="ob-guide-title" data-i18n="ob.guide_title"></div>
+        <div class="ob-guide-step">
+          <span class="ob-guide-num">1</span>
+          <svg class="ob-guide-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M12 14V3.5"/><path d="M8.5 6.5 12 3l3.5 3.5"/>
+            <path d="M7 10H5.5v9.5h13V10H17"/>
+          </svg>
+          <span data-i18n="${step1Key}"></span>
+        </div>
+        <div class="ob-guide-step">
+          <span class="ob-guide-num">2</span>
+          <span class="ob-guide-plus">+</span>
+          <span data-i18n="ob.guide_step2"></span>
+        </div>
+        <p class="ob-guide-hint" data-i18n="ob.guide_hint"></p>
+        <button class="ob-guide-done" type="button" data-i18n="ob.guide_done"></button>
+      </div>
+      <div class="ob-guide-arrow" aria-hidden="true">${arrowTop ? '\u2191' : '\u2193'}</div>`;
+    overlay.appendChild(guide);
+    if (typeof window.applyTranslations === 'function') window.applyTranslations(guide);
+    guide.addEventListener('click', e => {
+      if (e.target === guide || e.target.closest('.ob-guide-done')) closeInstallGuide();
     });
   }
 

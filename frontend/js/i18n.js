@@ -394,6 +394,13 @@
       'ob.s4.row_ios':  'Add to Home Screen',
       'ob.s4.row_android': 'Install app',
       'ob.install':     'INSTALL APP',
+      'ob.install_ios': 'SHOW ME HOW',
+      'ob.guide_title': 'INSTALL SETRADAR',
+      'ob.guide_step1_bottom': 'Tap the Share icon in the bar below',
+      'ob.guide_step1_top': 'Tap the Share icon at the top',
+      'ob.guide_step2': 'Choose \u201cAdd to Home Screen\u201d',
+      'ob.guide_hint':  'SETRADAR then lives on your home screen and opens full-screen \u2014 like a real app.',
+      'ob.guide_done':  'GOT IT',
 
       // Feed onboarding
       'feed.onboard_title':  'Your feed learns you.',
@@ -790,6 +797,13 @@
       'ob.s4.row_ios':  'Zum Home-Bildschirm',
       'ob.s4.row_android': 'App installieren',
       'ob.install':     'APP INSTALLIEREN',
+      'ob.install_ios': 'ZEIG MIR WIE',
+      'ob.guide_title': 'SETRADAR INSTALLIEREN',
+      'ob.guide_step1_bottom': 'Tippe unten auf das Teilen-Symbol',
+      'ob.guide_step1_top': 'Tippe oben auf das Teilen-Symbol',
+      'ob.guide_step2': 'W\u00e4hle \u201eZum Home-Bildschirm\u201c',
+      'ob.guide_hint':  'SETRADAR liegt dann auf deinem Homescreen und \u00f6ffnet im Vollbild \u2014 wie eine echte App.',
+      'ob.guide_done':  'ALLES KLAR',
 
       // Feed onboarding
       'feed.onboard_title':  'Dein Feed lernt dich.',
