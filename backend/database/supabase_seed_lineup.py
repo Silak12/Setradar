@@ -263,20 +263,28 @@ def _normalize_event_name(value: Any) -> str:
 
 
 def _same_legacy_ra_event(candidate: dict[str, Any], incoming: dict[str, Any]) -> bool:
-    """Conservatively identify pre-ra_id rows created by an older scraper run."""
+    """Conservatively identify pre-ra_id rows created by an older scraper run.
+
+    Legacy rows were created by a scraper that matched on the exact title only.
+    RA promoters regularly shift start/end times by an hour or two and extend
+    titles with the lineup, so an identical title on the same club/date is a
+    match regardless of schedule drift. Only when the titles merely resemble
+    each other is the start time used to tell parallel events apart; end times
+    drift too often to be part of the identity.
+    """
     old_name = _normalize_event_name(candidate.get("event_name"))
     new_name = _normalize_event_name(incoming.get("event_name"))
     if not old_name or not new_name:
         return False
 
-    for field in ("time_start", "time_end"):
-        old_value = str(candidate.get(field) or "")[:5]
-        new_value = str(incoming.get(field) or "")[:5]
-        if old_value and new_value and old_value != new_value:
-            return False
-
     if old_name == new_name:
         return True
+
+    old_start = str(candidate.get("time_start") or "")[:5]
+    new_start = str(incoming.get("time_start") or "")[:5]
+    if old_start and new_start and old_start != new_start:
+        return False
+
     if min(len(old_name), len(new_name)) >= 8 and (
         old_name.startswith(new_name) or new_name.startswith(old_name)
     ):
@@ -315,15 +323,18 @@ def _get_or_create_event_id(
 
         candidates = (
             supabase.table("events")
-            .select("id,event_name,time_start,time_end,ra_id")
+            .select("id,event_name,time_start,time_end,ra_id,is_active")
             .eq("club_id", club_id)
             .eq("event_date", event_date)
             .execute()
         ).data or []
+        # Inactive legacy rows were already superseded by an earlier run and
+        # must not be revived or counted as fresh duplicates.
         legacy_matches = [
             candidate
             for candidate in candidates
             if not candidate.get("ra_id")
+            and candidate.get("is_active") is not False
             and _same_legacy_ra_event(candidate, incoming)
         ]
 
@@ -543,13 +554,21 @@ def _deactivate_missing_ra_events(
             .eq("club_id", club_id)
             .execute()
         ).data or []
+        # The snapshot is the complete RA listing for this club and window, so
+        # every active row in the window that the snapshot did not touch is
+        # stale: either an RA event that has since been removed, or a legacy
+        # row (no ra_id) from an older scraper that could not be merged.
         stale_ids = []
         for row in rows:
+            if row.get("is_active") is False:
+                continue
             ra_id = str(row.get("ra_id") or "").strip()
+            if ra_id in current_ra_ids:
+                continue
             start_date = str(row.get("event_date") or "")
             end_date = str(row.get("event_end_date") or start_date)
             overlaps_window = end_date >= window_start and start_date <= window_end
-            if ra_id and overlaps_window and ra_id not in current_ra_ids and row.get("is_active") is not False:
+            if overlaps_window:
                 stale_ids.append(int(row["id"]))
         if stale_ids:
             supabase.table("events").update({"is_active": False}).in_("id", stale_ids).execute()

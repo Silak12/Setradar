@@ -117,6 +117,78 @@ def _ra_id_sort_key(event: dict) -> tuple[int, str]:
     return (int(ra_id), ra_id) if ra_id.isdigit() else (-1, ra_id)
 
 
+def _event_span(event: dict) -> tuple[str, str] | None:
+    """Return the (start, end) of an event as comparable ISO timestamps."""
+    event_date = parse_date(event.get("date"))
+    if not event_date:
+        return None
+    end_date = get_event_end_date(event) or event_date
+    start_time = parse_time(event.get("startTime")) or "00:00"
+    end_time = parse_time(event.get("endTime")) or "23:59"
+    return f"{event_date}T{start_time}", f"{end_date}T{end_time}"
+
+
+def _spans_overlap(first: dict, second: dict) -> bool:
+    first_span = _event_span(first)
+    second_span = _event_span(second)
+    if not first_span or not second_span:
+        return False
+    return first_span[0] < second_span[1] and second_span[0] < first_span[1]
+
+
+def _act_name_set(event: dict) -> frozenset[str]:
+    return frozenset(
+        _normalize_event_title(act["name"])
+        for act in event_to_acts(event)
+        if _normalize_event_title(act["name"])
+    )
+
+
+def _richness(event: dict) -> tuple[int, int, tuple[int, str]]:
+    interested = event.get("interestedCount")
+    try:
+        interested = int(interested or 0)
+    except (TypeError, ValueError):
+        interested = 0
+    return (len(_act_name_set(event)), interested, _ra_id_sort_key(event))
+
+
+def _is_shadow_listing(candidate: dict, primary: dict) -> bool:
+    """
+    Detect a secondary RA listing that duplicates ``primary`` on the same venue
+    and day, e.g. a stub an artist created for their own slot ("Euphorik",
+    lineup "Limoncello", no promoter) next to the promoter's official listing
+    ("EUPHORIK x CYCLE pres. ...", 15 artists). Such stubs share the day, overlap
+    in time and announce a subset of the official lineup. To stay conservative
+    the titles must also be related (one contains the other) unless RA marks
+    the candidate as promoter-less.
+    """
+    if candidate is primary:
+        return False
+    if parse_date(candidate.get("date")) != parse_date(primary.get("date")):
+        return False
+    if not _spans_overlap(candidate, primary):
+        return False
+
+    candidate_acts = _act_name_set(candidate)
+    primary_acts = _act_name_set(primary)
+    if not candidate_acts or not candidate_acts <= primary_acts:
+        return False
+    if _richness(candidate) >= _richness(primary):
+        return False
+
+    candidate_title = _normalize_event_title(candidate.get("title"))
+    primary_title = _normalize_event_title(primary.get("title"))
+    titles_related = bool(candidate_title) and bool(primary_title) and (
+        candidate_title == primary_title
+        or (len(candidate_title) >= 6 and candidate_title in primary_title)
+        or (len(primary_title) >= 6 and primary_title in candidate_title)
+    )
+    promoters = candidate.get("promoters")
+    promoter_less = isinstance(promoters, list) and not promoters
+    return titles_related or promoter_less
+
+
 def _deduplicate_ra_events(events: list[dict]) -> list[dict]:
     """Keep the newest RA representation of duplicate venue listings."""
     by_ra_id: dict[str, dict] = {}
@@ -138,7 +210,15 @@ def _deduplicate_ra_events(events: list[dict]) -> list[dict]:
             result.append(event)
         elif _ra_id_sort_key(event) > _ra_id_sort_key(result[duplicate_index]):
             result[duplicate_index] = event
-    return result
+
+    # Second pass: drop stub listings that merely shadow a richer listing of
+    # the same night. Richness is strictly ordered, so two listings can never
+    # absorb each other.
+    return [
+        event
+        for event in result
+        if not any(_is_shadow_listing(event, primary) for primary in result)
+    ]
 
 
 def build_lineup_json(

@@ -1,0 +1,1134 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   SETRADAR — onboarding.css
+   Fullscreen story onboarding. 3 Szenen, je ein synchroner 11s-Loop.
+   Jede Szene nutzt EINEN Master-Zyklus (11s): alle Elemente animieren in
+   Prozentfenstern desselben Zyklus und bleiben dadurch im Loop synchron.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ob-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--mono);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: obOverlayIn 0.35s ease both;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+.ob-overlay.ob-closing {
+  animation: obOverlayOut 0.3s ease both;
+}
+@keyframes obOverlayIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes obOverlayOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* Scanline-Textur wie im Rest der App */
+.ob-overlay::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent, transparent 2px,
+    rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px
+  );
+}
+
+/* ── Topbar: Progress-Segmente + Skip ───────────────────────────────────── */
+.ob-top {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: calc(14px + var(--safe-top, 0px)) 16px 10px;
+}
+.ob-progress {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+}
+.ob-seg {
+  flex: 1;
+  height: 2px;
+  background: #2a2a2a;
+  position: relative;
+  overflow: hidden;
+}
+.ob-seg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.ob-seg.done::after   { transform: scaleX(1); }
+.ob-seg.active::after { animation: obSegFill 11s linear both; }
+.ob-seg.active.hold::after { animation: obSegFill 0.4s ease both; }
+@keyframes obSegFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.ob-lang {
+  display: flex;
+  border: 1px solid var(--grey);
+}
+.ob-lang button {
+  border: 0;
+  background: transparent;
+  color: var(--grey-lt);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.ob-lang button + button { border-left: 1px solid var(--grey); }
+.ob-lang button.active {
+  color: var(--white);
+  background: rgba(255, 32, 32, 0.14);
+}
+
+.ob-skip {
+  border: 1px solid var(--grey);
+  background: transparent;
+  color: var(--grey-lt);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ob-skip:hover { color: var(--white); border-color: var(--grey-lt); }
+
+/* ── Slides ─────────────────────────────────────────────────────────────── */
+.ob-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.ob-slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 0 0;
+}
+.ob-slide.active {
+  display: flex;
+  animation: obSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ob-slide.from-right { --ob-shift:  26px; }
+.ob-slide.from-left  { --ob-shift: -26px; }
+@keyframes obSlideIn {
+  from { opacity: 0; transform: translateX(var(--ob-shift, 26px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.ob-scene {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ob-copy {
+  position: relative;
+  z-index: 5;
+  padding: 10px 22px calc(18px + var(--safe-bottom, 0px));
+}
+.ob-kicker {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+.ob-kicker::before { content: '// '; color: var(--grey); }
+.ob-headline {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(44px, 13vw, 64px);
+  line-height: 0.92;
+  letter-spacing: 0.015em;
+  margin: 0 0 10px;
+}
+.ob-headline em {
+  font-style: normal;
+  color: var(--red);
+}
+.ob-sub {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #c7c2b9;
+  max-width: 360px;
+  margin: 0;
+}
+
+/* Copy-Stagger bei Slide-Wechsel */
+.ob-slide.active .ob-kicker,
+.ob-slide.active .ob-headline,
+.ob-slide.active .ob-sub,
+.ob-slide.active .ob-cta {
+  animation: obCopyIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ob-slide.active .ob-headline { animation-delay: 0.06s; }
+.ob-slide.active .ob-sub      { animation-delay: 0.14s; }
+.ob-slide.active .ob-cta      { animation-delay: 0.24s; }
+@keyframes obCopyIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Bottombar: Hint / CTA ─────────────────────────────────────────────── */
+.ob-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #555;
+  margin-top: 16px;
+}
+.ob-hint::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: #333;
+}
+.ob-hint-arrow { color: var(--red); animation: obHintNudge 1.6s ease-in-out infinite; display: inline-block; }
+@keyframes obHintNudge {
+  0%, 100% { transform: translateX(0); opacity: 0.7; }
+  50%      { transform: translateX(5px); opacity: 1; }
+}
+
+.ob-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--red);
+  background: rgba(255, 32, 32, 0.08);
+  color: var(--white);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  padding: 13px 22px;
+  margin-top: 18px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.15s;
+}
+.ob-cta:hover { background: rgba(255, 32, 32, 0.16); }
+.ob-cta::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.14) 50%, transparent 60%);
+  transform: translateX(-110%);
+  animation: obCtaSheen 2.6s ease-in-out infinite;
+}
+@keyframes obCtaSheen {
+  0%, 55%   { transform: translateX(-110%); }
+  80%, 100% { transform: translateX(110%); }
+}
+.ob-cta .ob-cta-arrow { color: var(--red); animation: obHintNudge 1.6s ease-in-out infinite; }
+
+.ob-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.ob-cta-row .ob-cta { margin-top: 18px; }
+.ob-install {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--white);
+  background: rgba(240, 236, 228, 0.06);
+  color: var(--white);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  padding: 13px 22px;
+  margin-top: 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ob-install:hover { background: rgba(240, 236, 228, 0.14); }
+
+/* Pause (Press & Hold) */
+.ob-overlay.ob-paused .ob-slide.active *,
+.ob-overlay.ob-paused .ob-seg.active::after {
+  animation-play-state: paused !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SZENE 1 — RADAR  (bewerten → Geschmack → Vorschläge)
+   Master-Zyklus 11s. Fenster:
+   0–3%   Ringe/Grid ein · 2–9% Blips poppen · 12% Tap auf Blip A ·
+   14–24% Sterne füllen · 26% Blip A wird rot · 32–42% zweites Rating ·
+   44–54% Verbindungslinien zeichnen · 55–60% Sektor · 62/68% neue Blips ·
+   70–95% FOR-YOU-Chips · 96–100% Fade.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ob-radar-wrap {
+  position: relative;
+  width: min(86vw, 46vh, 380px);
+  aspect-ratio: 1;
+}
+.ob-radar-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+.ob-slide[data-scene="radar"] .ob-cycle { animation-duration: 11s; animation-iteration-count: infinite; animation-fill-mode: both; }
+
+.ob-ring   { fill: none; stroke: #222; stroke-width: 1; }
+.ob-ring--out { stroke-dasharray: 3 5; }
+.ob-slide.active .ob-ring {
+  animation-name: obFadeHold;
+}
+@keyframes obFadeHold {
+  0%       { opacity: 0; }
+  3%, 96%  { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+/* Sweep — läuft unabhängig konstant */
+.ob-sweep-g {
+  transform-origin: 160px 160px;
+}
+.ob-slide.active .ob-sweep-g { animation: obSweep 4s linear infinite; }
+@keyframes obSweep { to { transform: rotate(360deg); } }
+
+/* Blips */
+.ob-blip { transform-origin: center; transform-box: fill-box; }
+.ob-blip circle {
+  fill: #3a3a3a;
+  transition: none;
+}
+.ob-blip text {
+  fill: #555;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+.ob-slide.active .ob-blip { animation-name: obBlipIn; }
+@keyframes obBlipIn {
+  0%, 2%   { opacity: 0; transform: scale(0.4); }
+  5%, 96%  { opacity: 1; transform: scale(1); }
+  100%     { opacity: 0; }
+}
+
+/* Bewertete Blips färben sich rot (Fenster per Variable) */
+.ob-slide.active .ob-blip--rated circle { animation: obBlipRate 11s infinite both; animation-delay: var(--rate-d, 0s); }
+.ob-slide.active .ob-blip--rated text   { animation: obBlipRateTxt 11s infinite both; animation-delay: var(--rate-d, 0s); }
+@keyframes obBlipRate {
+  0%, 24%  { fill: #3a3a3a; r: 3.5; }
+  26%      { fill: var(--red); r: 6; }
+  29%, 95% { fill: var(--red); r: 4.5; }
+  100%     { fill: #3a3a3a; }
+}
+@keyframes obBlipRateTxt {
+  0%, 24%  { fill: #555; }
+  26%, 95% { fill: var(--white); }
+  100%     { fill: #555; }
+}
+
+/* Ping-Ring um bewertete Blips */
+.ob-ping {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.5;
+  transform-origin: center;
+  transform-box: fill-box;
+  opacity: 0;
+}
+.ob-slide.active .ob-ping { animation: obPing 11s infinite both; animation-delay: var(--rate-d, 0s); }
+@keyframes obPing {
+  0%, 24%  { opacity: 0; transform: scale(0.3); }
+  25%      { opacity: 0.9; transform: scale(0.4); }
+  33%      { opacity: 0; transform: scale(2.4); }
+  100%     { opacity: 0; }
+}
+
+/* Verbindungslinien (Taste-Graph) */
+.ob-link {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1;
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  opacity: 0.55;
+}
+.ob-slide.active .ob-link { animation-name: obLinkDraw; }
+@keyframes obLinkDraw {
+  0%, 34%  { stroke-dashoffset: 120; opacity: 0; }
+  36%      { opacity: 0.55; }
+  46%, 94% { stroke-dashoffset: 0; opacity: 0.55; }
+  100%     { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* Geschmacks-Sektor */
+.ob-sector {
+  fill: rgba(255, 32, 32, 0.06);
+  stroke: rgba(255, 32, 32, 0.45);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.ob-slide.active .ob-sector { animation-name: obSector; }
+@keyframes obSector {
+  0%, 50%  { opacity: 0; }
+  56%, 94% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+/* Neue (vorgeschlagene) Blips */
+.ob-blip--new circle { fill: var(--white); }
+.ob-blip--new text   { fill: var(--white); }
+.ob-slide.active .ob-blip--new { animation-name: obNewBlip; }
+.ob-slide.active .ob-blip--new.ob-delay { animation-delay: 0.5s; }
+@keyframes obNewBlip {
+  0%, 60%  { opacity: 0; transform: scale(0); }
+  63%      { opacity: 1; transform: scale(1.6); }
+  66%, 95% { opacity: 1; transform: scale(1); }
+  100%     { opacity: 0; }
+}
+
+/* FOR-YOU-Chip im SVG */
+.ob-foryou rect {
+  fill: var(--black);
+  stroke: var(--red);
+  stroke-width: 1;
+}
+.ob-foryou text {
+  fill: var(--red);
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.14em;
+}
+.ob-slide.active .ob-foryou { animation-name: obForYou; }
+@keyframes obForYou {
+  0%, 68%              { opacity: 0; }
+  70%, 76%, 82%, 95%   { opacity: 1; }
+  73%, 79%             { opacity: 0.25; }
+  100%                 { opacity: 0; }
+}
+
+/* Rating-Strip (HTML-Overlay): Tap-Cursor + 5 Sterne */
+.ob-ratebox {
+  position: absolute;
+  left: 8%;
+  top: 13%;
+  display: flex;
+  gap: 5px;
+  padding: 7px 9px;
+  background: rgba(8, 8, 8, 0.92);
+  border: 1px solid #2c2c2c;
+}
+.ob-ratebox::before {
+  content: 'RHEA.K';
+  position: absolute;
+  top: -14px;
+  left: 0;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--grey-lt);
+}
+.ob-slide.active .ob-ratebox { animation: obRatebox 11s infinite both; }
+@keyframes obRatebox {
+  0%, 7%   { opacity: 0; transform: translateY(8px); }
+  10%, 40% { opacity: 1; transform: translateY(0); }
+  44%, 100%{ opacity: 0; transform: translateY(-6px); }
+}
+.ob-star {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: #3a3a3a;
+  border: 1px solid #2c2c2c;
+}
+.ob-slide.active .ob-star { animation: obStarFill 11s infinite both; animation-delay: var(--d, 0s); }
+@keyframes obStarFill {
+  0%, 15%   { color: #3a3a3a; border-color: #2c2c2c; transform: scale(1); background: transparent; }
+  16%       { transform: scale(1.35); }
+  18%, 95%  { color: var(--red); border-color: var(--red); background: rgba(255,32,32,0.12); transform: scale(1); }
+  100%      { color: #3a3a3a; border-color: #2c2c2c; }
+}
+/* Tap-Cursor über dem 4. Stern */
+.ob-tap {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--white);
+  border-radius: 50%;
+  right: 22px;
+  top: 2px;
+  pointer-events: none;
+  opacity: 0;
+}
+.ob-slide.active .ob-tap { animation: obTap 11s infinite both; }
+@keyframes obTap {
+  0%, 12%  { opacity: 0; transform: scale(1.6); }
+  14%      { opacity: 1; transform: scale(0.8); }
+  17%      { opacity: 0.9; transform: scale(1); }
+  22%      { opacity: 0; transform: scale(1.8); }
+  100%     { opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SZENE 2 — TIMETABLE  (Departure-Board)
+   0–4% Karte ein · 4–9% Header tippt · 10–34% Zeilen (gestaffelt) tippen ·
+   38% Stempel · 46–86% Playhead-Sweep, Zeilen highlighten · 96–100% Fade.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ob-tt {
+  position: relative;
+  width: min(88vw, 400px);
+  background: #0c0c0c;
+  border: 1px solid #262626;
+  padding: 16px 16px 12px;
+}
+.ob-slide.active .ob-tt { animation: obTTIn 11s infinite both; }
+@keyframes obTTIn {
+  0%       { opacity: 0; transform: translateY(10px); clip-path: inset(-40px -40px 105% -40px); }
+  4%, 96%  { opacity: 1; transform: translateY(0); clip-path: inset(-40px); }
+  100%     { opacity: 0; }
+}
+
+.ob-tt-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid #262626;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+}
+.ob-tt-club {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.05em;
+}
+.ob-tt-date { font-size: 9px; letter-spacing: 0.16em; color: var(--grey-lt); }
+.ob-tt-date::after {
+  content: '▮';
+  color: var(--red);
+  margin-left: 4px;
+  animation: obCaret 1s steps(2, jump-none) infinite;
+}
+@keyframes obCaret { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Zeilen */
+.ob-tt-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 2px;
+  border-bottom: 1px dashed #1c1c1c;
+}
+.ob-tt-row:last-of-type { border-bottom: none; }
+.ob-slide.active .ob-tt-row { animation: obRowIn 11s infinite both; animation-delay: calc(var(--i) * 0.35s); }
+@keyframes obRowIn {
+  0%, 9%   { opacity: 0; transform: translateX(-8px); }
+  12%, 96% { opacity: 1; transform: translateX(0); }
+  100%     { opacity: 0; }
+}
+.ob-tt-time {
+  font-size: 10px;
+  color: var(--grey-lt);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  width: 44px;
+}
+.ob-tt-name {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+}
+.ob-slide.active .ob-tt-name {
+  animation: obType 11s steps(16, end) infinite both;
+  animation-delay: calc(var(--i) * 0.35s);
+}
+@keyframes obType {
+  0%, 10%  { max-width: 0; }
+  20%, 100%{ max-width: 16ch; }
+}
+.ob-tt-tag {
+  margin-left: auto;
+  font-size: 7px;
+  letter-spacing: 0.14em;
+  color: var(--red);
+  border: 1px solid var(--red);
+  padding: 2px 5px;
+  flex-shrink: 0;
+}
+.ob-slide.active .ob-tt-tag { animation: obTagBlink 11s infinite both; }
+@keyframes obTagBlink {
+  0%, 30%            { opacity: 0; }
+  33%, 37%, 43%, 95% { opacity: 1; }
+  40%                { opacity: 0.25; }
+  100%               { opacity: 0; }
+}
+
+/* Row-Highlight synchron zum Playhead (5 Zeilen, Fenster je ~8%) */
+.ob-slide.active .ob-tt-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 32, 32, 0.07);
+  opacity: 0;
+  animation: obRowHot 11s infinite both;
+  animation-delay: calc(var(--i) * 0.8s);
+}
+@keyframes obRowHot {
+  0%, 46%  { opacity: 0; }
+  48%, 53% { opacity: 1; }
+  56%, 100%{ opacity: 0; }
+}
+
+/* Playhead */
+.ob-playhead {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 64px;
+  height: 1.5px;
+  background: var(--red);
+  box-shadow: 0 0 8px rgba(255, 32, 32, 0.7);
+  opacity: 0;
+}
+.ob-playhead::before {
+  content: 'LIVE';
+  position: absolute;
+  right: 6px;
+  top: -14px;
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  color: var(--red);
+}
+.ob-slide.active .ob-playhead { animation: obPlayhead 11s infinite both; }
+@keyframes obPlayhead {
+  0%, 45%  { opacity: 0; transform: translateY(0); }
+  47%      { opacity: 1; }
+  82%      { opacity: 1; transform: translateY(138px); }
+  86%, 100%{ opacity: 0; transform: translateY(138px); }
+}
+
+/* Stempel */
+.ob-stamp {
+  position: absolute;
+  top: -13px;
+  right: -9px;
+  padding: 6px 10px;
+  border: 1.5px dashed var(--red);
+  color: var(--red);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  background: rgba(8, 8, 8, 0.9);
+  transform: rotate(6deg);
+  opacity: 0;
+}
+.ob-slide.active .ob-stamp { animation: obStamp 11s cubic-bezier(0.2, 1.6, 0.4, 1) infinite both; }
+@keyframes obStamp {
+  0%, 36%  { opacity: 0; transform: rotate(6deg) scale(2.6); }
+  39%      { opacity: 1; transform: rotate(6deg) scale(0.92); }
+  41%, 95% { opacity: 1; transform: rotate(6deg) scale(1); }
+  100%     { opacity: 0; }
+}
+
+/* Sync-Footer */
+.ob-tt-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #262626;
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: #555;
+}
+.ob-tt-foot i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: obDotPulse 1.4s ease-in-out infinite;
+}
+@keyframes obDotPulse {
+  0%, 100% { opacity: 0.35; box-shadow: 0 0 0 rgba(61,220,132,0); }
+  50%      { opacity: 1; box-shadow: 0 0 7px rgba(61,220,132,0.8); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SZENE 3 — COMPANION  (Queue live → Rave-Stats)
+   Phase A (Queue) 0–46% · Crossfade · Phase B (Stats) 50–96%.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ob-comp {
+  position: relative;
+  width: min(88vw, 400px);
+  height: min(52vh, 380px);
+}
+.ob-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+  background: #0c0c0c;
+  border: 1px solid #262626;
+  opacity: 0;
+}
+.ob-slide.active .ob-panel--queue { animation: obPanelA 11s infinite both; }
+.ob-slide.active .ob-panel--stats { animation: obPanelB 11s infinite both; }
+@keyframes obPanelA {
+  0%       { opacity: 0; transform: translateY(12px); }
+  4%, 44%  { opacity: 1; transform: translateY(0); }
+  50%, 100%{ opacity: 0; transform: translateY(-12px); }
+}
+@keyframes obPanelB {
+  0%, 48%  { opacity: 0; transform: translateY(14px); }
+  54%, 95% { opacity: 1; transform: translateY(0); }
+  100%     { opacity: 0; transform: translateY(-8px); }
+}
+
+.ob-panel-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--grey-lt);
+  margin-bottom: 18px;
+}
+.ob-panel-label b { color: var(--red); font-weight: 400; }
+
+/* Queue-Meter */
+.ob-meter {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.ob-meter i {
+  flex: 1;
+  height: 26px;
+  background: #1c1c1c;
+  position: relative;
+  overflow: hidden;
+}
+.ob-meter i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--seg, var(--red));
+  opacity: 0;
+}
+.ob-slide.active .ob-meter i::after {
+  animation: obMeterFill 11s infinite both;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+.ob-meter i:nth-child(-n+4)::after  { --seg: var(--green); }
+.ob-meter i:nth-child(5)::after,
+.ob-meter i:nth-child(6)::after     { --seg: #ffc800; }
+@keyframes obMeterFill {
+  0%, 6%   { opacity: 0; transform: translateY(100%); }
+  9%, 42%  { opacity: 1; transform: translateY(0); }
+  48%, 100%{ opacity: 0; }
+}
+/* die letzten (leeren) Zellen flackern als "Vorhersage" */
+.ob-meter i.ob-meter-ghost::after { --seg: #3a3a3a; }
+.ob-slide.active .ob-meter i.ob-meter-ghost::after {
+  animation: obMeterGhost 11s infinite both;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+@keyframes obMeterGhost {
+  0%, 10%       { opacity: 0; transform: translateY(0); }
+  14%, 20%, 30% { opacity: 0.5; }
+  17%, 24%, 42% { opacity: 0.15; }
+  48%, 100%     { opacity: 0; }
+}
+
+/* Odometer für die Wartezeit */
+.ob-wait {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--grey-lt);
+  letter-spacing: 0.14em;
+}
+.ob-odo {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  font-family: var(--display);
+  font-size: 46px;
+  line-height: 1;
+  color: var(--white);
+}
+.ob-odo span {
+  display: block;
+}
+.ob-slide.active .ob-odo span { animation: obOdoQueue 11s steps(3, end) infinite both; }
+@keyframes obOdoQueue {
+  0%, 10%  { transform: translateY(0); }
+  32%, 100%{ transform: translateY(-3em); }
+}
+.ob-wait small {
+  font-size: 10px;
+  color: #555;
+  letter-spacing: 0.1em;
+}
+/* Personen-Punkte, die zur "Tür" wandern */
+.ob-queue-dots {
+  position: relative;
+  height: 14px;
+  margin-top: 18px;
+  border-bottom: 1px dashed #262626;
+  overflow: hidden;
+}
+.ob-queue-dots::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--red);
+}
+.ob-queue-dots i {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #666;
+}
+.ob-slide.active .ob-queue-dots i {
+  animation: obQueueWalk 3.2s linear infinite;
+  animation-delay: calc(var(--i) * 0.8s);
+}
+@keyframes obQueueWalk {
+  0%   { transform: translateX(0); opacity: 0; }
+  12%  { opacity: 1; }
+  86%  { opacity: 1; }
+  100% { transform: translateX(min(84vw, 372px)); opacity: 0; }
+}
+
+/* Stats-Panel */
+.ob-ecg {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 74px;
+  height: 22px;
+  overflow: visible;
+}
+.ob-ecg path {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.5;
+  stroke-dasharray: 130;
+  stroke-dashoffset: 130;
+  filter: drop-shadow(0 0 3px rgba(255, 32, 32, 0.8));
+}
+.ob-slide.active .ob-ecg path { animation: obEcg 11s linear infinite both; }
+@keyframes obEcg {
+  0%, 52%  { stroke-dashoffset: 130; opacity: 0; }
+  54%      { opacity: 1; }
+  72%      { stroke-dashoffset: 0; opacity: 1; }
+  90%      { stroke-dashoffset: -130; opacity: 1; }
+  96%,100% { stroke-dashoffset: -130; opacity: 0; }
+}
+
+.ob-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px dashed #1c1c1c;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--grey-lt);
+}
+.ob-slide.active .ob-stat-row {
+  animation: obStatIn 11s infinite both;
+  animation-delay: calc(var(--i) * 0.22s);
+}
+@keyframes obStatIn {
+  0%, 54%  { opacity: 0; transform: translateX(-8px); }
+  58%, 95% { opacity: 1; transform: translateX(0); }
+  100%     { opacity: 0; }
+}
+.ob-stat-num {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--white);
+}
+.ob-stat-num span { display: block; }
+.ob-slide.active .ob-stat-num span {
+  animation: obOdoStat 11s steps(4, end) infinite both;
+  animation-delay: calc(var(--i) * 0.22s);
+}
+@keyframes obOdoStat {
+  0%, 56%  { transform: translateY(0); }
+  74%, 100%{ transform: translateY(-4em); }
+}
+.ob-stat-num--red { color: var(--red); }
+
+/* Mini-Barchart */
+.ob-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 44px;
+  margin-top: 16px;
+}
+.ob-bars i {
+  flex: 1;
+  background: #2a2a2a;
+  height: calc(var(--h) * 1%);
+  transform-origin: bottom;
+}
+.ob-bars i.hot { background: var(--red); }
+.ob-slide.active .ob-bars i {
+  animation: obBarUp 11s cubic-bezier(0.2, 1.4, 0.4, 1) infinite both;
+  animation-delay: calc(var(--i) * 0.09s);
+}
+@keyframes obBarUp {
+  0%, 60%  { transform: scaleY(0); }
+  68%, 95% { transform: scaleY(1); }
+  100%     { transform: scaleY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SZENE 4 — INSTALL  (Homescreen)
+   0–4% Phone ein · 5–12% Grid-Tiles · 16–24% Tap auf Share/Menü ·
+   26–48% Sheet mit Install-Zeile · 54% App-Tile ploppt · 60–95% Glow ·
+   96–100% Fade.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ob-phone-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+.ob-phone {
+  position: relative;
+  width: min(56vw, 32vh, 240px);
+  aspect-ratio: 10 / 17;
+  border: 1.5px solid #333;
+  border-radius: 26px;
+  background: #0c0c0c;
+  overflow: hidden;
+  padding: 30px 14px 50px;
+}
+.ob-slide.active .ob-phone { animation: obPhoneIn 11s infinite both; }
+@keyframes obPhoneIn {
+  0%       { opacity: 0; transform: translateY(10px) scale(0.97); }
+  4%, 96%  { opacity: 1; transform: translateY(0) scale(1); }
+  100%     { opacity: 0; }
+}
+.ob-phone-notch {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 5px;
+  border-radius: 3px;
+  background: #242424;
+}
+
+.ob-home-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.ob-home-grid i {
+  aspect-ratio: 1;
+  border-radius: 24%;
+  background: #191919;
+}
+.ob-slide.active .ob-home-grid i {
+  animation: obTileIn 11s infinite both;
+  animation-delay: calc(var(--i) * 0.07s);
+}
+@keyframes obTileIn {
+  0%, 4%   { opacity: 0; transform: scale(0.6); }
+  8%, 96%  { opacity: 1; transform: scale(1); }
+  100%     { opacity: 0; }
+}
+
+.ob-app-tile {
+  aspect-ratio: 1;
+  border-radius: 24%;
+  background: var(--red);
+  display: grid;
+  place-items: center;
+  transform: scale(0);
+}
+.ob-app-tile span {
+  font-family: var(--display);
+  font-size: 20px;
+  color: #fff;
+  line-height: 1;
+}
+.ob-slide.active .ob-app-tile {
+  animation: obAppPop 11s cubic-bezier(0.2, 1.6, 0.4, 1) infinite both;
+}
+@keyframes obAppPop {
+  0%, 53%  { transform: scale(0); box-shadow: 0 0 0 rgba(255, 32, 32, 0); }
+  57%      { transform: scale(1.22); }
+  60%      { transform: scale(1); box-shadow: 0 0 14px rgba(255, 32, 32, 0.55); }
+  76%      { box-shadow: 0 0 4px rgba(255, 32, 32, 0.25); }
+  90%, 95% { transform: scale(1); box-shadow: 0 0 12px rgba(255, 32, 32, 0.5); }
+  100%     { transform: scale(0); }
+}
+.ob-app-tile-label {
+  position: absolute;
+  right: 14px;
+  top: calc(30px + (100% - 44px - 30px) * 0.25);
+  width: calc((100% - 28px - 36px) / 4);
+  text-align: center;
+  font-size: 6px;
+  letter-spacing: 0.12em;
+  color: var(--grey-lt);
+  opacity: 0;
+}
+.ob-slide.active .ob-app-tile-label { animation: obAppLabel 11s infinite both; }
+@keyframes obAppLabel {
+  0%, 58%  { opacity: 0; }
+  62%, 95% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+.ob-install-sheet {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 50px;
+  background: #161616;
+  border: 1px solid #2c2c2c;
+  border-radius: 12px;
+  padding: 13px 12px;
+  transform: translateY(150%);
+  opacity: 0;
+}
+.ob-slide.active .ob-install-sheet { animation: obSheet 11s cubic-bezier(0.16, 1, 0.3, 1) infinite both; }
+@keyframes obSheet {
+  0%, 24%  { transform: translateY(150%); opacity: 0; }
+  28%, 44% { transform: translateY(0); opacity: 1; }
+  50%, 100%{ transform: translateY(150%); opacity: 0; }
+}
+.ob-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--white);
+}
+.ob-slide.active .ob-sheet-row { animation: obSheetBlink 11s infinite both; }
+@keyframes obSheetBlink {
+  0%, 31%, 35%, 100% { opacity: 1; }
+  33%                { opacity: 0.35; }
+}
+.ob-sheet-plus {
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.ob-phone-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42px;
+  border-top: 1px solid #222;
+  background: #101010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ob-share-glyph { width: 20px; height: 20px; color: #eaeaea; }
+.ob-menu-glyph { font-size: 19px; color: #eaeaea; line-height: 1; }
+.ob-tap--bar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -13px 0 0 -13px;
+  right: auto;
+}
+.ob-slide.active .ob-tap--bar { animation: obTapBar 11s infinite both; }
+@keyframes obTapBar {
+  0%, 14%  { opacity: 0; transform: scale(1.6); }
+  16%      { opacity: 1; transform: scale(0.8); }
+  19%      { opacity: 0.9; transform: scale(1); }
+  25%      { opacity: 0; transform: scale(1.8); }
+  100%     { opacity: 0; }
+}
+
+/* ── Responsive Feinheiten ─────────────────────────────────────────────── */
+@media (min-width: 700px) {
+  .ob-copy { padding-left: max(22px, calc(50vw - 300px)); }
+  .ob-sub  { font-size: 14px; max-width: 420px; }
+}
+
+/* ── Reduced Motion: Endzustände statt Loops ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ob-overlay *,
+  .ob-overlay *::before,
+  .ob-overlay *::after {
+    animation: none !important;
+  }
+  .ob-seg.active::after { transform: scaleX(1); }
+  .ob-blip--rated circle { fill: var(--red); }
+  .ob-blip--rated text,
+  .ob-blip--new circle,
+  .ob-blip--new text { fill: var(--white); }
+  .ob-link { stroke-dashoffset: 0; }
+  .ob-sector, .ob-foryou, .ob-tt-tag, .ob-stamp,
+  .ob-panel--queue { opacity: 1; }
+  .ob-panel--stats { opacity: 0; }
+  .ob-slide[data-scene="companion"] .ob-panel--stats { opacity: 1; }
+  .ob-slide[data-scene="companion"] .ob-panel--queue { opacity: 0; }
+  .ob-tt-name { max-width: 16ch; }
+  .ob-star { color: var(--red); border-color: var(--red); }
+  .ob-ratebox, .ob-tt-row, .ob-stat-row { opacity: 1; }
+  .ob-meter i::after { opacity: 1; transform: none; }
+  .ob-meter i.ob-meter-ghost::after { opacity: 0.3; }
+  .ob-odo span, .ob-stat-num span { transform: translateY(-3em); }
+  .ob-stat-num span { transform: translateY(-4em); }
+  .ob-bars i { transform: none; }
+  .ob-playhead, .ob-tap, .ob-queue-dots i { display: none; }
+  .ob-phone, .ob-home-grid i, .ob-install-sheet, .ob-app-tile-label { opacity: 1; }
+  .ob-install-sheet { transform: translateY(0); }
+  .ob-app-tile { transform: scale(1); }
+}

@@ -290,6 +290,10 @@
       'live.in_club_open':      'In Club ▲',
       'live.queue_locked_info': 'You can join the queue at the earliest 1 hour before the event starts.',
       'live.score_info':        'Rate more DJs to see a personal score. The more you and other users rate, the more accurately we can predict how much you will enjoy the event.',
+      'live.section_rate':      '// RATE THE LINEUP',
+      'live.queue_now':         '~{n} min wait',
+      'live.queue_reported_ago':'last report {m} min ago',
+      'live.queue_auto_hint':   'No wait-time data tonight yet. Your queue & entry times feed the chart automatically.',
 
       // Queue status (event cards + live panel)
       'queue.label':           'Queue',
@@ -367,6 +371,38 @@
       'help.dabei.text':       'Track your night in real time: Queue → Inside → Left. Your profile then shows stats: nights out, hours in the club, and average wait times.',
       'help.fav.title':        'FAVOURITES',
       'help.fav.text':         'Save artists and clubs to your profile. Keep everything in one place and never miss a show from acts you love.',
+
+      // Onboarding
+      'ob.label':       'Tutorial',
+      'ob.skip':        'SKIP',
+      'ob.hint':        'TAP TO CONTINUE',
+      'ob.cta':         "LET'S GO",
+      'ob.replay':      'WATCH TUTORIAL',
+      'ob.s1.kicker':   '01 — RATE',
+      'ob.s1.headline': 'RATE.<br><em>DISCOVER.</em>',
+      'ob.s1.sub':      'Rate the artists you see live. Your radar learns your taste — and pings acts made for you.',
+      'ob.s2.kicker':   '02 — TIMETABLES',
+      'ob.s2.headline': 'TIMETABLES.<br><em>INSTANTLY.</em>',
+      'ob.s2.sub':      'Running orders land here the moment they drop. Who plays where, and when — one look.',
+      'ob.s3.kicker':   '03 — LIVE',
+      'ob.s3.headline': 'YOUR TECHNO<br><em>COMPANION.</em>',
+      'ob.s3.sub':      'Live queue reports before you head out. And every night you rave builds your stats.',
+      'ob.s4.kicker':   '04 \u2014 INSTALL',
+      'ob.s4.headline': 'ON YOUR<br><em>HOME SCREEN.</em>',
+      'ob.s4.sub_ios':  'In Safari: tap Share, then \u201cAdd to Home Screen\u201d. SETRADAR opens full-screen \u2014 like a real app.',
+      'ob.s4.sub_android': 'In Chrome: menu \u22ee \u2192 \u201cInstall app\u201d \u2014 SETRADAR then opens full-screen, like a real app.',
+      'ob.s4.row_ios':  'Add to Home Screen',
+      'ob.s4.row_android': 'Install app',
+      'ob.install':     'INSTALL APP',
+
+      // Feed onboarding
+      'feed.onboard_title':  'Your feed learns you.',
+      'feed.onboard_step1':  'Rate the artists you saw live',
+      'feed.onboard_step2':  'Follow clubs & DJs with the \u2665',
+      'feed.onboard_step3':  'Mark events as \u2726 Interested',
+      'feed.onboard_saved_title': 'Your shortlist for going out.',
+      'feed.onboard_saved1': 'Tap \u2726 Interested on events you want to keep',
+      'feed.onboard_saved2': 'They line up here \u2014 your plan for the weekend',
     },
 
     de: {
@@ -650,6 +686,10 @@
       'live.in_club_open':      'Im Club ▲',
       'live.queue_locked_info': 'Du kannst dich frühestens 1 Stunde vor Eventstart in die Warteschlange eintragen.',
       'live.score_info':        'Bewerte mehr DJs um einen persönlichen Score zu sehen. Je mehr du und andere User bewerten, desto genauer wird die Vorhersage wie gut dir das Event gefallen wird.',
+      'live.section_rate':      '// LINEUP BEWERTEN',
+      'live.queue_now':         '~{n} Min Wartezeit',
+      'live.queue_reported_ago':'letzte Meldung vor {m} Min',
+      'live.queue_auto_hint':   'Heute noch keine Wartezeit-Daten. Deine Queue- & Einlasszeiten füttern den Chart automatisch.',
 
       // Queue status (event cards + live panel)
       'queue.label':           'Warteschlange',
@@ -727,6 +767,38 @@
       'help.dabei.text':       'Tracke deinen Abend in Echtzeit: Queue → Drin → Gegangen. Dein Profil zeigt danach wie viele Nächte du out warst, Stunden im Club und durchschnittliche Wartezeiten.',
       'help.fav.title':        'FAVORITEN',
       'help.fav.text':         'Speichere Artists und Clubs auf deinem Profil. So hast du alles auf einem Blick und verpasst keine Show von Acts die du liebst.',
+
+      // Onboarding
+      'ob.label':       'Tutorial',
+      'ob.skip':        'SKIP',
+      'ob.hint':        'TIPPEN FÜR WEITER',
+      'ob.cta':         "LOS GEHT'S",
+      'ob.replay':      'TUTORIAL ANSEHEN',
+      'ob.s1.kicker':   '01 — BEWERTEN',
+      'ob.s1.headline': 'BEWERTE.<br><em>ENTDECKE.</em>',
+      'ob.s1.sub':      'Bewerte die Artists, die du live siehst. Dein Radar lernt deinen Geschmack — und funkt dir neue Acts.',
+      'ob.s2.kicker':   '02 — TIMETABLES',
+      'ob.s2.headline': 'TIMETABLES.<br><em>SOFORT.</em>',
+      'ob.s2.sub':      'Running Orders landen hier, sobald sie raus sind. Wer spielt wann und wo — ein Blick.',
+      'ob.s3.kicker':   '03 — LIVE',
+      'ob.s3.headline': 'DEIN TECHNO<br><em>COMPANION.</em>',
+      'ob.s3.sub':      'Live-Wartezeiten, bevor du losfährst. Und jede Nacht baut deine Rave-Stats weiter aus.',
+      'ob.s4.kicker':   '04 \u2014 INSTALL',
+      'ob.s4.headline': 'AUF DEINEN<br><em>HOMESCREEN.</em>',
+      'ob.s4.sub_ios':  'In Safari: Teilen antippen, dann \u201eZum Home-Bildschirm\u201c. SETRADAR \u00f6ffnet im Vollbild \u2014 wie eine echte App.',
+      'ob.s4.sub_android': 'In Chrome: Men\u00fc \u22ee \u2192 \u201eApp installieren\u201c \u2014 SETRADAR startet dann im Vollbild, wie eine echte App.',
+      'ob.s4.row_ios':  'Zum Home-Bildschirm',
+      'ob.s4.row_android': 'App installieren',
+      'ob.install':     'APP INSTALLIEREN',
+
+      // Feed onboarding
+      'feed.onboard_title':  'Dein Feed lernt dich.',
+      'feed.onboard_step1':  'Bewerte die Artists, die du live gesehen hast',
+      'feed.onboard_step2':  'Folge Clubs & DJs mit dem \u2665',
+      'feed.onboard_step3':  'Markiere Events als \u2726 Interessiert',
+      'feed.onboard_saved_title': 'Deine Shortlist f\u00fcrs Ausgehen.',
+      'feed.onboard_saved1': 'Tippe \u2726 Interessiert bei Events, die du behalten willst',
+      'feed.onboard_saved2': 'Sie sammeln sich hier \u2014 dein Plan f\u00fcrs Wochenende',
     },
   };
 

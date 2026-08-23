@@ -57,6 +57,10 @@ query GET_VENUE_EVENTS($id: ID!, $limit: Int) {
       endTime
       interestedCount
       lineup
+      promoters {
+        id
+        name
+      }
       artists {
         id
         name
@@ -79,6 +83,10 @@ query GET_EVENT_DETAIL($id: ID!) {
     endTime
     interestedCount
     lineup
+    promoters {
+      id
+      name
+    }
     artists {
       id
       name

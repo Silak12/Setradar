@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/onboarding.css" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080808" />
@@ -52,9 +53,24 @@
   </div>
 
   <main id="mainContent">
-    <div class="loading-screen">
-      <div class="loading-bar"></div>
-      <span data-i18n="loading.events">Loading events</span>
+    <div class="skeleton-feed" aria-hidden="true">
+      <div class="sk sk-day"></div>
+      <div class="sk-card">
+        <div class="sk sk-line" style="width:62%"></div>
+        <div class="sk sk-line sk-line--sub" style="width:34%"></div>
+        <div class="sk-chip-row"><div class="sk sk-chip"></div><div class="sk sk-chip" style="width:72px"></div></div>
+      </div>
+      <div class="sk-card">
+        <div class="sk sk-line" style="width:48%"></div>
+        <div class="sk sk-line sk-line--sub" style="width:28%"></div>
+        <div class="sk-chip-row"><div class="sk sk-chip"></div><div class="sk sk-chip" style="width:58px"></div></div>
+      </div>
+      <div class="sk-card">
+        <div class="sk sk-line" style="width:70%"></div>
+        <div class="sk sk-line sk-line--sub" style="width:40%"></div>
+        <div class="sk-chip-row"><div class="sk sk-chip"></div><div class="sk sk-chip" style="width:66px"></div></div>
+      </div>
+      <span class="sk-caption" data-i18n="loading.events">Loading events</span>
     </div>
   </main>
 
@@ -179,6 +195,7 @@
           <div class="help-eyebrow" data-i18n="help.eyebrow">// HOW IT WORKS</div>
           <div class="help-title" id="helpTitle" data-i18n="help.title">SETRADAR</div>
           <div class="help-subtitle" data-i18n="help.subtitle">Your radar for the Berlin techno scene.</div>
+          <button class="help-tutorial-btn" id="helpTutorialBtn" type="button"><span data-i18n="ob.replay">WATCH TUTORIAL</span><span class="help-tutorial-arrow">→</span></button>
         </div>
 
         <div class="help-cards">
@@ -292,5 +309,6 @@
   <script src="js/event-cards.js"></script>
   <script src="js/home.js"></script>
   <script src="js/help.js"></script>
+  <script src="js/onboarding.js"></script>
 </body>
 </html>

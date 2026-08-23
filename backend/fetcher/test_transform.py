@@ -74,3 +74,94 @@ def test_build_lineup_uses_newer_ra_id_for_replacement_listing() -> None:
     assert len(events) == 1
     assert events[0]["ra_id"] == "2508281"
     assert events[0]["name"] == "Symbiotikka"
+
+
+def _lokschuppen(events: list[dict]) -> list[dict]:
+    venues = [{"venue_id": 17071, "city": "Berlin", "club": "Lokschuppen"}]
+    return build_lineup_json(venues, {17071: events})["cities"][0]["clubs"][0]["events"]
+
+
+def test_artist_stub_listing_is_absorbed_by_official_listing() -> None:
+    # Real RA data from 2026-08-29: the promoter's listing plus a promoter-less
+    # stub "Euphorik" announcing only one of the same artists.
+    official = {
+        "id": "2331880",
+        "title": "EUPHORIK x CYCLE pres. L.zwo, Noise Not War, DJ SPORTSCHUH, CARGO",
+        "date": "2026-08-29T00:00:00.000",
+        "startTime": "2026-08-29T22:00:00.000",
+        "endTime": "2026-08-30T09:00:00.000",
+        "interestedCount": 369,
+        "promoters": [{"id": "9094", "name": "Lokschuppen Berlin"}],
+        "artists": [{"name": n} for n in ["L.zwo", "CARGO (DE)", "Limoncello", "Noise Not War"]],
+    }
+    stub = {
+        "id": "2516525",
+        "title": "Euphorik",
+        "date": "2026-08-29T00:00:00.000",
+        "startTime": "2026-08-29T23:00:00.000",
+        "endTime": "2026-08-30T06:00:00.000",
+        "interestedCount": 1,
+        "promoters": [],
+        "artists": [],
+        "lineup": "Limoncello",
+    }
+
+    events = _lokschuppen([stub, official])
+
+    assert [event["ra_id"] for event in events] == ["2331880"]
+
+
+def test_stub_with_related_title_is_absorbed_even_without_promoter_info() -> None:
+    official = {
+        "id": "1",
+        "title": "wieder: BOILER ROOM SETUP + MARKETPLACE",
+        "date": "2026-10-11T00:00:00.000",
+        "startTime": "2026-10-11T21:00:00.000",
+        "endTime": "2026-10-12T06:00:00.000",
+        "interestedCount": 4,
+        "artists": [{"name": "Resident"}],
+    }
+    duplicate = {**official, "id": "2", "startTime": "2026-10-11T23:00:00.000", "interestedCount": 3}
+
+    events = _lokschuppen([official, duplicate])
+
+    assert [event["ra_id"] for event in events] == ["1"]
+
+
+def test_afterparty_with_shared_dj_is_kept() -> None:
+    main = {
+        "id": "1",
+        "title": "Klubnacht",
+        "date": "2026-09-05T00:00:00.000",
+        "startTime": "2026-09-05T23:00:00.000",
+        "endTime": "2026-09-06T08:00:00.000",
+        "interestedCount": 300,
+        "promoters": [{"id": "1", "name": "Club"}],
+        "artists": [{"name": "DJ A"}, {"name": "DJ B"}, {"name": "DJ C"}],
+    }
+    # Same day, lineup subset, but it starts after the main event ends.
+    afterparty = {
+        "id": "2",
+        "title": "Klubnacht Afterhour",
+        "date": "2026-09-06T00:00:00.000",
+        "startTime": "2026-09-06T09:00:00.000",
+        "endTime": "2026-09-06T18:00:00.000",
+        "interestedCount": 20,
+        "promoters": [],
+        "artists": [{"name": "DJ A"}],
+    }
+    # Parallel floor the same night: unrelated title and own lineup.
+    parallel = {
+        "id": "3",
+        "title": "Garden Floor Open Air",
+        "date": "2026-09-05T00:00:00.000",
+        "startTime": "2026-09-05T16:00:00.000",
+        "endTime": "2026-09-06T02:00:00.000",
+        "interestedCount": 40,
+        "promoters": [],
+        "artists": [{"name": "DJ A"}, {"name": "DJ Z"}],
+    }
+
+    events = _lokschuppen([main, afterparty, parallel])
+
+    assert sorted(event["ra_id"] for event in events) == ["1", "2", "3"]

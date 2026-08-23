@@ -144,6 +144,7 @@ let userPresence = null;          // { user_id, event_id, status } | null
 let liveEventData = { queueTimeline: [], mood: null, presenceRows: [], allRatings: [] };
 let livePollingId = null;
 let livePanelExpanded = false;
+let liveLineupOpen = true;
 let liveGoodbyeEvent = null;   // event after "Club verlassen" — persists until new queue join
 let liveGoodbyeScreen = false; // true = show goodbye message; false = show full read-only view
 // ── Phase 3: Ratings state ────────────────────────────────────────────────
@@ -187,23 +188,6 @@ function sortActs(acts) {
   return [...withTime, ...withoutTime];
 }
 
-function getUserActAvg(actId) {
-  if (!actId || !userActRatings.size) return null;
-  const ratings = [];
-  for (const [key, r] of userActRatings.entries()) {
-    if (key.startsWith(`${actId}:`) && r.rating) ratings.push(r.rating);
-  }
-  return ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-}
-
-function buildActLeftHtml(actId) {
-  if (!actId) return `<span class="artist-act-avg empty"></span>`;
-  if (!sessionUser) return `<span class="artist-act-avg empty"></span>`;
-  const avg = getUserActAvg(actId);
-  return avg !== null
-    ? `<span class="artist-act-avg rated">${avg.toFixed(1)}</span>`
-    : `<span class="artist-act-avg empty">—</span>`;
-}
 function formatDateLabel(dateStr) {
   const d = new Date(`${dateStr}T00:00:00`);
   return {
@@ -989,6 +973,7 @@ function buildLivePanelSignature(ev, status, hypeTotal) {
     eventId: Number(ev?.id) || null,
     status,
     expanded: !!livePanelExpanded,
+    lineup: !!liveLineupOpen,
     queue: myQueueStartTime?.toISOString?.() || '',
     club: myClubEntryTime?.toISOString?.() || '',
     hype: hypeTotal,
@@ -1173,10 +1158,30 @@ function renderAll({ preserveDateNavScroll = false, syncDateNavToActive = !prese
   const scrollY = window.scrollY;
   if (!grouped.length) {
     const isFeedEmpty = sessionUser && feedMode !== 'all';
-    const emptyMsg = isFeedEmpty
-      ? t(feedMode === 'saved' ? 'feed.empty_saved' : 'feed.empty_foryou')
-      : t('empty.no_events');
-    main.innerHTML = `<div class="empty-state feed-empty-state"><span>${emptyMsg}</span>${isFeedEmpty ? `<button class="feed-empty-cta" type="button" data-action="feed-all">${t('feed.show_all')}</button>` : ''}</div>`;
+    if (isFeedEmpty) {
+      const saved = feedMode === 'saved';
+      const stepKeys = saved
+        ? ['feed.onboard_saved1', 'feed.onboard_saved2']
+        : ['feed.onboard_step1', 'feed.onboard_step2', 'feed.onboard_step3'];
+      main.innerHTML = `
+        <div class="feed-onboard">
+          <div class="feed-onboard-kicker">${t(saved ? 'feed.saved' : 'feed.foryou')}</div>
+          <div class="feed-onboard-title">${t(saved ? 'feed.onboard_saved_title' : 'feed.onboard_title')}</div>
+          <div class="feed-onboard-steps">
+            ${stepKeys.map((key, i) => `
+              <div class="feed-onboard-step" style="--i:${i}">
+                <span class="feed-onboard-num">0${i + 1}</span>
+                <span>${t(key)}</span>
+              </div>`).join('')}
+          </div>
+          <div class="feed-onboard-actions">
+            <button class="feed-empty-cta feed-empty-cta--primary" type="button" data-action="feed-all">${t('feed.show_all')}</button>
+            <button class="feed-empty-cta" type="button" data-action="open-tutorial">${t('ob.replay')}</button>
+          </div>
+        </div>`;
+    } else {
+      main.innerHTML = `<div class="empty-state feed-empty-state"><span>${t('empty.no_events')}</span></div>`;
+    }
     window.scrollTo(0, scrollY);
     return;
   }
@@ -1450,8 +1455,10 @@ async function toggleHype(id) {
       const { error } = await supabaseClient.from('event_hypes').delete().eq('user_id', sessionUser.id).eq('event_id', eventId);
       if (error) throw error;
     } else {
+      // ON CONFLICT DO NOTHING: authenticated hat auf event_hypes nur
+      // insert/delete (kein update), ein DO-UPDATE-Upsert wird mit 42501 abgelehnt.
       const { error } = await supabaseClient.from('event_hypes')
-        .upsert({ user_id: sessionUser.id, event_id: eventId }, { onConflict: 'user_id,event_id', ignoreDuplicates: false });
+        .upsert({ user_id: sessionUser.id, event_id: eventId }, { onConflict: 'user_id,event_id', ignoreDuplicates: true });
       if (error) throw error;
       triggerHypeBurst(eventId);
     }
@@ -1592,6 +1599,10 @@ function bindActionHandlers() {
     }
     if (target.dataset.action === 'feed-all') {
       setFeedMode('all');
+      return;
+    }
+    if (target.dataset.action === 'open-tutorial') {
+      if (typeof window.openOnboarding === 'function') window.openOnboarding();
       return;
     }
     if (target.dataset.action === 'score-info') {
@@ -2620,8 +2631,10 @@ function buildQueueChartRow(evId) {
   const server = queueTimelineByEventId.get(Number(evId)) || [];
   const points = withPersonalPoint(server, evId);
   const empty  = !points.length;
+  const last = points.length ? points[points.length - 1] : null;
+  const nowHtml = last ? `<span class="eqs-now">~${Math.round(last.avgWait)} min</span>` : '';
   return `<div class="event-queue-row">
-    <span class="eqs-label">${t('queue.label')}</span>
+    <span class="eqs-label">${t('queue.label')}${nowHtml}</span>
     <div class="event-queue-chart${empty ? ' event-queue-chart--empty' : ''}">${empty ? `<span class="eqs-empty">${t('queue.nobody_yet')} — ${t('queue.join_hint')}</span>` : ''}</div>
   </div>`;
 }
@@ -2678,6 +2691,19 @@ function updateLiveSpotlights() {
   container.innerHTML = renderEventSpotlightCards(spotlights || { best: null, surprise: null, hiddenGem: null });
 }
 
+function buildLiveQueueNow() {
+  const points = liveEventData.queueTimeline || [];
+  if (!points.length) {
+    return `<div class="live-queue-hint">${t('live.queue_auto_hint')}</div>`;
+  }
+  const last = points[points.length - 1];
+  const ago = Math.max(0, Math.round((Date.now() - last.ts) / 60000));
+  return `<div class="live-queue-now">
+      <strong>${t('live.queue_now', { n: last.avgWait })}</strong>
+      <span>${t('live.queue_reported_ago', { m: ago })}</span>
+    </div>`;
+}
+
 function renderLivePanel() {
   const panel = document.getElementById('livePanel');
   if (!panel) return;
@@ -2725,20 +2751,12 @@ function renderLivePanel() {
 
   // timetable
   const acts = sortActs(ev.event_acts || []);
-  const mergedRatings = buildMergedRatingsForEvent(eventId);
-  const spotlights = computeEventSpotlights(acts, mergedRatings);
-  const spotlightHtml = renderEventSpotlightCards(spotlights || { best: null, surprise: null, hiddenGem: null });
   const timetableHtml = acts.length
     ? acts.map(a => {
         const s = fmtTime(a.start_time), e2 = fmtTime(a.end_time);
         const timeStr = s && e2 ? `${s}–${e2}` : s ? t('act.from', { time: s }) : t('live.tba');
         const actId = a.acts?.id ?? null;
         const numActId = actId ? Number(actId) : null;
-        const isActFavorite = numActId ? favoriteActIds.has(numActId) : false;
-        const avgHtml = buildActLeftHtml(actId);
-        const followBtn = actId
-          ? `<button class="act-follow-btn${isActFavorite ? ' active' : ''}" type="button" data-action="toggle-favorite-act" data-act-id="${actId}" aria-pressed="${isActFavorite}">${isActFavorite ? '♥' : '♡'}</button>`
-          : '';
         const existingLiveRating = actId && sessionUser ? userActRatings.get(`${actId}:${ev.id}`) : null;
         const stars = [1,2,3,4,5].map(i =>
           `<span class="pem-star${existingLiveRating?.rating >= i ? ' filled' : ''}" data-star="${i}">★</span>`
@@ -2751,11 +2769,7 @@ function renderLivePanel() {
              </div>`
           : '<span class="live-act-rating-placeholder"></span>';
         return `
-          <div class="live-act-row${isActFavorite ? ' artist-row--followed' : ''}${a.canceled ? ' act-canceled' : ''}">
-            <div class="live-act-meta">
-              ${avgHtml}
-              ${followBtn || '<span class="live-act-follow-placeholder"></span>'}
-            </div>
+          <div class="live-act-row live-act-row--simple${a.canceled ? ' act-canceled' : ''}">
             <div class="artist-name live-act-name-wrap">
               <span class="artist-name-link live-act-name" ${actId ? `data-act-id="${actId}"` : ''} data-act-name="${a.acts?.name ?? '?'}">${a.acts?.name ?? '?'}</span>
               <div class="pem-act-time live-inline-act-time">${a.canceled ? t('act.canceled') : timeStr}</div>
@@ -2842,16 +2856,18 @@ function renderLivePanel() {
       ${personalHtml}
       <div class="live-section">
         <div class="live-section-label">${t('live.section_queue')}</div>
+        ${buildLiveQueueNow()}
         <div class="pem-q-chart-wrap" id="liveQueueChart"></div>
       </div>
-      <div class="live-section">
-        <div class="live-section-label">${t('live.section_spotlights')}</div>
-        <div id="liveSpotlightCards">${spotlightHtml}</div>
-      </div>
-      <div class="live-section">
-        <div class="live-section-label">${t('live.section_timetable')}</div>
+      <div class="live-section live-section--lineup">
+        <button class="live-lineup-toggle" type="button" data-live-action="toggle-lineup" aria-expanded="${liveLineupOpen}">
+          <span class="live-section-label">${t('live.section_rate')}</span>
+          <span class="live-lineup-count">${acts.length}</span>
+          <span class="live-lineup-chevron">${liveLineupOpen ? '▾' : '▸'}</span>
+        </button>
+        ${liveLineupOpen ? `
         <div class="pem-rating-hint">${t('live.surprise_hint')}</div>
-        <div class="live-timetable">${timetableHtml}</div>
+        <div class="live-timetable">${timetableHtml}</div>` : ''}
       </div>
     </div>
   `;
@@ -3005,6 +3021,7 @@ function initLivePanel() {
       return;
     }
     if (action === 'queue-report') { await submitQueueReport(eventId, target.dataset.level); return; }
+    if (action === 'toggle-lineup') { liveLineupOpen = !liveLineupOpen; renderLivePanel(); return; }
     if (action === 'hype')         { await toggleHype(eventId); renderLivePanel();           return; }
     if (action === 'denied')       { await handleDenied(eventId); return; }
     if (action === 'next-status') {

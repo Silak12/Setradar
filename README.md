@@ -181,3 +181,40 @@ Manueller lokaler Lauf:
 ```
 
 Dann in `backend/database/supabase_all_tables_dump.json` kontrollieren, ob das neue Feld in der Zieltabelle angekommen ist.
+
+## Supabase CLI (Migrationen in `supabase/migrations`)
+
+Die CLI muss nicht global installiert werden, `npx` reicht (Node ist vorhanden):
+
+```powershell
+npx supabase@latest login                                   # oeffnet Browser, Access Token wird lokal gespeichert
+npx supabase@latest link --project-ref yvqwwssvftzsjsfeyghk  # Projekt-Ref = Subdomain aus SUPABASE_URL
+npx supabase@latest migration list                          # lokal vs. remote vergleichen
+npx supabase@latest db push                                 # fehlende Migrationen aus supabase/migrations anwenden
+```
+
+Beim `link` wird das Datenbank-Passwort abgefragt (Supabase Dashboard → Project Settings → Database).
+Alternativ ohne Browser: `$env:SUPABASE_ACCESS_TOKEN = "sbp_..."` setzen (Token unter
+https://supabase.com/dashboard/account/tokens erzeugen).
+
+Wurde eine Migration bereits manuell im SQL Editor ausgefuehrt, muss sie in der
+Remote-Historie als angewendet markiert werden, sonst versucht `db push` sie erneut:
+
+```powershell
+npx supabase@latest migration repair --status applied 20260823000000
+```
+
+## Event-Identitaet beim Scrapen (Duplikate vermeiden)
+
+Der `RA Scraper` Workflow laeuft einmal pro Woche (Montag 12:00 UTC) und seedet
+einen kompletten RA-Snapshot der naechsten 10 Wochen pro Club:
+
+- Identitaet eines Events ist `events.ra_id` (Unique Index). Titel und Zeiten
+  duerfen sich auf RA aendern, die Zeile wird dann nur aktualisiert.
+- Aeltere Zeilen ohne `ra_id` werden ueber Club + Datum + Titel gemerged
+  (Zeitdrift wird toleriert) und bekommen dabei ihre `ra_id`.
+- Alles, was im gescrapten Zeitfenster eines Clubs aktiv ist und vom Snapshot
+  nicht beruehrt wurde (von RA entfernte Events oder nicht mergebare
+  Legacy-Zeilen), wird auf `is_active = false` gesetzt. Es wird nie geloescht,
+  damit Ratings/Favoriten/Hype erhalten bleiben. Das Frontend zeigt nur
+  `is_active = true`.
