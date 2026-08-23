@@ -483,48 +483,18 @@ def _parse_act(raw_act: Any) -> tuple[str, str | None, str | None, str | None, s
 
 
 @_retry_transport
-def _upsert_event_act(
-    supabase: Client,
-    event_id: int,
-    act_id: int,
-    start_time: str | None,
-    end_time: str | None,
-    sort_order: int,
-) -> None:
+def _upsert_event_acts(supabase: Client, rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        return
     try:
-        existing = (
+        (
             supabase.table("event_acts")
-            .select("id")
-            .eq("event_id", event_id)
-            .eq("act_id", act_id)
-            .limit(1)
+            .upsert(rows, on_conflict="event_id,act_id")
             .execute()
         )
-        if existing.data:
-            payload: dict[str, Any] = {"sort_order": sort_order}
-            if start_time is not None:
-                payload["start_time"] = start_time
-            if end_time is not None:
-                payload["end_time"] = end_time
-            (
-                supabase.table("event_acts")
-                .update(payload)
-                .eq("id", existing.data[0]["id"])
-                .execute()
-            )
-            return
-
-        payload = {
-            "event_id": event_id,
-            "act_id": act_id,
-            "start_time": start_time,
-            "end_time": end_time,
-            "sort_order": sort_order,
-        }
-        supabase.table("event_acts").insert(payload).execute()
     except APIError as exc:
-        key = f"event_id={event_id}, act_id={act_id}"
-        raise _api_error(f"event_acts upsert failed for {key}", exc) from exc
+        event_id = rows[0].get("event_id")
+        raise _api_error(f"event_acts batch upsert failed for event_id={event_id}", exc) from exc
 
 
 @_retry_transport
@@ -614,6 +584,7 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
         "event_acts_removed": 0,
         "events_deactivated": 0,
     }
+    act_ids_by_name: dict[str, int] = {}
 
     for city in payload.get("cities", []):
         city_name = str(city.get("name", "")).strip()
@@ -679,6 +650,7 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                     counters["events_deactivated"] += len(duplicate_ids)
 
                 current_act_ids: set[int] = set()
+                event_act_rows_by_act_id: dict[int, dict[str, Any]] = {}
                 for idx, raw_act in enumerate(event.get("acts", []), start=1):
                     (
                         act_name,
@@ -689,25 +661,34 @@ def seed_from_json(supabase: Client, payload: dict[str, Any], verbose: bool = Tr
                     ) = _parse_act(raw_act)
                     if not act_name:
                         continue
-                    act_id = _get_or_create_act_id(
-                        supabase,
-                        act_name,
-                        insta_name=act_insta_name,
-                        soundcloud_url=act_soundcloud_url,
-                        supports_soundcloud_url=supports_soundcloud_url,
-                    )
+                    normalized_act_name = _normalize_act_name(act_name)
+                    act_id = act_ids_by_name.get(normalized_act_name)
+                    if (
+                        act_id is None
+                        or act_insta_name is not None
+                        or (supports_soundcloud_url and act_soundcloud_url is not None)
+                    ):
+                        act_id = _get_or_create_act_id(
+                            supabase,
+                            act_name,
+                            insta_name=act_insta_name,
+                            soundcloud_url=act_soundcloud_url,
+                            supports_soundcloud_url=supports_soundcloud_url,
+                        )
+                        act_ids_by_name[normalized_act_name] = act_id
                     counters["acts"] += 1
                     current_act_ids.add(act_id)
+                    event_act_rows_by_act_id[act_id] = {
+                        "event_id": event_id,
+                        "act_id": act_id,
+                        "start_time": act_start_time,
+                        "end_time": act_end_time,
+                        "sort_order": idx,
+                    }
 
-                    _upsert_event_act(
-                        supabase=supabase,
-                        event_id=event_id,
-                        act_id=act_id,
-                        start_time=act_start_time,
-                        end_time=act_end_time,
-                        sort_order=idx,
-                    )
-                    counters["event_acts"] += 1
+                event_act_rows = list(event_act_rows_by_act_id.values())
+                _upsert_event_acts(supabase, event_act_rows)
+                counters["event_acts"] += len(event_act_rows)
 
                 if ra_id:
                     counters["event_acts_removed"] += _remove_stale_event_acts(
