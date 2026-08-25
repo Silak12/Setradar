@@ -50,6 +50,11 @@ DELETE_AFTER_PROCESSING = True
 MAX_ATTEMPTS            = 3    # Versuche pro Bild bei transienten Fehlern (OpenAI/Netz)
 HORIZON_DAYS            = 30   # Events nur innerhalb dieses Zeitraums zuordnen
 
+# OCR_PREFILTER=0 in der .env schaltet den lokalen easyocr-Pre-Filter AUS und
+# schickt jedes Bild direkt an OpenAI. Sinnvoll auf schwachen/heißen Pis, wo
+# easyocr langsamer (Minuten/Bild, Throttling/OOM) ist als ein OpenAI-Call.
+OCR_PREFILTER_ENABLED   = os.getenv("OCR_PREFILTER", "1").strip().lower() not in ("0", "false", "no", "off")
+
 # ── OCR Pre-Filter ────────────────────────────────────────────────────────────
 # Nur Bilder mit Uhrzeiten oder Cancel-Keywords an OpenAI schicken
 
@@ -652,15 +657,19 @@ def process_new_images(verbose: bool = True) -> int:
     for img_path in new_images:
         print(f"\n── {img_path.name} ──")
         try:
-            # OCR Pre-Filter: nur Bilder mit Zeiten/Cancel-Keywords an OpenAI
-            relevant, ocr_text = ocr_prefilter(img_path)
-            if not relevant:
-                print("  [OCR] Kein Timetable-Inhalt – überspringe OpenAI")
-                processed.add(img_path.name)
-                save_processed(processed)
-                if DELETE_AFTER_PROCESSING:
-                    img_path.unlink()
-                continue
+            # OCR Pre-Filter: nur Bilder mit Zeiten/Cancel-Keywords an OpenAI.
+            # Per OCR_PREFILTER=0 abschaltbar → jedes Bild geht direkt an OpenAI.
+            if OCR_PREFILTER_ENABLED:
+                relevant, ocr_text = ocr_prefilter(img_path)
+                if not relevant:
+                    print("  [OCR] Kein Timetable-Inhalt – überspringe OpenAI")
+                    processed.add(img_path.name)
+                    save_processed(processed)
+                    if DELETE_AFTER_PROCESSING:
+                        img_path.unlink()
+                    continue
+            else:
+                ocr_text = ""
 
             extracted   = analyze_image(openai_client, img_path, ocr_text)
             story_type  = extracted.get("type", "irrelevant")
