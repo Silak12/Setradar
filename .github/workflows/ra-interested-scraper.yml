@@ -37,5 +37,5 @@ jobs:
       - name: Install scraper dependencies
         run: python -m pip install requests==2.32.5 python-dotenv==1.2.1 supabase==2.28.0
 
-      - name: Update RA interested counts for the next 28 days
+      - name: Update RA interested counts and deactivate delisted events (next 28 days)
         run: python backend/fetcher/ra_interested_scraper.py

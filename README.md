@@ -168,6 +168,13 @@ täglich um 11:00 und 20:00 Uhr in der Zeitzone `Europe/Berlin` und verarbeitet
 ausschließlich Events von heute bis einschließlich 28 Tage im Voraus. Er kann
 außerdem über `workflow_dispatch` manuell gestartet werden.
 
+Derselbe Lauf setzt Events in diesem Zeitfenster auf `is_active = false`, deren
+`ra_id` nicht mehr in der RA-Venue-Liste steht (auf RA abgesagt oder
+depubliziert). So verschwinden Absagen nach spätestens 12 Stunden von der Seite
+statt erst beim wöchentlichen Snapshot. Liefert RA für eine Venue keine oder
+eine abgeschnittene Antwort, wird fuer diese Venue nichts deaktiviert. Ein
+Reaktivieren passiert hier nie, das macht nur der `RA Scraper`.
+
 Manueller lokaler Lauf:
 
 ```powershell

@@ -1,4 +1,12 @@
-"""Update public RA interested counts for existing Setradar events."""
+"""Update public RA interested counts for existing Setradar events.
+
+The venue listing fetched here is also the fastest signal that RA has
+cancelled or unpublished an event: such events vanish from the venue page
+while their detail page keeps resolving. Rows for the next DAYS_AHEAD days
+whose ra_id is no longer listed are therefore set to is_active = false so the
+website stops showing them within hours instead of waiting for the weekly
+snapshot.
+"""
 
 from __future__ import annotations
 
@@ -25,6 +33,9 @@ except ImportError:
 
 DAYS_AHEAD = 28
 REQUEST_DELAY = 1.0
+# Generous so a busy venue never truncates the 28 day window; a truncated list
+# is treated as incomplete and never deactivates anything.
+VENUE_EVENT_LIMIT = 100
 LOGGER = logging.getLogger(__name__)
 
 VENUE_INTEREST_QUERY = """
@@ -68,21 +79,48 @@ def _parse_interested_count(value: Any) -> int | None:
         return None
 
 
-def fetch_venue_interest(
+def fetch_venue_snapshot(
     venue_cfg: dict,
     *,
     today: date | None = None,
-) -> list[dict]:
+) -> dict:
+    """Return interested counts plus the complete set of listed RA ids.
+
+    ``listed_ra_ids`` is ``None`` when RA did not answer, returned no venue or
+    truncated the listing. Callers must then skip deactivation for the venue.
+    """
     start = today or date.today()
     cutoff = start + timedelta(days=DAYS_AHEAD)
-    limit = 50
+    limit = VENUE_EVENT_LIMIT
     data = gql(VENUE_INTEREST_QUERY, {"id": venue_cfg["venue_id"], "limit": limit})
     venue = (data.get("data") or {}).get("venue") if data else None
-    raw_events = (venue or {}).get("events") or []
+    raw_events = (venue or {}).get("events") if venue else None
     if isinstance(raw_events, dict):
         raw_events = raw_events.get("data", [])
 
-    result: list[dict] = []
+    listed_ra_ids: set[str] | None
+    if venue is None or not isinstance(raw_events, list):
+        listed_ra_ids = None
+        raw_events = []
+        LOGGER.warning(
+            "[!] %s: keine RA-Antwort, Snapshot unvollstaendig (keine Deaktivierung).",
+            venue_cfg["club"],
+        )
+    elif len(raw_events) >= limit:
+        listed_ra_ids = None
+        LOGGER.warning(
+            "[!] %s: RA Event-Limit (%s) erreicht, Snapshot unvollstaendig (keine Deaktivierung).",
+            venue_cfg["club"],
+            limit,
+        )
+    else:
+        listed_ra_ids = {
+            str(event.get("id") or "").strip()
+            for event in raw_events
+            if str(event.get("id") or "").strip()
+        }
+
+    interest: list[dict] = []
     for event in raw_events:
         event_date = _parse_ra_date(event.get("date"))
         interested_count = _parse_interested_count(event.get("interestedCount"))
@@ -94,7 +132,7 @@ def fetch_venue_interest(
             or not event_name
         ):
             continue
-        result.append(
+        interest.append(
             {
                 "ra_id": str(event.get("id") or ""),
                 "city": venue_cfg["city"],
@@ -104,23 +142,49 @@ def fetch_venue_interest(
                 "interested_count": interested_count,
             }
         )
-    return result
+    return {
+        "city": venue_cfg["city"],
+        "club": venue_cfg["club"],
+        "interest": interest,
+        "listed_ra_ids": listed_ra_ids,
+    }
 
 
-def scrape_interest(venues: list[dict]) -> list[dict]:
+def fetch_venue_interest(
+    venue_cfg: dict,
+    *,
+    today: date | None = None,
+) -> list[dict]:
+    return fetch_venue_snapshot(venue_cfg, today=today)["interest"]
+
+
+def scrape_venues(venues: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Return (interested rows, per-venue listings) for all configured venues."""
     scraped: list[dict] = []
+    listings: list[dict] = []
     for index, venue_cfg in enumerate(venues):
         if index:
             time.sleep(REQUEST_DELAY)
-        events = fetch_venue_interest(venue_cfg)
-        scraped.extend(events)
+        snapshot = fetch_venue_snapshot(venue_cfg)
+        scraped.extend(snapshot["interest"])
+        listings.append(
+            {
+                "city": snapshot["city"],
+                "club": snapshot["club"],
+                "listed_ra_ids": snapshot["listed_ra_ids"],
+            }
+        )
         LOGGER.info(
             "[ok] %s, %s: %s Interested-Wert(e)",
             venue_cfg["club"],
             venue_cfg["city"],
-            len(events),
+            len(snapshot["interest"]),
         )
-    return scraped
+    return scraped, listings
+
+
+def scrape_interest(venues: list[dict]) -> list[dict]:
+    return scrape_venues(venues)[0]
 
 
 def _city_name(club: dict) -> str:
@@ -196,7 +260,69 @@ def build_event_updates(
     return updates, unmatched
 
 
-def update_database(supabase: Client, scraped: list[dict]) -> int:
+def build_deactivations(
+    listings: list[dict],
+    clubs: list[dict],
+    events: list[dict],
+    *,
+    today: date,
+    cutoff: date,
+) -> list[dict]:
+    """Return active DB rows in [today, cutoff] that RA no longer lists.
+
+    Only rows carrying a ra_id are considered: legacy rows are handled by the
+    weekly snapshot. Venues whose listing is ``None`` (RA failure or truncated
+    response) are skipped entirely so a transient outage never hides events.
+    Rows are never re-activated here because the weekly scraper deliberately
+    deactivates shadow listings that RA still shows.
+    """
+    club_ids = {
+        (_city_name(club), str(club.get("name") or "").strip()): int(club["id"])
+        for club in clubs
+        if club.get("id") is not None
+    }
+    listed_by_club: dict[int, set[str]] = {}
+    for listing in listings:
+        listed = listing.get("listed_ra_ids")
+        if listed is None:
+            continue
+        club_id = club_ids.get((listing["city"], listing["club"]))
+        if club_id is None:
+            continue
+        listed_by_club[club_id] = set(listed)
+
+    stale: list[dict] = []
+    for event in events:
+        if event.get("id") is None or event.get("club_id") is None:
+            continue
+        if event.get("is_active") is False:
+            continue
+        ra_id = str(event.get("ra_id") or "").strip()
+        if not ra_id:
+            continue
+        club_id = int(event["club_id"])
+        if club_id not in listed_by_club or ra_id in listed_by_club[club_id]:
+            continue
+        event_date = _parse_ra_date(event.get("event_date"))
+        if event_date is None or not today <= event_date <= cutoff:
+            continue
+        stale.append(
+            {
+                "id": int(event["id"]),
+                "club_id": club_id,
+                "event_date": event_date.isoformat(),
+                "event_name": str(event.get("event_name") or ""),
+                "ra_id": ra_id,
+            }
+        )
+    return stale
+
+
+def update_database(
+    supabase: Client,
+    scraped: list[dict],
+    listings: list[dict] | None = None,
+) -> tuple[int, int]:
     today = date.today()
     cutoff = today + timedelta(days=DAYS_AHEAD)
     try:
@@ -207,7 +333,7 @@ def update_database(supabase: Client, scraped: list[dict]) -> int:
         )
         events_response = (
             supabase.table("events")
-            .select("id,club_id,event_date,event_name,ra_id")
+            .select("id,club_id,event_date,event_name,ra_id,is_active")
             .gte("event_date", today.isoformat())
             .lte("event_date", cutoff.isoformat())
             .execute()
@@ -221,7 +347,7 @@ def update_database(supabase: Client, scraped: list[dict]) -> int:
         if scraped_ra_ids:
             identity_response = (
                 supabase.table("events")
-                .select("id,club_id,event_date,event_name,ra_id")
+                .select("id,club_id,event_date,event_name,ra_id,is_active")
                 .in_("ra_id", scraped_ra_ids)
                 .execute()
             )
@@ -246,6 +372,28 @@ def update_database(supabase: Client, scraped: list[dict]) -> int:
                 .eq("id", update["id"])
                 .execute()
             )
+
+        stale = build_deactivations(
+            listings or [],
+            clubs_response.data or [],
+            list(events_response.data or []),
+            today=today,
+            cutoff=cutoff,
+        )
+        if stale:
+            for item in stale:
+                LOGGER.info(
+                    "[x] Deaktiviert (nicht mehr auf RA gelistet): %s | %s | RA %s",
+                    item["event_date"],
+                    item["event_name"],
+                    item["ra_id"],
+                )
+            (
+                supabase.table("events")
+                .update({"is_active": False})
+                .in_("id", [item["id"] for item in stale])
+                .execute()
+            )
     except APIError as exc:
         message = getattr(exc, "message", str(exc))
         raise RuntimeError(f"Supabase interested update failed: {message}") from exc
@@ -263,7 +411,7 @@ def update_database(supabase: Client, scraped: list[dict]) -> int:
                 item["event_name"],
                 item["ra_id"],
             )
-    return len(updates)
+    return len(updates), len(stale)
 
 
 def main() -> None:
@@ -271,17 +419,18 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     try:
         venues = load_venues_config()
-        scraped = scrape_interest(venues)
+        scraped, listings = scrape_venues(venues)
         supabase = _supabase_client()
-        updated = update_database(supabase, scraped)
+        updated, deactivated = update_database(supabase, scraped, listings)
         seeded = seed_upcoming_hype(supabase, DAYS_AHEAD)
     except (RuntimeError, ValueError, VenuesConfigError) as exc:
         LOGGER.error("[ERROR] %s", exc)
         raise SystemExit(1) from exc
 
     LOGGER.info(
-        "[ok] Interested aktualisiert: %s DB-Event(s), %s Hype-Zähler.",
+        "[ok] Interested aktualisiert: %s DB-Event(s), %s deaktiviert, %s Hype-Zähler.",
         updated,
+        deactivated,
         seeded,
     )
 
