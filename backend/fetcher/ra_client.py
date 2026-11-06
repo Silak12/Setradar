@@ -1,4 +1,6 @@
 import logging
+import time
+from datetime import date
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -62,3 +64,51 @@ def gql(query: str, variables: dict, timeout: int = DEFAULT_TIMEOUT) -> dict:
     except requests.RequestException as exc:
         LOGGER.error("Request-Fehler: %s", exc)
         return {}
+
+
+def fetch_venue_listing(
+    query: str,
+    venue_id: int,
+    *,
+    initial_limit: int = 100,
+    max_limit: int = 3200,
+) -> list[dict]:
+    """Fetch a complete LATEST listing, expanding the limit when it fills up.
+
+    Both scrapers use these listings to deactivate missing events. Missing,
+    malformed or partially failed responses must never count as an empty list.
+    """
+    if not 1 <= initial_limit <= max_limit:
+        raise ValueError("Expected 1 <= initial_limit <= max_limit")
+
+    limit = initial_limit
+    while True:
+        data = gql(query, {"id": venue_id, "limit": limit})
+        if not data or data.get("errors"):
+            raise RuntimeError(f"RA lieferte keine vollstaendige Antwort fuer venue_id={venue_id}")
+        venue = (data.get("data") or {}).get("venue")
+        events = venue.get("events") if isinstance(venue, dict) else None
+        if isinstance(events, dict):
+            events = events.get("data")
+        if not isinstance(events, list):
+            raise RuntimeError(f"RA lieferte keine Event-Liste fuer venue_id={venue_id}")
+        for event in events:
+            if not isinstance(event, dict) or not str(event.get("id") or "").strip():
+                raise RuntimeError(f"RA lieferte ein Event ohne Identitaet fuer venue_id={venue_id}")
+            try:
+                date.fromisoformat(str(event.get("date") or "")[:10])
+            except ValueError as exc:
+                raise RuntimeError(
+                    f"RA lieferte ein Event ohne gueltiges Datum fuer venue_id={venue_id}"
+                ) from exc
+        LOGGER.info("  RA venue_id=%s: %s Event(s), Limit %s", venue_id, len(events), limit)
+        if len(events) < limit:
+            return events
+        if limit >= max_limit:
+            raise RuntimeError(
+                f"RA Event-Limit fuer venue_id={venue_id} erreicht ({limit}); "
+                "Snapshot waere moeglicherweise unvollstaendig."
+            )
+        limit = min(limit * 2, max_limit)
+        LOGGER.info("  Erhoehe RA Event-Limit fuer venue_id=%s auf %s", venue_id, limit)
+        time.sleep(1)

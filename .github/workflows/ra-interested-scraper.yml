@@ -5,37 +5,57 @@ on:
     - cron: "0 11,20 * * *"
       timezone: "Europe/Berlin"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Read RA and Supabase without updating counts, events or hype"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: ra-interested-scraper
+  group: ra-database
   cancel-in-progress: false
 
 jobs:
   update-interested:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: production
 
     env:
+      TZ: Europe/Berlin
+      PYTHONUNBUFFERED: "1"
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: backend/fetcher/requirements.txt
 
       - name: Install scraper dependencies
-        run: python -m pip install requests==2.32.5 python-dotenv==1.2.1 supabase==2.28.0
+        run: python -m pip install -r backend/fetcher/requirements.txt pytest==9.0.2
+
+      - name: Run backend regression tests
+        run: python -m pytest backend -q
 
       - name: Update RA interested counts and deactivate delisted events (next 28 days)
-        run: python backend/fetcher/ra_interested_scraper.py
+        env:
+          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          python backend/fetcher/ra_interested_scraper.py "${ARGS[@]}"
