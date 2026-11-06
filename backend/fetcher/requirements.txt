@@ -1,0 +1,4 @@
+# Shared by both RA workflows; no OCR, Android or GPU packages are needed.
+requests==2.32.5
+python-dotenv==1.2.1
+supabase==2.28.0

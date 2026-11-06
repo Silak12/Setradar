@@ -1,5 +1,10 @@
 from datetime import date
+from types import SimpleNamespace
+from unittest.mock import Mock
 
+import pytest
+
+from backend.fetcher import ra_interested_scraper
 from backend.fetcher.ra_interested_scraper import build_event_updates
 
 
@@ -156,3 +161,55 @@ def test_build_deactivations_trusts_empty_venue_listing() -> None:
     stale = build_deactivations(listings, clubs, events, today=date(2026, 9, 5), cutoff=date(2026, 10, 3))
 
     assert sorted(item["id"] for item in stale) == [10, 11]
+
+
+def test_incomplete_listing_prevents_database_changes(monkeypatch) -> None:
+    monkeypatch.setattr(
+        ra_interested_scraper, "fetch_venue_listing", Mock(side_effect=RuntimeError("RA unavailable"))
+    )
+    venues = [{"city": "Berlin", "club": "Lokschuppen", "venue_id": 17071}]
+
+    with pytest.raises(RuntimeError, match="keine DB-Aenderungen"):
+        ra_interested_scraper.scrape_venues(venues)
+
+
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_database_dry_run_reports_updates_without_writing(dry_run) -> None:
+    today = date.today().isoformat()
+    supabase = Mock()
+    clubs = [{"id": 1, "name": "Lokschuppen", "cities": {"name": "Berlin"}}]
+    events = [
+        {"id": 10, "club_id": 1, "event_date": today, "event_name": "Listed", "ra_id": "100"},
+        {"id": 11, "club_id": 1, "event_date": today, "event_name": "Delisted", "ra_id": "101"},
+    ]
+    supabase.table.return_value.select.return_value.execute.return_value = SimpleNamespace(data=clubs)
+    supabase.table.return_value.select.return_value.gte.return_value.lte.return_value.execute.return_value = SimpleNamespace(data=events)
+    supabase.table.return_value.select.return_value.in_.return_value.execute.return_value = SimpleNamespace(data=events[:1])
+    scraped = [{
+        "city": "Berlin", "club": "Lokschuppen", "event_date": today,
+        "event_name": "Listed", "ra_id": "100", "interested_count": 25,
+    }]
+    listings = [{"city": "Berlin", "club": "Lokschuppen", "listed_ra_ids": {"100"}}]
+
+    assert ra_interested_scraper.update_database(supabase, scraped, listings, dry_run=dry_run) == (1, 1)
+
+    if dry_run:
+        supabase.table.return_value.update.assert_not_called()
+    else:
+        assert supabase.table.return_value.update.call_count == 2
+
+
+def test_dry_run_does_not_seed_hype(monkeypatch) -> None:
+    monkeypatch.setattr(ra_interested_scraper.sys, "argv", ["ra_interested_scraper", "--dry-run"])
+    monkeypatch.setattr(ra_interested_scraper, "load_venues_config", lambda: [])
+    monkeypatch.setattr(ra_interested_scraper, "scrape_venues", lambda _: ([], []))
+    monkeypatch.setattr(ra_interested_scraper, "_supabase_client", Mock())
+    update = Mock(return_value=(0, 0))
+    hype = Mock()
+    monkeypatch.setattr(ra_interested_scraper, "update_database", update)
+    monkeypatch.setattr(ra_interested_scraper, "seed_upcoming_hype", hype)
+
+    ra_interested_scraper.main()
+
+    assert update.call_args.kwargs == {"dry_run": True}
+    hype.assert_not_called()

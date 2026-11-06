@@ -19,11 +19,11 @@ from datetime import date, timedelta
 from pathlib import Path
 
 try:
-    from .ra_client import gql
+    from .ra_client import fetch_venue_listing, gql
     from .transform import build_lineup_json, get_event_end_date
     from .venues_config import VenuesConfigError, load_venues_config
 except ImportError:
-    from ra_client import gql
+    from ra_client import fetch_venue_listing, gql
     from transform import build_lineup_json, get_event_end_date
     from venues_config import VenuesConfigError, load_venues_config
 
@@ -136,27 +136,7 @@ def fetch_venue_events(venue_id: int, weeks_ahead: int = DEFAULT_WEEKS) -> list[
     """
     today  = date.today()
     cutoff = today + timedelta(weeks=weeks_ahead)
-    # Großzügiges Limit: selbst bei täglich Events wären 8 Wochen = ~60 Events
-    limit  = max(weeks_ahead * 10, 50)
-
-    LOGGER.info("  Lade Events via venue-Query (venue_id=%s, LATEST, limit=%s)...", venue_id, limit)
-    data = gql(VENUE_EVENTS_QUERY, {"id": venue_id, "limit": limit})
-
-    if not data:
-        raise RuntimeError(f"RA lieferte keine Antwort fuer venue_id={venue_id}")
-
-    venue_data = (data.get("data") or {}).get("venue")
-    if not venue_data:
-        raise RuntimeError(f"RA lieferte keine Venue-Daten fuer venue_id={venue_id}")
-
-    raw = venue_data.get("events") or []
-    if isinstance(raw, dict):  # Sicherheitsnetz falls paginiertes Objekt
-        raw = raw.get("data", [])
-    if len(raw) >= limit:
-        raise RuntimeError(
-            f"RA Event-Limit fuer venue_id={venue_id} erreicht ({limit}); "
-            "Snapshot waere moeglicherweise unvollstaendig."
-        )
+    raw = fetch_venue_listing(VENUE_EVENTS_QUERY, venue_id)
 
     result = []
     for event in raw:
@@ -226,6 +206,8 @@ def main():
                         help="Nur scrapen + JSON schreiben, kein DB-Seed")
     parser.add_argument("--debug", action="store_true", help="Debug Logging aktivieren")
     args = parser.parse_args()
+    if not 1 <= args.weeks <= 52:
+        parser.error("--weeks muss zwischen 1 und 52 liegen")
 
     configure_logging(args.debug)
     try:
@@ -261,6 +243,7 @@ def main():
     )
     LOGGER.info("[ok] Gesamt: %s Event(s), %s Act-Slot(s)", total_events, total_acts)
 
+    args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     LOGGER.info("[ok] JSON gespeichert: %s", args.output)
 

@@ -10,6 +10,7 @@ snapshot.
 
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 import time
@@ -21,21 +22,18 @@ from supabase import Client
 
 try:
     from ..database.seed_event_hype import _supabase_client, seed_upcoming_hype
-    from .ra_client import gql
+    from .ra_client import fetch_venue_listing
     from .venues_config import VenuesConfigError, load_venues_config
 except ImportError:
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from backend.database.seed_event_hype import _supabase_client, seed_upcoming_hype
-    from backend.fetcher.ra_client import gql
+    from backend.fetcher.ra_client import fetch_venue_listing
     from backend.fetcher.venues_config import VenuesConfigError, load_venues_config
 
 DAYS_AHEAD = 28
 REQUEST_DELAY = 1.0
-# Generous so a busy venue never truncates the 28 day window; a truncated list
-# is treated as incomplete and never deactivates anything.
-VENUE_EVENT_LIMIT = 100
 LOGGER = logging.getLogger(__name__)
 
 VENUE_INTEREST_QUERY = """
@@ -91,28 +89,16 @@ def fetch_venue_snapshot(
     """
     start = today or date.today()
     cutoff = start + timedelta(days=DAYS_AHEAD)
-    limit = VENUE_EVENT_LIMIT
-    data = gql(VENUE_INTEREST_QUERY, {"id": venue_cfg["venue_id"], "limit": limit})
-    venue = (data.get("data") or {}).get("venue") if data else None
-    raw_events = (venue or {}).get("events") if venue else None
-    if isinstance(raw_events, dict):
-        raw_events = raw_events.get("data", [])
-
-    listed_ra_ids: set[str] | None
-    if venue is None or not isinstance(raw_events, list):
+    try:
+        raw_events = fetch_venue_listing(VENUE_INTEREST_QUERY, venue_cfg["venue_id"])
+    except RuntimeError as exc:
+        LOGGER.warning(
+            "[!] %s: Snapshot unvollstaendig (keine Deaktivierung): %s",
+            venue_cfg["club"],
+            exc,
+        )
         listed_ra_ids = None
         raw_events = []
-        LOGGER.warning(
-            "[!] %s: keine RA-Antwort, Snapshot unvollstaendig (keine Deaktivierung).",
-            venue_cfg["club"],
-        )
-    elif len(raw_events) >= limit:
-        listed_ra_ids = None
-        LOGGER.warning(
-            "[!] %s: RA Event-Limit (%s) erreicht, Snapshot unvollstaendig (keine Deaktivierung).",
-            venue_cfg["club"],
-            limit,
-        )
     else:
         listed_ra_ids = {
             str(event.get("id") or "").strip()
@@ -180,6 +166,9 @@ def scrape_venues(venues: list[dict]) -> tuple[list[dict], list[dict]]:
             venue_cfg["city"],
             len(snapshot["interest"]),
         )
+    incomplete = [item["club"] for item in listings if item["listed_ra_ids"] is None]
+    if incomplete:
+        raise RuntimeError("Unvollstaendige RA-Snapshots; keine DB-Aenderungen: " + ", ".join(incomplete))
     return scraped, listings
 
 
@@ -322,6 +311,8 @@ def update_database(
     supabase: Client,
     scraped: list[dict],
     listings: list[dict] | None = None,
+    *,
+    dry_run: bool = False,
 ) -> tuple[int, int]:
     today = date.today()
     cutoff = today + timedelta(days=DAYS_AHEAD)
@@ -365,7 +356,7 @@ def update_database(
             raise RuntimeError(
                 "RA returned interested counts, but none matched an existing DB event."
             )
-        for update in updates:
+        for update in ([] if dry_run else updates):
             (
                 supabase.table("events")
                 .update({"interested_count": update["interested_count"]})
@@ -383,17 +374,18 @@ def update_database(
         if stale:
             for item in stale:
                 LOGGER.info(
-                    "[x] Deaktiviert (nicht mehr auf RA gelistet): %s | %s | RA %s",
+                    "[x] Nicht mehr auf RA gelistet: %s | %s | RA %s",
                     item["event_date"],
                     item["event_name"],
                     item["ra_id"],
                 )
-            (
-                supabase.table("events")
-                .update({"is_active": False})
-                .in_("id", [item["id"] for item in stale])
-                .execute()
-            )
+            if not dry_run:
+                (
+                    supabase.table("events")
+                    .update({"is_active": False})
+                    .in_("id", [item["id"] for item in stale])
+                    .execute()
+                )
     except APIError as exc:
         message = getattr(exc, "message", str(exc))
         raise RuntimeError(f"Supabase interested update failed: {message}") from exc
@@ -416,19 +408,23 @@ def update_database(
 
 def main() -> None:
     _configure_console()
+    parser = argparse.ArgumentParser(description="Update RA interested counts and delisted events")
+    parser.add_argument("--dry-run", action="store_true", help="Read RA and Supabase without writing")
+    args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     try:
         venues = load_venues_config()
         scraped, listings = scrape_venues(venues)
         supabase = _supabase_client()
-        updated, deactivated = update_database(supabase, scraped, listings)
-        seeded = seed_upcoming_hype(supabase, DAYS_AHEAD)
+        updated, deactivated = update_database(supabase, scraped, listings, dry_run=args.dry_run)
+        seeded = 0 if args.dry_run else seed_upcoming_hype(supabase, DAYS_AHEAD)
     except (RuntimeError, ValueError, VenuesConfigError) as exc:
         LOGGER.error("[ERROR] %s", exc)
         raise SystemExit(1) from exc
 
     LOGGER.info(
-        "[ok] Interested aktualisiert: %s DB-Event(s), %s deaktiviert, %s Hype-Zähler.",
+        "[%s] Interested: %s DB-Event(s), %s Deaktivierungen, %s Hype-Zaehler.",
+        "dry-run" if args.dry_run else "ok",
         updated,
         deactivated,
         seeded,

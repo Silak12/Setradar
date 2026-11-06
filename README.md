@@ -225,3 +225,43 @@ einen kompletten RA-Snapshot der naechsten 10 Wochen pro Club:
   Legacy-Zeilen), wird auf `is_active = false` gesetzt. Es wird nie geloescht,
   damit Ratings/Favoriten/Hype erhalten bleiben. Das Frontend zeigt nur
   `is_active = true`.
+
+## RA-Workflows pruefen
+
+Beide Scraper laden die vollstaendige RA-Venue-Liste. Bei einer vollen Antwort
+wird das Abfragelimit schrittweise von 100 bis maximal 3200 erhoeht. Fehlende,
+fehlerhafte oder weiterhin abgeschnittene Antworten brechen den Lauf vor dem
+DB-Import ab. Die Workflows verwenden dieselbe Concurrency-Gruppe, damit
+Lineup-Snapshot und Interested-Updates nicht gleichzeitig die Datenbank aendern.
+
+Die CI installiert nur die Scraper-Abhaengigkeiten aus
+`backend/fetcher/requirements.txt` und fuehrt vor jedem Lauf die Backend-Tests aus.
+Lokal kann dieselbe Pruefung so gestartet werden:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend/fetcher/requirements.txt pytest==9.0.2
+.\.venv\Scripts\python.exe -m pytest backend -q
+```
+
+Testlaeufe auf einem Branch ohne DB-Schreibzugriffe:
+
+```powershell
+gh workflow run ra-scraper.yml --ref fix-actions -f weeks=10 -f dry_run=true
+gh workflow run ra-interested-scraper.yml --ref fix-actions -f dry_run=true
+```
+
+Der Haupt-Scraper stellt das JSON als Actions-Artefakt `ra-scraper-output` bereit.
+Der Interested-Testlauf liest auch Supabase und meldet geplante Aenderungen,
+schreibt aber weder Interested-Werte noch Deaktivierungen oder Hype-Zaehler.
+Mit `dry_run=false` laufen die regulaeren DB-Updates.
+
+Zeitplaene verwenden immer die Workflow-Version auf `main`; Aenderungen auf
+einem Feature-Branch werden durch den manuellen Test nicht automatisch aktiv.
+GitHub kann Zeitplaene in oeffentlichen Repositories nach 60 Tagen ohne
+Repository-Aktivitaet deaktivieren. Status und Reaktivierung:
+
+```powershell
+gh workflow list --all
+gh workflow enable ra-interested-scraper.yml
+gh workflow enable ra-scraper.yml
+```
