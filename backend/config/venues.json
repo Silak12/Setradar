@@ -142,5 +142,15 @@
         "venue_id": 19602
       }
     ]
+  },
+  {
+    "city": "Potsdam",
+    "area_id": 208,
+    "clubs": [
+      {
+        "club": "Siggi",
+        "venue_id": 299980
+      }
+    ]
   }
 ]
